@@ -12,8 +12,8 @@ The project objectives to:
 
 ## Project Objectives
 
-- [ ]: Create cluster and complete analysing jobs on SPARTAN.
-- [ ]: Project reports ([overleaf](https://www.overleaf.com/read/sdsczmmdxzvq))
+- [ ] Create cluster and complete analysing jobs on SPARTAN.
+- [ ] Project reports ([overleaf](https://www.overleaf.com/read/sdsczmmdxzvq))
 
 ## Short outcomes
 
