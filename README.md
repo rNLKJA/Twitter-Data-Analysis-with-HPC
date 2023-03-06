@@ -12,6 +12,8 @@ The project objectives to:
 
 ## Project Objectives
 
+**_Project Deadline_**: Wednesday 5th April (by 12:00 noon).
+
 - [ ] Create cluster and complete analysing jobs on SPARTAN.
 - [ ] Project reports ([overleaf](https://www.overleaf.com/read/sdsczmmdxzvq))
 
@@ -40,11 +42,12 @@ ssh [unimelb-username]@spartan.hpc.unimelb.edu.au
 # password = karaage password
 ```
 
-After login, please check the `data/projeccts/COMP90024/` directory, make sure you obtain four twitter json files. Please create a soft link for quick access.
+After login, please check the `/data/projeccts/COMP90024/` directory, make sure you obtain four twitter json files. Please create a soft link for quick access.
 
 One more thing! For better development and testing, you may decide to use the tiny/small JSON files on your own device to save runtime.
 
 **Test Benchmark**
+
 The application should allow a given number of nodes and cores to be utilized. Specifically, the application should be run once to search the `bigTwitter.json` file on each of the following resources.
 
 | NO. nodes | NO. cores                 |
@@ -85,6 +88,20 @@ Strongly recommended that you follow the guidelines provided on access and use o
 └── README.md
 ```
 
+## Data Dictionary
+
+The data dictionary is specificaly extracted from `sal.json` file to identiy the greater capital city. The greater capital city is defined via `gcc` attribute in `sal.json`, each greater capital city has the following regex format: `\dg[a-z]{3}`.
+
+| gcc   | description       |
+| ----- | :---------------- |
+| 1gsyd | Greater Sydney    |
+| 2gmel | Greater Melbourne |
+| 3gbri | Greater Brisbane  |
+| 4gade | Greater Adelaide  |
+| 5gper | Greater Perth     |
+| 6ghob | Greater Hobart    |
+| 7gdar | Greater Darwin    |
+
 ## Assignment Dependencies
 
 <!-- TODO: provide request dependence information and installatino methods, it will be good if there is a auto install/deployment script -->
@@ -97,11 +114,11 @@ For complete assignment 1 report, please check [overleaf](https://www.overleaf.c
 
 ## License
 
-The code will be public after 27th May 2023. For @copyright information please refer to [MIT License]().
+The code will be public after 27th May 2023. For @copyright information please refer to [MIT License](./LICENSE).
 
 <!-- TODO: create MIT license -->
 
 ---
 
 <!-- TODO: write team name -->
-<p align=right>2023@Team name</p>
+<p align=right>2023@Wei & Sunchuangyu</p>
