@@ -46,7 +46,13 @@ After login, please check the `/data/projeccts/COMP90024/` directory, make sure 
 
 One more thing! For better development and testing, you may decide to use the tiny/small JSON files on your own device to save runtime.
 
-**Test Benchmark**
+### Melbourne Research Cloud (MRC)
+
+Visit the following link: https://dashboard.cloud.unimelb.edu.au.
+
+Login use University of Melbourne credential to authenticate yourself.
+
+### Test Benchmark
 
 The application should allow a given number of nodes and cores to be utilized. Specifically, the application should be run once to search the `bigTwitter.json` file on each of the following resources.
 
@@ -56,9 +62,11 @@ The application should allow a given number of nodes and cores to be utilized. S
 |     1     | 8                         |
 |     2     | 8 (with 4 cores per node) |
 
-**Submitting jobs**
+### Submitting jobs
 
 PLEASE PLEASE PLEASE DO NOT SUBMIT AT THE HEAD NODE, if anything goes wrong it will kill the entire server.
+
+Please change working directory to `/data/projects/COMP90024` and submit work via `srun`, more infor please refer `srun`.
 
 The resources should be set when submitting the search application with the appropriate SLURM options. Note that you should run a single SLURM job \*three• separate times on each of the resources given here.
 
@@ -101,6 +109,13 @@ The data dictionary is specificaly extracted from `sal.json` file to identiy the
 | 5gper | Greater Perth     |
 | 6ghob | Greater Hobart    |
 | 7gdar | Greater Darwin    |
+| 8acte | Canberra          |
+
+TODO: define terminologies
+
+- `bbox`
+- `gcc`
+- `sal`
 
 ## Assignment Dependencies
 
