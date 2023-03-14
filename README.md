@@ -28,50 +28,7 @@ The project objectives to:
 | Sunchuangyu Huang |  1118472   | sunchuangyuh@student.unimelb.edu.au |
 | Wei Zhao          |  1118649   | weizhao1@student.unimelb.edu.au     |
 
-## For dev
 
-Before you access, build, deploy or run any code, make sure you obtain your [**SPARTAN**](https://spartan-fastx.hpc.unimelb.edu.au/auth/ssh/) account and acquire your account from [**KAARAGE**](https://dashboard.hpc.unimelb.edu.au/karaage/applications/project/new/).
-
-Typically, spartan use your student name as login id and the password set in karrage.
-
-To log in SPARTAN through running the following command:
-
-```{bash}
-ssh [unimelb-username]@spartan.hpc.unimelb.edu.au
-
-# password = karaage password
-```
-
-After login, please check the `/data/projeccts/COMP90024/` directory, make sure you obtain four twitter json files. Please create a soft link for quick access.
-
-One more thing! For better development and testing, you may decide to use the tiny/small JSON files on your own device to save runtime.
-
-### Melbourne Research Cloud (MRC)
-
-Visit the following link: https://dashboard.cloud.unimelb.edu.au.
-
-Login use University of Melbourne credential to authenticate yourself.
-
-### Test Benchmark
-
-The application should allow a given number of nodes and cores to be utilized. Specifically, the application should be run once to search the `bigTwitter.json` file on each of the following resources.
-
-| NO. nodes | NO. cores                 |
-| :-------: | :------------------------ |
-|     1     | 1                         |
-|     1     | 8                         |
-|     2     | 8 (with 4 cores per node) |
-
-### Submitting jobs
-
-PLEASE PLEASE PLEASE DO NOT SUBMIT AT THE HEAD NODE, if anything goes wrong it will kill the entire server.
-
-Please change working directory to `/data/projects/COMP90024` and submit work via `srun`, more infor please refer `srun`.
-
-The resources should be set when submitting the search application with the appropriate SLURM options. Note that you should run a single SLURM job \*three• separate times on each of the resources given here.
-
-**Last words**
-Strongly recommended that you follow the guidelines provided on access and use of the SPARTAN cluster, for more information, please check SPARTAN documentation.
 
 ## Directories
 
