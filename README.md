@@ -10,69 +10,27 @@ The project objectives to:
 - identify the Twitter accoutns (users) that have made the most tweets, and
 - identify the users that have tweeted from the most different Greater Capital cities.
 
-## Project Objectives
-
-**_Project Deadline_**: Wednesday 5th April (by 12:00 noon).
-
-- [ ] Create cluster and complete analysing jobs on SPARTAN.
-- [ ] Project reports ([overleaf](https://www.overleaf.com/read/sdsczmmdxzvq))
-
-## Short outcomes
-
-<!-- TODO: complete a short outcome -->
-
-## Team
-
-| Name              | Student ID | Email                               |
-| ----------------- | :--------: | ----------------------------------- |
-| Sunchuangyu Huang |  1118472   | sunchuangyuh@student.unimelb.edu.au |
-| Wei Zhao          |  1118649   | weizhao1@student.unimelb.edu.au     |
-
-
+More information, please visit [project wiki](https://github.com/rNLKJA/2023-S1-COMP90024-A1/wiki).
 
 ## Directories
 
 ```
-[Team]
+A1
 |   |── data
-|       |── raw
-|             |── bigTwitter.json
-|             |── smallTwitter.json
-|             |── tinyTwitter.json
-|             |── sal.json
+|       |── bigTwitter.json
+|       |── smallTwitter.json
+|       |── tinyTwitter.json
+|       |── sal.json
 |── notebooks
+|── slurm
+|   |── output
+|       |── output
+|       |── error
+|   |── scripts
 |── scripts
-|   |── data_processing
-|   |── feature_engineering
-|   |── model_training
-|   |── model_evaluation
-|   |── model_inference
-|   |── utils
-|── models
 |── requirements.txt
 └── README.md
 ```
-
-## Data Dictionary
-
-The data dictionary is specificaly extracted from `sal.json` file to identiy the greater capital city. The greater capital city is defined via `gcc` attribute in `sal.json`, each greater capital city has the following regex format: `\dg[a-z]{3}`.
-
-| gcc   | description       |
-| ----- | :---------------- |
-| 1gsyd | Greater Sydney    |
-| 2gmel | Greater Melbourne |
-| 3gbri | Greater Brisbane  |
-| 4gade | Greater Adelaide  |
-| 5gper | Greater Perth     |
-| 6ghob | Greater Hobart    |
-| 7gdar | Greater Darwin    |
-| 8acte | Canberra          |
-
-TODO: define terminologies
-
-- `bbox`
-- `gcc`
-- `sal`
 
 ## Assignment Dependencies
 
