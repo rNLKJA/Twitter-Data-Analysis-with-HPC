@@ -16,9 +16,9 @@
 #SBATCH --mail-type=ALL
 
 ##load required modules
-module purge
+module --force purge
 module load python/3.9.6
+module load mpi4py/3.0.2-timed-pingpong
 
 ##run main program here
 python3 hello_world.py
-
