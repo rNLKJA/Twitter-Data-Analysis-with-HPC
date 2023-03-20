@@ -136,3 +136,4 @@ data(copy)/
 *.stats
 data/bigTwitter.json
 *.json
+data/twitter-data-small.json.tar.gz
