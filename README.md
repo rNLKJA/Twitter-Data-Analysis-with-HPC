@@ -1,4 +1,4 @@
-<div align=center><h1>Cloud & Cluster Computing Assignment 1 <br> Social Media Analytics</h1></div>
+<div align=center><h1>Cluster & Cloud Computing Assignment 1 <br> Social Media Analytics</h1></div>
 
 ## Project overview
 
