@@ -134,3 +134,5 @@ data(copy)/
 
 .virtual_documents/
 *.stats
+data/bigTwitter.json
+*.json
