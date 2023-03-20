@@ -19,7 +19,7 @@ logging.basicConfig(
 )
 
 # define twitter logger
-twitter_logger = logging.getLogger("twitter_analys")
+twitter_logger = logging.getLogger("twitter_logger")
 
 # initial message send via twitter logger
 MESSAGE = """========================================================
@@ -27,6 +27,5 @@ MESSAGE = """========================================================
 Organization: the University of Melbourne
 Author: Wei Zhao & Sunchuangyu Huang
 Github: https://github.com/rNLKJA/2023-S1-COMP90024-A1/
-========================================================
-"""
+========================================================"""
 twitter_logger.info(MESSAGE)
