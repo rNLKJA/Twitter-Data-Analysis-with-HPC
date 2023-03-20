@@ -7,7 +7,7 @@ import logging
 def process_sal(path: Path, logger: logging) -> pd.DataFrame:
     """
     Process sal.json file by removing irrelevant attributes,
-    case 0: remove any gcc contains r (r represent rural)
+    case 0: remove any gcc containing char r (r represents rural)
     case 1: remove all brackets
     case 2: remove all " - " 
     case 3: remove all "\."
