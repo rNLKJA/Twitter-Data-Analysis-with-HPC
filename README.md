@@ -16,11 +16,8 @@ More information, please visit [project wiki](https://github.com/rNLKJA/2023-S1-
 
 ```
 A1
-|   |── data
-|       |── bigTwitter.json
-|       |── smallTwitter.json
-|       |── tinyTwitter.json
-|       |── sal.json
+|   |── data           
+|       |── processed
 |── notebooks
 |── scripts
 |── slurm
