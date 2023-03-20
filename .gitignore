@@ -133,3 +133,4 @@ dmypy.json
 data(copy)/
 
 .virtual_documents/
+*.stats
