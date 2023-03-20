@@ -22,12 +22,11 @@ A1
 |       |── tinyTwitter.json
 |       |── sal.json
 |── notebooks
-|── slurm
-|   |── output
-|       |── output
-|       |── error
-|   |── scripts
 |── scripts
+|── slurm
+|── doc
+|   |── log
+|   |── slurm
 |── requirements.txt
 └── README.md
 ```
