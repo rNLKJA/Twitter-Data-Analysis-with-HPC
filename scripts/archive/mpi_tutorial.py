@@ -68,36 +68,66 @@ def is_author_id(prefix: str, event: str, value: any) -> bool:
 
 def is_location(prefix: str, event: str, value: any) -> bool:
     return True if prefix == LOCATION and event == HAS_VALUE and value is not None else False
-    
+
+import math
+from mpi4py import MPI
+
+from mpi_wrapper import *
+
+@mpi_parallelize
+def sum_list(lst):
+    return sum(lst)
+
 if __name__ == "__main__":
-    comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()
-    size = comm.Get_size()
+    lst = list(range(1, 1001))
+    final_sum = sum_list(lst)
+    
+    print(final_sum, sum(lst) == final_sum)
+    
+    
+#     comm = MPI.COMM_WORLD
+#     rank = comm.Get_rank()
+#     size = comm.Get_size()
 
-    file_path = Path('./data/twitter-data-small.json')
-    file_size = file_path.stat().st_size # return a file size in kb
-    chunk_size = file_size // size
+#     chunk_size = math.ceil(len(lst) / size)
 
-    comm.Barrier()
+#     chunks = [lst[i:i+chunk_size] for i in range(0, len(lst), chunk_size)]
+#     print(chunks)
 
-    with open(file_path, 'rb') as f:
+#     result = sum(chunks[rank])
 
-        chunk_size = 735400
-        not_valid_start = True
+    
+#     comm.Barrier()
+#     results = comm.gather(result, root=0)
+    
+#     if rank == 0:
+#         final_result = sum(results)
+#         print(final_result)
+    
+#     file_path = Path('./data/twitter-data-small.json')
+#     file_size = file_path.stat().st_size # return a file size in kb
+#     chunk_size = file_size // size
 
-        while not_valid_start:
-            f.seek(chunk_size)
-            parser = ijson.parse(f)
-            try:
-                for prefix, event, value in parser:
-                    if prefix == FRIST_LINE:
-                        not_valid_start = False
-                    break
-                break
-            except:
-                chunk_size -= 1
+#     comm.Barrier()
+
+#     with open(file_path, 'rb') as f:
+
+#         chunk_size = 735400
+#         not_valid_start = True
+
+#         while not_valid_start:
+#             f.seek(chunk_size)
+#             parser = ijson.parse(f)
+#             try:
+#                 for prefix, event, value in parser:
+#                     if prefix == FRIST_LINE:
+#                         not_valid_start = False
+#                     break
+#                 break
+#             except:
+#                 chunk_size -= 1
             
-            print(chunk_size)
+#             print(chunk_size)
     
     # start_byte = rank * chunk_size
 #     print(start_byte)
