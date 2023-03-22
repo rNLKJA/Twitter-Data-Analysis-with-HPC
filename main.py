@@ -29,11 +29,22 @@ rank, size = comm.Get_rank(), comm.Get_size()
 if __name__ == '__main__':
 
     chunk_start, chunk_end = split_file_into_chunks(twitter_file, size)
-    print(chunk_start, chunk_end)
 
     tweet_df = twitter_processor(
         twitter_file, chunk_start[rank], chunk_end[rank])
 
+    comm.Barrier()
+
     if rank == 0:
-        tweet_dfs = comm.gather(tweet_df, root=0)
-        print(tweet_dfs)
+        tweet_dfs = [tweet_df]
+        for np in range(1, size):
+            tweet_dfs.append(comm.recv(source=np))
+    else:
+        comm.send(tweet_df, dest=0)
+
+    if rank == 0:
+        tdf = pd.concat(tweet_dfs)
+        print(tdf)
+
+    # end program after job complete
+    exit()
