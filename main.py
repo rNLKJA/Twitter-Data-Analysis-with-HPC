@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
     if rank == 0:
         tdf = pd.concat(tweet_dfs)
-        print(tdf)
+        tdf.to_parquet("./data/processed/tmp.parquet")
 
     comm.Barrier()
 
