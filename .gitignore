@@ -135,3 +135,5 @@ data(copy)/
 .virtual_documents/
 *.stats
 data/twitter-data-small.json.tar.gz
+data/processed/tmp.parquet
+data/twitter-data-small.json
