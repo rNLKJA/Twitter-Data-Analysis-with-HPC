@@ -12,7 +12,7 @@ parser.add_argument('-t', '--twitter_file_name',
                     type=str,
                     required=True,
                     help='The name of the Twitter data file')
-parser.add_argument('-c', '--chunk_size',
-                    type=int,
-                    required=True,
-                    help='The number of lines per chunk for processing')
+# parser.add_argument('-c', '--chunk_size',
+#                     type=int,
+#                     required=True,
+#                     help='The number of lines per chunk for processing')
