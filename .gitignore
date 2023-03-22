@@ -134,3 +134,4 @@ data(copy)/
 
 .virtual_documents/
 *.stats
+data/twitter-data-small.json.tar.gz
