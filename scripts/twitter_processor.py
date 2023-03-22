@@ -25,6 +25,7 @@ def file_break_check(cb: int, ce: int) -> bool:
     Returns:
         bool: break signal, true for stop
     """
+    ...
 
 
 def twitter_processor(filename: Path, cs: int, ce: int) -> pd.DataFrame:
