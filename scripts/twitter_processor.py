@@ -73,5 +73,4 @@ def twitter_processor(filename: Path, cs: int, ce: int) -> pd.DataFrame:
                     breaker = True
 
     tweet_df = pd.DataFrame([tweet.__dict__ for tweet in tweet_lst])
-    print(tweet_df)
     return tweet_df
