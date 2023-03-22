@@ -9,6 +9,7 @@ Github: https://github.com/rNLKJA/2023-S1-COMP90024-A1/
 
 """
 from mpi4py import MPI
+import time
 
 from scripts.arg_parser import parser
 from scripts.logger import twitter_logger as log
@@ -25,6 +26,9 @@ sal_df = load_sal_parquet(PATH, log)
 # define MPI tools
 comm = MPI.COMM_WORLD
 rank, size = comm.Get_rank(), comm.Get_size()
+
+
+start_time = time.time()
 
 if __name__ == '__main__':
 
@@ -45,6 +49,10 @@ if __name__ == '__main__':
     if rank == 0:
         tdf = pd.concat(tweet_dfs)
         print(tdf)
+
+    comm.Barrier()
+
+    log(f"Programming running seconds: {time.time() - start_time}")
 
     # end program after job complete
     exit()
