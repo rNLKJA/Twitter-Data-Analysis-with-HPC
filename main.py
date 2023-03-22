@@ -12,7 +12,7 @@ from mpi4py import MPI
 import time
 
 from scripts.arg_parser import parser
-from scripts.logger import twitter_logger as log
+from scripts.logger import twitter_logger as logger
 from scripts.sal_processor import *
 from scripts.utils import obtain_args, split_file_into_chunks
 from scripts.twitter_processor import twitter_processor
@@ -20,8 +20,8 @@ from scripts.twitter_processor import twitter_processor
 PATH = Path()
 
 # load kwargs & required sal.parquet file
-twitter_file = obtain_args(parser, log)
-sal_df = load_sal_parquet(PATH, log)
+twitter_file = obtain_args(parser, logger)
+sal_df = load_sal_parquet(PATH, logger)
 
 # define MPI tools
 comm = MPI.COMM_WORLD
@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
     comm.Barrier()
 
-    log(f"Programming running seconds: {time.time() - start_time}")
+    logger.info(f"Programming running seconds: {time.time() - start_time}")
 
     # end program after job complete
     exit()
