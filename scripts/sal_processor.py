@@ -1,8 +1,9 @@
-#/usr/bin/env python3
+# /usr/bin/env python3
 import pandas as pd
 import re
 from pathlib import Path
 import logging
+
 
 def process_sal(path: Path, logger: logging) -> pd.DataFrame:
     """
@@ -12,14 +13,15 @@ def process_sal(path: Path, logger: logging) -> pd.DataFrame:
     case 2: remove all " - " 
     case 3: remove all "\."
     Then store the final result into a csv file.
-    
+
     path (Path): root directory
     """
     logger.info("Loading sal.json into pandas")
     # load sal.json file & reset index
-    df = pd.read_json(path/ "data/sal.json", orient="index")
-    df.reset_index(inplace=True)
-    df.rename(columns={'index': 'locat'})
+    df = pd.read_json(path / "data/sal.json", orient="index")
+    df = df.reset_index().rename(columns={'index': 'locat'})
+
+    print(df)
 
     logger.info("Convert ste, sal dtype to integer")
     # convert data type for ste and sal
@@ -45,18 +47,20 @@ def process_sal(path: Path, logger: logging) -> pd.DataFrame:
     # store result to a csv file
     logger.info("Store sal.csv file.")
     df.to_csv(path/"data/processed/sal.csv")
-    
+
+
 def sal_csv_exist(path: Path, logger: logging):
     """
     Check sal.csv existence, if exist, then continue, else execute
     process_sal function.
-    
+
     path (Path): root directory
     logger (logging): log logger
     """
     if path.exists():
         logger.info("Required sal.csv file exist, continue")
         return True
+
 
 def load_sal_csv(path: Path, logger: logging) -> pd.DataFrame:
     """
@@ -71,5 +75,5 @@ def load_sal_csv(path: Path, logger: logging) -> pd.DataFrame:
 
     logger.info("Load sal.csv")
     df = pd.read_csv(sal_file)
-        
+
     return df
