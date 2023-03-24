@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=tinyTwitter_1_core_8_node
+#SBATCH --job-name=test
 
 ##set task request resources
 #SBATCH --time=00:15:00
@@ -18,10 +18,11 @@
 ##load required modules
 module --force purge
 # module load python/3.9.6
-module load mpi4py/3.0.2-timed-pingpong
-module load python/3.7.4
-pip3 install numpy pandas 
+module load "mpi4py/3.0.2-timed-pingpong"
+module load "python/3.7.4"
+pip3 install numpy pandas --user
 
 ##run main program here
-srun mpiexec -n 8 python3 main.py -t "tinyTwitter"
+time mpiexec -n 8 python3 main.py -t "tinyTwitter"
 
+##email log result to user
