@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import datetime
 import time
 
@@ -15,13 +16,13 @@ Wei Zhao & Sunchuangyu Huang
 print(message)
 
 # the script should generate a text file include slurm run time information
-with open("hello_world.txt", "w") as f:
+with open("/home/sunchuangyuh/A1/slurm/hello_world.txt", "w") as f:
     current_time = datetime.datetime.now()
     time_str = current_time.strftime("%Y-%m-%d %H:%M:%S")   
 
     f.write(f"{time_str}: slurm job start, call by Rin\n")
 
-with open("hello_world.txt", "a") as f:
+with open("/home/sunchuangyuh/A1/slurm/hello_world.txt", "a") as f:
     current_time = datetime.datetime.now()
     time_str = current_time.strftime("%Y-%m-%d %H:%M:%S")
     
