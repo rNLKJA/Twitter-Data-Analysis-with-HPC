@@ -15,7 +15,7 @@ logging.basicConfig(
     format="[%(levelname)-7s] [%(filename)-10s:%(lineno)d] %(asctime)s \n%(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
     level=logging.INFO,
-    force=True,
+    # force=True,
 )
 
 # define twitter logger
