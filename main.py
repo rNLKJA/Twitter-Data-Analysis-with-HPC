@@ -49,8 +49,9 @@ if __name__ == '__main__':
     comm.Barrier()
     if rank == 0:
         tdf = pd.concat(tweet_dfs)
-        tdf.to_parquet("./data/processed/tmp.parquet")
-        # print(tdf)
+        tdf.to_csv("./data/processed/tmp.csv")
+        logger.info(
+            f"Twitter file {twitter_file} has a dataframe shape {tdf.shape}")
 
         end_time = time.time()
         logger.info(f'Programming running seconds: {end_time - start_time}')
