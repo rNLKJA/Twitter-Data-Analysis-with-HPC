@@ -18,7 +18,8 @@ def process_sal(path: Path, logger: logging) -> pd.DataFrame:
     logger.info("Loading sal.json into pandas")
     # load sal.json file & reset index
     df = pd.read_json(path/ "data/sal.json", orient="index")
-    df.reset_index(names="locat", inplace=True)
+    df.reset_index(inplace=True)
+    df.rename(columns={'index': 'locat'})
 
     logger.info("Convert ste, sal dtype to integer")
     # convert data type for ste and sal
