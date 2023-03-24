@@ -1,11 +1,10 @@
 #!/bin/bash
-#SBATCH --job-name=basic_slurm
+#SBATCH --job-name=tinyTwitter_1_core_1_node
 
 ##set task request resources
 #SBATCH --time=00:15:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=1
 
 ##set standard output
 #SBATCH --output=/home/sunchuangyuh/A1/doc/slurm/stdout/slurm.%x.%N.%j.out
@@ -17,10 +16,11 @@
 
 ##load required modules
 module --force purge
-module load python/3.9.6
+# module load python/3.9.6
 module load mpi4py/3.0.2-timed-pingpong
-pip3 install numpy pandas pyarrow --user
+module load python/3.7.4
+pip3 install numpy pandas 
 
 ##run main program here
-srun mpiexec -n 1 python3 main.py -t "tinyTwitter.json"
+srun mpiexec -n 1 python3 /home/sunchuangyuh/A1/main.py -t "tinyTwitter.json"
 
