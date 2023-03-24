@@ -19,9 +19,9 @@ from scripts.twitter_processor import twitter_processor
 
 PATH = Path()
 
-# load kwargs & required sal.parquet file
+# load kwargs & required sal.csv file
 twitter_file = obtain_args(parser, logger)
-sal_df = load_sal_parquet(PATH, logger)
+sal_df = load_sal_csv(PATH, logger)
 
 # define MPI tools
 comm = MPI.COMM_WORLD
@@ -46,13 +46,16 @@ if __name__ == '__main__':
     else:
         comm.send(tweet_df, dest=0)
 
+    comm.Barrier()
     if rank == 0:
         tdf = pd.concat(tweet_dfs)
         tdf.to_parquet("./data/processed/tmp.parquet")
+        # print(tdf)
+
+        end_time = time.time()
+        logger.info(f'Programming running seconds: {end_time - start_time}')
 
     comm.Barrier()
-
-    logger.info(f"Programming running seconds: {time.time() - start_time}")
 
     # end program after job complete
     exit()
