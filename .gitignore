@@ -134,3 +134,10 @@ data(copy)/
 
 .virtual_documents/
 *.stats
+data/bigTwitter.local.json
+data/processed/tmp.parquet
+data/processed/sal.csv
+data/sal.json
+data/tinyTwitter.local.json
+data/twitter-data-small.json
+data/twitter-data-small.json.tar.gz
