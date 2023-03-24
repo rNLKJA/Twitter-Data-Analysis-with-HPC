@@ -4,12 +4,11 @@
 ##set task request resources
 #SBATCH --time=00:15:00
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=1
+#SBATCH --ntasks-per-node=8
 
 ##set standard output
-#SBATCH --output=/home/sunchuangyuh/A1/log/slurm/stdout/slurm.%x.%N.%j.out
-#SBATCH --error=/home/sunchuangyuh/A1/log/slurm/stderr/slurm.%x.%N.%j.err 
+#SBATCH --output=/home/sunchuangyuh/A1/doc/log/slurm/stdout/slurm.%x.%N.%j.out
+#SBATCH --error=/home/sunchuangyuh/A1/doc/log/slurm/stderr/slurm.%x.%N.%j.err 
 
 ##send job information to target user
 #SBATCH --mail-user=sunchuangyuh@student.unimelb.edu.au
