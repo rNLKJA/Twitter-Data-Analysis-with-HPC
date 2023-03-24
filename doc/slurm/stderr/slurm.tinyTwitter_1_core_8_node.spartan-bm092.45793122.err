@@ -1,0 +1,10 @@
+--------------------------------------------------------------------------
+An ORTE daemon has unexpectedly failed after launch and before
+communicating back to mpirun. This could be caused by a number
+of factors, including an inability to create a connection back
+to mpirun due to a lack of common network interfaces and/or no
+route found between them. Please check network connectivity
+(including firewalls and network routing requirements).
+--------------------------------------------------------------------------
+slurmstepd: error: *** STEP 45793122.0 ON spartan-bm092 CANCELLED AT 2023-03-24T22:09:41 DUE TO TIME LIMIT ***
+slurmstepd: error: *** JOB 45793122 ON spartan-bm092 CANCELLED AT 2023-03-24T22:09:41 DUE TO TIME LIMIT ***
