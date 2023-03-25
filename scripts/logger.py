@@ -10,7 +10,7 @@ from scripts.utils import obtain_args
 ROOT_PATH = Path()
 LOGFILE_PATH = ROOT_PATH / "doc" / "log"
 
-time_string = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+time_string = datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
 
 # logger configuration
 logging.basicConfig(
