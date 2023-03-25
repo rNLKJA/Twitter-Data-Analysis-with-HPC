@@ -62,5 +62,9 @@ to mpirun due to a lack of common network interfaces and/or no
 route found between them. Please check network connectivity
 (including firewalls and network routing requirements).
 --------------------------------------------------------------------------
-srun: error: spartan-bm100: tasks 0-3: Exited with exit code 1
-srun: error: spartan-bm109: tasks 4-7: Exited with exit code 1
+srun: error: spartan-bm042: tasks 4-7: Exited with exit code 1
+srun: error: spartan-bm021: tasks 0-3: Exited with exit code 1
+
+real	19m48.081s
+user	0m0.013s
+sys	0m0.012s

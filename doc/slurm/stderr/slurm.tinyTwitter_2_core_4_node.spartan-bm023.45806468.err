@@ -1,0 +1,11 @@
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+slurmstepd: error: *** STEP 45806468.0 ON spartan-bm023 CANCELLED AT 2023-03-25T13:50:26 DUE TO TIME LIMIT ***
+slurmstepd: error: *** JOB 45806468 ON spartan-bm023 CANCELLED AT 2023-03-25T13:50:26 DUE TO TIME LIMIT ***
+--------------------------------------------------------------------------
+An ORTE daemon has unexpectedly failed after launch and before
+communicating back to mpirun. This could be caused by a number
+of factors, including an inability to create a connection back
+to mpirun due to a lack of common network interfaces and/or no
+route found between them. Please check network connectivity
+(including firewalls and network routing requirements).
+--------------------------------------------------------------------------
