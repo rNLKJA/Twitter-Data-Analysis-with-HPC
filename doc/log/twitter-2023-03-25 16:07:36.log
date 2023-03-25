@@ -1,0 +1,34 @@
+[INFO   ] [logger.py :35] 2023-03-25 16:07:36 
+========================================================
+2023 S1 COMP90024 Cluster & Cloud Computing Assignment 1
+Organization: the University of Melbourne
+Author: Wei Zhao & Sunchuangyu Huang
+Github: https://github.com/rNLKJA/2023-S1-COMP90024-A1/
+========================================================
+[INFO   ] [main.py   :30] 2023-03-25 16:07:36 
+PROGRAM START
+[INFO   ] [utils.py  :18] 2023-03-25 16:07:36 
+Parsing kwargs
+[INFO   ] [sal_processor.py:69] 2023-03-25 16:07:36 
+Loading sal.csv
+[INFO   ] [sal_processor.py:61] 2023-03-25 16:07:36 
+Required sal.csv file exist, continue
+[INFO   ] [sal_processor.py:76] 2023-03-25 16:07:36 
+Load sal.csv
+[INFO   ] [main.py   :63] 2023-03-25 16:12:06 
+File read complete
+8 nodes
+
+[INFO   ] [main.py   :46] 2023-03-25 16:07:36 
+Target file: bigTwitter
+
+[INFO   ] [main.py   :63] 2023-03-25 16:12:07 
+File read complete
+[INFO   ] [main.py   :67] 2023-03-25 16:12:18 
+Retrive dataframe list
+[INFO   ] [main.py   :76] 2023-03-25 16:12:24 
+Start merge dataframes
+[INFO   ] [main.py   :80] 2023-03-25 16:12:47 
+Twitter file bigTwitter has a dataframe shape (9092274, 3)
+[INFO   ] [main.py   :83] 2023-03-25 16:12:47 
+Programming running seconds: 310.96580696105957
