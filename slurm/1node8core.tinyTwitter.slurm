@@ -2,7 +2,7 @@
 #SBATCH --job-name=tinyTwitter_1_core_8_node
 
 ##set task request resources
-#SBATCH --time=00:15:00
+#SBATCH --time=00:10:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=8
 #SBATCH --cpus-per-task=1
@@ -17,11 +17,10 @@
 
 ##load required modules
 module --force purge
-# module load python/3.9.6
 module load mpi4py/3.0.2-timed-pingpong
 module load python/3.7.4
 pip3 install numpy pandas 
 
 ##run main program here
-srun mpiexec -n 8 python3 main.py -t "tinyTwitter"
+mpiexec -np 8 python3 main.py -t "tinyTwitter"
 
