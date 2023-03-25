@@ -27,7 +27,7 @@ sal_df = load_sal_csv(PATH, logger)
 comm = MPI.COMM_WORLD
 rank, size = comm.Get_rank(), comm.Get_size()
 
-
+# define timer start
 start_time = time.time()
 
 if __name__ == '__main__':
@@ -49,7 +49,7 @@ if __name__ == '__main__':
     comm.Barrier()
     if rank == 0:
         tdf = pd.concat(tweet_dfs)
-        tdf.to_csv("./data/processed/tmp.csv")
+        tdf.to_csv("./data/processed/tinyTwitter.csv")
         logger.info(
             f"Twitter file {twitter_file} has a dataframe shape {tdf.shape}")
 
