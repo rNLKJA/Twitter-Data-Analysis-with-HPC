@@ -33,7 +33,9 @@ logger.info("PROGRAM START")
 PATH = Path()
 
 # load kwargs & required sal.csv file
-twitter_file = PATH / 'data' / obtain_args(parser, logger)
+twitter_file_name = obtain_args(parser, logger)
+twitter_file = PATH / "./data" / twitter_file_name
+
 sal_df = load_sal_csv(PATH, logger)
 
 # define MPI tools
@@ -65,9 +67,9 @@ if __name__ == '__main__':
     if rank == 0:
         logger.info("Start merge dataframes")
         tdf = pd.concat(tweet_dfs)
-        tdf.to_csv("./data/processed/tinyTwitter.csv")
+        tdf.to_csv(f"./data/processed/{twitter_file_name.replace('.json', '')}.csv")
         logger.info(
-            f"Twitter file {twitter_file} has a dataframe shape {tdf.shape}")
+            f"Twitter file {twitter_file_name.replace('json', '')} has a dataframe shape {tdf.shape}")
 
         end_time = time.time()
         logger.info(f'Programming running seconds: {end_time - start_time}')
