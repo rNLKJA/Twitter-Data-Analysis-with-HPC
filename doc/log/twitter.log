@@ -1,0 +1,19 @@
+[INFO   ] [logger.py :31] 2023-03-25 13:51:10 
+========================================================
+2023 S1 COMP90024 Cluster & Cloud Computing Assignment 1
+Organization: the University of Melbourne
+Author: Wei Zhao & Sunchuangyu Huang
+Github: https://github.com/rNLKJA/2023-S1-COMP90024-A1/
+========================================================
+[INFO   ] [utils.py  :18] 2023-03-25 13:51:10 
+Parsing kwargs
+[INFO   ] [sal_processor.py:69] 2023-03-25 13:51:10 
+Loading sal.csv
+[INFO   ] [sal_processor.py:61] 2023-03-25 13:51:10 
+Required sal.csv file exist, continue
+[INFO   ] [sal_processor.py:76] 2023-03-25 13:51:10 
+Load sal.csv
+[INFO   ] [main.py   :54] 2023-03-25 13:51:10 
+Twitter file data/tinyTwitter has a dataframe shape (715, 3)
+[INFO   ] [main.py   :57] 2023-03-25 13:51:10 
+Programming running seconds: 0.30951905250549316
