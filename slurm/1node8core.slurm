@@ -4,8 +4,7 @@
 ##set task request resources
 #SBATCH --time=00:15:00
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=1
+#SBATCH --ntasks-per-node=8
 
 ##set standard output
 #SBATCH --output=/home/sunchuangyuh/A1/doc/slurm/stdout/slurm.%x.%N.%j.out

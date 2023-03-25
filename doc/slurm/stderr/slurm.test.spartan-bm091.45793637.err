@@ -1,0 +1,76 @@
+--------------------------------------------------------------------------
+An ORTE daemon has unexpectedly failed after launch and before
+communicating back to mpirun. This could be caused by a number
+of factors, including an inability to create a connection back
+to mpirun due to a lack of common network interfaces and/or no
+route found between them. Please check network connectivity
+(including firewalls and network routing requirements).
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+An ORTE daemon has unexpectedly failed after launch and before
+communicating back to mpirun. This could be caused by a number
+of factors, including an inability to create a connection back
+to mpirun due to a lack of common network interfaces and/or no
+route found between them. Please check network connectivity
+(including firewalls and network routing requirements).
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+An ORTE daemon has unexpectedly failed after launch and before
+communicating back to mpirun. This could be caused by a number
+of factors, including an inability to create a connection back
+to mpirun due to a lack of common network interfaces and/or no
+route found between them. Please check network connectivity
+(including firewalls and network routing requirements).
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+An ORTE daemon has unexpectedly failed after launch and before
+communicating back to mpirun. This could be caused by a number
+of factors, including an inability to create a connection back
+to mpirun due to a lack of common network interfaces and/or no
+route found between them. Please check network connectivity
+(including firewalls and network routing requirements).
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+An ORTE daemon has unexpectedly failed after launch and before
+communicating back to mpirun. This could be caused by a number
+of factors, including an inability to create a connection back
+to mpirun due to a lack of common network interfaces and/or no
+route found between them. Please check network connectivity
+(including firewalls and network routing requirements).
+--------------------------------------------------------------------------
+srun: error: spartan-bm106: task 7: Exited with exit code 1
+--------------------------------------------------------------------------
+An ORTE daemon has unexpectedly failed after launch and before
+communicating back to mpirun. This could be caused by a number
+of factors, including an inability to create a connection back
+to mpirun due to a lack of common network interfaces and/or no
+route found between them. Please check network connectivity
+(including firewalls and network routing requirements).
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+An ORTE daemon has unexpectedly failed after launch and before
+communicating back to mpirun. This could be caused by a number
+of factors, including an inability to create a connection back
+to mpirun due to a lack of common network interfaces and/or no
+route found between them. Please check network connectivity
+(including firewalls and network routing requirements).
+--------------------------------------------------------------------------
+srun: error: spartan-bm099: task 3: Exited with exit code 1
+srun: error: spartan-bm104: task 5: Exited with exit code 1
+--------------------------------------------------------------------------
+An ORTE daemon has unexpectedly failed after launch and before
+communicating back to mpirun. This could be caused by a number
+of factors, including an inability to create a connection back
+to mpirun due to a lack of common network interfaces and/or no
+route found between them. Please check network connectivity
+(including firewalls and network routing requirements).
+--------------------------------------------------------------------------
+srun: error: spartan-bm091: task 0: Exited with exit code 1
+srun: error: spartan-bm095: task 2: Exited with exit code 1
+srun: error: spartan-bm105: task 6: Exited with exit code 1
+srun: error: spartan-bm092: task 1: Exited with exit code 1
+srun: error: spartan-bm100: task 4: Exited with exit code 1
+
+real	15m14.101s
+user	0m0.013s
+sys	0m0.017s

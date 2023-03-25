@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=basic_slurm
+#SBATCH --job-name=tinyTwitter_1_core_1_node
 
 ##set task request resources
 #SBATCH --time=00:15:00
@@ -16,18 +16,12 @@
 
 ##load required modules
 module --force purge
-# module load miniconda3/4.9.2
-# conda create -n a1 python=3.10 pandas numpy pyarrow mpi4py -y
-# conda init bash
-# conda activate a1
-
-module load python/3.7.4
+# module load python/3.9.6
 module load mpi4py/3.0.2-timed-pingpong
-pip3 install numpy pandas 
+module load python/3.7.4
+pip3 install numpy pandas --user
 
-#SBATCH --cpus-per-task=1
 ##run main program here
-srun mpiexec -n 1 python3 /home/sunchuangyuh/A1/slurm/hello_world.py
+time srun mpiexec -n 1 python3 main.py -t "tinyTwitter"
 
-echo "JOB DONE"
-
+##email log result to user
