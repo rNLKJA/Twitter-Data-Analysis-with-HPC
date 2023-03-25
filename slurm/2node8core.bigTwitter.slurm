@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=tinyTwitter_2_core_8_node
+#SBATCH --job-name=bigTwitter_2_core_8_node
 
 ##set task request resources
 #SBATCH --time=00:15:00
