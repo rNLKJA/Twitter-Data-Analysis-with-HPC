@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=tinyTwitter_2_core_4_node
+#SBATCH --job-name=tinyTwitter_2_core_8_node
 
 ##set task request resources
 #SBATCH --time=00:15:00
@@ -22,5 +22,5 @@ module load python/3.7.4
 pip3 install numpy pandas 
 
 ##run main program here
-mpiexec -np 1 python3 main.py -t "bigTwitter"
+mpiexec -np 8 python3 main.py -t "bigTwitter"
 
