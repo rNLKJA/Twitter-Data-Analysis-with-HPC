@@ -1,8 +1,9 @@
-#/usr/bin/env python3
+# /usr/bin/env python3
 import pandas as pd
 import re
 from pathlib import Path
 import logging
+
 
 def process_sal(path: Path, logger: logging) -> pd.DataFrame:
     """
@@ -11,14 +12,16 @@ def process_sal(path: Path, logger: logging) -> pd.DataFrame:
     case 1: remove all brackets
     case 2: remove all " - " 
     case 3: remove all "\."
-    Then store the final result into a parquet file.
-    
+    Then store the final result into a csv file.
+
     path (Path): root directory
     """
     logger.info("Loading sal.json into pandas")
     # load sal.json file & reset index
-    df = pd.read_json(path/ "data/sal.json", orient="index")
-    df.reset_index(names="locat", inplace=True)
+    df = pd.read_json(path / "data/sal.json", orient="index")
+    df = df.reset_index().rename(columns={'index': 'locat'})
+
+    print(df)
 
     logger.info("Convert ste, sal dtype to integer")
     # convert data type for ste and sal
@@ -41,34 +44,36 @@ def process_sal(path: Path, logger: logging) -> pd.DataFrame:
     logger.info("Substitude \. with an empty string")
     df.locat = df.agg(lambda x: re.sub("\.", "", x.locat), axis=1)
 
-    # store result to a parquet file
-    logger.info("Store sal.parquet file.")
-    df.to_parquet(path/"data/processed/sal.parquet")
-    
-def sal_parquet_exist(path: Path, logger: logging):
+    # store result to a csv file
+    logger.info("Store sal.csv file.")
+    df.to_csv(path/"data/processed/sal.csv")
+
+
+def sal_csv_exist(path: Path, logger: logging):
     """
-    Check sal.parquet existence, if exist, then continue, else execute
+    Check sal.csv existence, if exist, then continue, else execute
     process_sal function.
-    
+
     path (Path): root directory
     logger (logging): log logger
     """
     if path.exists():
-        logger.info("Required sal.parquet file exist, continue")
+        logger.info("Required sal.csv file exist, continue")
         return True
 
-def load_sal_parquet(path: Path, logger: logging) -> pd.DataFrame:
-    """
-    Load sal.parquet into a pandas dataframe
-    """
-    logger.info("Loading sal.parquet")
-    sal_file = path / "data/processed/sal.parquet"
-    if not sal_parquet_exist(sal_file, logger):
-        logger.info("Missing required sal.parquet file, start processing")
-        process_sal(path, logger)
-        logger.info("Completed sal.parquet")
 
-    logger.info("Load sal.parquet")
-    df = pd.read_parquet(sal_file)
-        
+def load_sal_csv(path: Path, logger: logging) -> pd.DataFrame:
+    """
+    Load sal.csv into a pandas dataframe
+    """
+    logger.info("Loading sal.csv")
+    sal_file = path / "data/processed/sal.csv"
+    if not sal_csv_exist(sal_file, logger):
+        logger.info("Missing required sal.csv file, start processing")
+        process_sal(path, logger)
+        logger.info("Completed sal.csv")
+
+    logger.info("Load sal.csv")
+    df = pd.read_csv(sal_file)
+
     return df
