@@ -19,7 +19,7 @@ def obtain_args(parser: argparse.ArgumentParser,
     args = parser.parse_args()
     twitter_file = args.twitter_file_name
 
-    twitter_file = Path() / 'data' / twitter_file
+    twitter_file = twitter_file
 
     return twitter_file
 

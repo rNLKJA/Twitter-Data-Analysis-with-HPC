@@ -1,3 +1,4 @@
+# pylint: disable=import-error
 # /usr/bin/env python3
 # pylint: disable=no-name-in-module
 """
@@ -12,22 +13,27 @@ Github: https://github.com/rNLKJA/2023-S1-COMP90024-A1/
 # local testing purpose - remove before release
 from scripts.twitter_processor import twitter_processor
 from scripts.utils import obtain_args, split_file_into_chunks
-from scripts.sal_processor import *
+from scripts.sal_processor import load_sal_csv
 from scripts.logger import twitter_logger as logger
 from scripts.arg_parser import parser
+
 import time
+from pathlib import Path
+import pandas as pd
+
 from mpi4py import MPI
+
+import sys
 import os
 os.environ['NUMEXPR_MAX_THREADS'] = '32'
 
 
 logger.info("PROGRAM START")
 
-
 PATH = Path()
 
 # load kwargs & required sal.csv file
-twitter_file = obtain_args(parser, logger)
+twitter_file = PATH / 'data' / obtain_args(parser, logger)
 sal_df = load_sal_csv(PATH, logger)
 
 # define MPI tools
@@ -69,4 +75,4 @@ if __name__ == '__main__':
     comm.Barrier()
 
     # end program after job complete
-    exit()
+    sys.exit()
