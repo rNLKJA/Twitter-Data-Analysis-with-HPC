@@ -10,7 +10,6 @@ Github: https://github.com/rNLKJA/2023-S1-COMP90024-A1/
 
 """
 
-# local testing purpose - remove before release
 from scripts.twitter_processor import twitter_processor
 from scripts.utils import obtain_args, split_file_into_chunks
 from scripts.sal_processor import load_sal_csv
@@ -42,6 +41,10 @@ sal_df = load_sal_csv(PATH, logger)
 comm = MPI.COMM_WORLD
 rank, size = comm.Get_rank(), comm.Get_size()
 
+if rank == 0:
+    logger.info(f"Current running on {size} nodes")
+    logger.info(f"Target file: {twitter_file_name}")
+
 # define timer start
 start_time = time.time()
 
@@ -49,6 +52,7 @@ if __name__ == '__main__':
 
     chunk_start, chunk_end = split_file_into_chunks(twitter_file, size)
 
+    logger.info(f"Processing twitter file, {rank} will process chunk: {chunk_start[rank]} - {chunk_end[rank]}")
     tweet_df = twitter_processor(
         twitter_file, chunk_start[rank], chunk_end[rank])
 
