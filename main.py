@@ -11,7 +11,7 @@ Github: https://github.com/rNLKJA/2023-S1-COMP90024-A1/
 """
 
 from scripts.twitter_processor import twitter_processor, task1, task2, task3
-from scripts.utils import obtain_args, split_file_into_chunks
+from scripts.utils import obtain_args, split_file_into_chunks, normalise_location, is_state_location
 from scripts.sal_processor import load_sal_csv
 from scripts.logger import twitter_logger as logger
 from scripts.arg_parser import parser
@@ -65,62 +65,56 @@ if __name__ == '__main__':
     comm.Barrier()
     
     # =================================== TASK 1 ===================================
-    
-    
-    if size == 1:
-        ...
-    
+    task1_df = task1(tweet_df)
+    if rank == 0:
+        task1_dfs = [task1_df]
+        for np in range(1, size):
+            task1_dfs.append(comm.recv(source=np))
     else:
-        task1_df = task1(tweet_df)
-        if rank == 0:
-            task1_dfs = [task1_df]
-            for np in range(1, size):
-                task1_dfs.append(comm.recv(source=np))
-        else:
-            comm.send(task1_df, dest=0)
+        comm.send(task1_df, dest=0)
+    
+    comm.Barrier()
+    
+    if rank == 0:
+        t1rdf = pd.concat(task1_dfs, axis=0, ignore_index=True)
+        t1rdf = t1rdf.groupby('gcc').sum()\
+                     .reset_index()\
+                     .sort_values(by='gcc', ascending=True)
+        t1rdf.to_csv(PATH / 'data/result' / f"task1-{twitter_file_name.replace('json', '')}.csv", 
+                     index=False)
         
-        comm.Barrier()
+    comm.Barrier()
+    # =================================== TASK 2 ===================================
+    task2_df = task2(tweet_df)
+    if rank == 0:
+        task2_dfs = [task2_df]
+        for np in range(1, size):
+            task2_dfs.append(comm.recv(source=np))
+    else:
+        comm.send(task2_df, dest=0)
+    
+    comm.Barrier()
+    
+    if rank == 0:
+        t2rdf = pd.concat(task2_dfs, axis=0, ignore_index=True)
+        t2rdf = t2rdf.groupby('author').sum()\
+                     .reset_index()\
+                     .sort_values(by='_id', ascending=False)\
+                     .head(10)
+        t2rdf.to_csv(PATH / 'data/result' / f"task2-{twitter_file_name.replace('json', '')}.csv", 
+                     index=False)
         
-        if rank == 0:
-            t1rdf = pd.concat(task1_dfs, axis=0, ignore_index=True)
-            t1rdf = t1rdf.groupby('gcc').sum()\
-                        .reset_index()\
-                        .sort_values(by='gcc', ascending=True)
-            t1rdf.to_csv(PATH / 'data/result' / f"task1-{twitter_file_name.replace('json', '')}.csv", 
-                        index=False)
-            
-        comm.Barrier()
-        # =================================== TASK 2 ===================================
-        task2_df = task2(tweet_df)
-        if rank == 0:
-            task2_dfs = [task2_df]
-            for np in range(1, size):
-                task2_dfs.append(comm.recv(source=np))
-        else:
-            comm.send(task2_df, dest=0)
-        
-        comm.Barrier()
-        
-        if rank == 1:
-            t2rdf = pd.concat(task2_dfs, axis=0, ignore_index=True)
-            t2rdf = t2rdf.groupby('author').sum()\
-                        .reset_index()\
-                        .sort_values(by='_id', ascending=False)\
-                        .head(10)
-            t2rdf.to_csv(PATH / 'data/result' / f"task2-{twitter_file_name.replace('json', '')}.csv", 
-                        index=False)
-            
-        comm.Barrier()
-        # =================================== TASK 3 ===================================
-        task3_df = task3(tweet_df)
-        if rank == 2:
-            task3_dfs = [task3_df]
-            for np in range(1, size):
-                task3_dfs.append(comm.recv(source=np))
-        else:
-            comm.send(task3_df, dest=0)
-        
-        comm.Barrier()
+    comm.Barrier()
+    # =================================== TASK 3 ===================================
+    task3_df = task3(tweet_df)
+    if rank == 0:
+        task3_dfs = [task3_df]
+        for np in range(1, size):
+            task3_dfs.append(comm.recv(source=np))
+    else:
+        comm.send(task3_df, dest=0)
+    
+    comm.Barrier()
     
     if rank == 0:
         t3rdf = t2rdf = pd.concat(task3_dfs, axis=0, ignore_index=True)
