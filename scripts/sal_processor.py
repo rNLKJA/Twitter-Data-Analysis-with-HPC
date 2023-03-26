@@ -19,34 +19,35 @@ def process_sal(path: Path, logger: logging) -> pd.DataFrame:
     logger.info("Loading sal.json into pandas")
     # load sal.json file & reset index
     df = pd.read_json(path / "data/sal.json", orient="index")
-    df = df.reset_index().rename(columns={'index': 'locat'})
-
-    print(df)
-
-    logger.info("Convert ste, sal dtype to integer")
-    # convert data type for ste and sal
-    df.ste = df.ste.astype("int8")
-    df.sal = df.ste.astype("int16")
+    df = df.reset_index().rename(columns={'index': 'location'})
+    
+    # drop unused columns
+    df.drop(['ste', 'sal'], axis=1, inplace=True)
 
     # case0: drop any rural sal value, this won't be use in the future
     logger.info("Remove any location not in city")
     df = df[~df.gcc.str.contains(r"\dr[a-z]{3}")]
+    df = df[~df.gcc.str.contains("9oter")]
 
     # case1: replace all brackets with an empty string
-    logger.info("Substitute brackets in locat")
-    df.locat = df.agg(lambda x: re.sub(r"[()]", "", x.locat), axis=1)
+    logger.info("Substitute brackets in location")
+    df.location = df.agg(lambda x: re.sub(r"[()]", "", x.location), axis=1)
 
     # case2: replace " - " with " "
     logger.info("Substitude string ' - ' with ' '")
-    df.locat = df.agg(lambda x: re.sub(" - ", " ", x.locat), axis=1)
+    df.location = df.agg(lambda x: re.sub(" - ", " ", x.location), axis=1)
 
     # case3: replace "\." with ""
     logger.info("Substitude \. with an empty string")
-    df.locat = df.agg(lambda x: re.sub("\.", "", x.locat), axis=1)
+    df.location = df.agg(lambda x: re.sub("\.", "", x.location), axis=1)
 
+    # add a super location as a search string
+    gcc_dict = dict(zip(df.gcc.unique(), [g[2::] for g in df.gcc.unique()]))
+    df['location_x'] = df.agg(lambda x: x.location + ' ' + gcc_dict[x.gcc], axis=1)
+    
     # store result to a csv file
     logger.info("Store sal.csv file.")
-    df.to_csv(path/"data/processed/sal.csv")
+    df.to_csv(path/"data/processed/sal.csv", index=False)
 
 
 def sal_csv_exist(path: Path, logger: logging):
