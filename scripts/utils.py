@@ -7,6 +7,7 @@ import pandas as pd
 import math
 import copy
 from mpi4py import MPI
+import re
 
 
 def obtain_args(parser: argparse.ArgumentParser,
@@ -41,3 +42,45 @@ def split_file_into_chunks(path: Path, size: int) -> List[List]:
 
 def twitter_wrangler(filename: Path, size: int) -> pd.DataFrame:
     ...
+
+    
+
+state_location = dict(zip([s.lower() for s in ['Australian Capital Territory', 
+                                               'New South Wales', 
+                                               'Northern Territory', 
+                                               'Queensland', 
+                                               'South Australia', 
+                                               'Tasmania', 'Victoria', 
+                                               'Western Australia']], 
+                         [s.lower() for s in ['ACT', 'NSW', 
+                                              'NT', 'QLD', 'SA', 
+                                              'TAS', 'VIC', 'WA']]))
+
+city_location = dict(zip([s.lower() for s in ['Canberra', 'Sydney', 'Darwin', 'Brisbane', 
+                                              'Adelaide', 'Hobart', 'Melbourne', 'Perth']],
+                         [s.lower() for s in ['CAN', 'SYD', 'DAR', 'BRI', 
+                                              'ADE', 'HOB', 'MEL', 'PER']]))
+    
+def normalise_location(location: str) -> str:
+    text = location.lower()
+    
+    text = re.sub(r'[^\w\s]', '', text)
+    text = re.sub(r' - ', '', text)
+    
+    for key, value in state_location.items():
+        text = re.sub(key, value, text)
+
+    return text
+
+INVALID_LOCATION = ['act australia', 
+                'nsw australia', 
+                'nt australia', 
+                'qld Australia', 
+                'sa australia', 
+                'tas australia', 'vic australia', 
+                'wa australia', 'australia']
+
+def is_state_location(location):
+    if location in INVALID_LOCATION:
+        return True
+    return False

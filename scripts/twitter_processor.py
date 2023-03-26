@@ -3,6 +3,7 @@ import pandas as pd
 from pathlib import Path
 from dataclasses import dataclass
 import re
+from .utils import normalise_location, is_state_location
 
 # from .logger import twitter_logger as log
 
@@ -74,4 +75,19 @@ def twitter_processor(filename: Path, cs: int, ce: int) -> pd.DataFrame:
                     breaker = True
 
     tweet_df = pd.DataFrame([tweet.__dict__ for tweet in tweet_lst])
+    tweet_df.location = tweet_df.location.apply(lambda x: normalise_location(x))
+    tweet_df = tweet_df[~tweet_df.location.apply(lambda x: is_state_location(x))]
+    
     return tweet_df
+
+def task1(tweet_df: pd.DataFrame) -> pd.DataFrame:
+    rdf = tweet_df[['gcc', '_id']].groupby('gcc').count().reset_index()
+    return rdf
+
+def task2(tweet_df: pd.DataFrame) -> pd.DataFrame:
+    rdf = tweet_df[['author', '_id']].groupby('author').count().reset_index()
+    return rdf
+
+def task3(tweet_df: pd.DataFrame) -> pd.DataFrame:
+    rdf = tweet_df[['author', 'gcc']].groupby(['author']).nunique().reset_index()
+    return rdf

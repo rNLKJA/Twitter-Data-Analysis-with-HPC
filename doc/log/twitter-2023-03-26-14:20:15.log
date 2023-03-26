@@ -1,0 +1,30 @@
+[INFO   ] [logger.py :35] 2023-03-26 14:20:15 
+========================================================
+2023 S1 COMP90024 Cluster & Cloud Computing Assignment 1
+Organization: the University of Melbourne
+Author: Wei Zhao & Sunchuangyu Huang
+Github: https://github.com/rNLKJA/2023-S1-COMP90024-A1/
+========================================================
+[INFO   ] [main.py   :30] 2023-03-26 14:20:15 
+PROGRAM START
+[INFO   ] [utils.py  :19] 2023-03-26 14:20:15 
+Parsing kwargs
+[INFO   ] [sal_processor.py:70] 2023-03-26 14:20:15 
+Loading sal.csv
+[INFO   ] [sal_processor.py:62] 2023-03-26 14:20:15 
+Required sal.csv file exist, continue
+[INFO   ] [sal_processor.py:77] 2023-03-26 14:20:15 
+Load sal.csv
+[INFO   ] [main.py   :64] 2023-03-26 14:20:19 
+File read complete
+8 nodes
+
+[INFO   ] [main.py   :46] 2023-03-26 14:20:15 
+Target file: smallTwitter.json
+
+[INFO   ] [main.py   :64] 2023-03-26 14:20:19 
+File read complete
+[INFO   ] [main.py   :106] 2023-03-26 14:20:19 
+ALL TASKS COMLETE
+[INFO   ] [main.py   :108] 2023-03-26 14:20:19 
+Programming running seconds: 3.9539220333099365
