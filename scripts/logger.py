@@ -22,8 +22,16 @@ logging.basicConfig(
     # force=True,
 )
 
+
+
 # define twitter logger
 twitter_logger = logging.getLogger("twitter_logger")
+
+def return_filename():
+    return "twitter-{time_string}.log"
+
+def return_full_path():
+    return LOGFILE_PATH / f"twitter-{time_string}.log"
 
 # initial message send via twitter logger
 MESSAGE = """========================================================

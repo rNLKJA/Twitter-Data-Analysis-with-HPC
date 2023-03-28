@@ -15,7 +15,7 @@ from scripts.utils import obtain_args, split_file_into_chunks, normalise_locatio
 from scripts.sal_processor import load_sal_csv
 from scripts.logger import twitter_logger as logger
 from scripts.arg_parser import parser
-
+from scripts.email_sender import send_log
 import time
 from pathlib import Path
 import pandas as pd
@@ -132,7 +132,9 @@ if __name__ == '__main__':
         logger.info(f"ALL TASKS COMLETE")
         end_time = time.time()
         logger.info(f'Programming running seconds: {end_time - start_time}')
-
+    if rank == 0:
+        send_log()
+        
     comm.Barrier()
 
     
