@@ -7,11 +7,11 @@
 #SBATCH --ntasks-per-node=1
 
 ##set standard output
-#SBATCH --output=/home/weizhao1/A1/doc/slurm/stdout/slurm.%x.%N.%j.out
-#SBATCH --error=/home/weizhao1/A1/doc/slurm/stderr/slurm.%x.%N.%j.err 
+#SBATCH --output=/home/sunchuangyuh/A1/doc/slurm/stdout/slurm.%x.%N.%j.out
+#SBATCH --error=/home/sunchuangyuh/A1/doc/slurm/stderr/slurm.%x.%N.%j.err 
 
 ##send job information to target user
-#SBATCH --mail-user=weizhao1@student.unimelb.edu.au
+#SBATCH --mail-user=sunchuangyuh@student.unimelb.edu.au
 #SBATCH --mail-type=ALL
 
 ##load required modules
