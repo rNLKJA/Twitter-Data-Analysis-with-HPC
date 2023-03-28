@@ -28,6 +28,6 @@ def send_log():
     message['Subject'] = 'Log file'
     message.attach(MIMEText('Please find attached the log file.'))
 
-    smtp_connection.sendmail(smtp_username, 'recipient_email_address@example.com', message.as_string())
+    smtp_connection.sendmail(smtp_username, 'zw0432751551@gmail.com', message.as_string())
     smtp_connection.quit()
     print ("Email sent successfully")
