@@ -2,8 +2,8 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
-from logger import return_filename as filename
-from logger import return_full_path as full_path # import logger
+from .logger import FILENAME
+from .logger import FULL_PATH # import logger
 
 
 def send_log():
@@ -14,8 +14,8 @@ def send_log():
     smtp_connection = smtplib.SMTP(smtp_server, smtp_port)
     smtp_connection.login(smtp_username, smtp_password)
 
-    log_file_path = full_path
-    log_file_name = filename
+    log_file_path = FULL_PATH
+    log_file_name = FILENAME
     with open(log_file_path, 'rb') as file:
         log_file_data = file.read()
     log_file_attachment = MIMEApplication(log_file_data, Name=log_file_name)
