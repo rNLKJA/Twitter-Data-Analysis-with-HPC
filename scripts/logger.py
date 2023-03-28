@@ -6,23 +6,24 @@ from pathlib import Path
 from datetime import datetime
 from scripts.utils import obtain_args
 
-# define path for logging file
 ROOT_PATH = Path()
 LOGFILE_PATH = ROOT_PATH / "doc" / "log"
 
-time_string = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+# define path for logging file
+def __init__():
+    ROOT_PATH = Path()
+    LOGFILE_PATH = ROOT_PATH / "doc" / "log"
+    time_string = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
-# logger configuration
-logging.basicConfig(
-    filename=LOGFILE_PATH / f"twitter-{time_string}.log",
-    filemode='w',
-    format="[%(levelname)-7s] [%(filename)-10s:%(lineno)d] %(asctime)s \n%(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    level=logging.INFO,
-    # force=True,
-)
-
-
+    # logger configuration
+    logging.basicConfig(
+        filename=LOGFILE_PATH / f"twitter-{time_string}.log",
+        filemode='w',
+        format="[%(levelname)-7s] [%(filename)-10s:%(lineno)d] %(asctime)s \n%(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        level=logging.INFO,
+        # force=True,
+    )
 
 # define twitter logger
 twitter_logger = logging.getLogger("twitter_logger")
