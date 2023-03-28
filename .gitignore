@@ -139,3 +139,4 @@ data/tinyTwitter.local.json
 data/twitter-data-small.json
 data/twitter-data-small.json.tar.gz
 *.json
+.DS_Store
