@@ -6,11 +6,14 @@ from pathlib import Path
 from datetime import datetime
 from scripts.utils import obtain_args
 
-# define path for logging file
-ROOT_PATH = Path()
-LOGFILE_PATH = ROOT_PATH / "doc" / "log"
-
 time_string = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+
+# define path for logging file
+
+ROOT_PATH = Path()
+FILENAME = f"twitter-{time_string}.log"
+LOGFILE_PATH = ROOT_PATH / "doc" / "log"
+FULL_PATH = LOGFILE_PATH / f"twitter-{time_string}.log"
 
 # logger configuration
 logging.basicConfig(
@@ -24,6 +27,7 @@ logging.basicConfig(
 
 # define twitter logger
 twitter_logger = logging.getLogger("twitter_logger")
+
 
 # initial message send via twitter logger
 MESSAGE = """========================================================
