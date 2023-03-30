@@ -35,7 +35,7 @@ PATH = Path()
 twitter_file_name = obtain_twitter_file_name(parser)
 twitter_file = PATH / "data" / twitter_file_name
 
-sal_df = load_sal_csv(PATH, logger)[['location', 'gcc']]
+sal_df = load_sal_csv(PATH, logger)
 
 # define MPI tools
 comm = MPI.COMM_WORLD

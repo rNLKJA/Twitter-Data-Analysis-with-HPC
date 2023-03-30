@@ -86,5 +86,6 @@ def load_sal_csv(path: Path, logger: logging) -> pd.DataFrame:
 
     logger.info("Load sal.csv")
     df = pd.read_csv(sal_file)
+    # print(df)
 
     return df
