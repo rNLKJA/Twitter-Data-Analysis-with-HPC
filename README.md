@@ -36,11 +36,21 @@ mpiexec -n [NUM_PROCESSORS] python main.py -t [TWITTER_FILE] -s [SAL_FILE] --ema
 
 ## Assignment Dependencies
 
+Main Python dependencies: python=3.7.4, mpi4py=3.0.4, numpy, pandas.
+
 <!-- TODO: provide request dependence information and installatino methods, it will be good if there is a auto install/deployment script -->
 
 ## Assignment report
 
 <!-- Write a short project outcomes here -->
+
+**Task 1 Question**: The solution should count the number of tweets made by the same individual based on the bigTwitter.json file and returned the top 10 tweeters in terms of the number of tweets made irrespective of where they tweeted. The result will be of the form (where the author Ids and tweet numbers are representative).
+
+**Task 2 Question**: Using the *bigTwitter.json* and *sal.json* file you will then count the number of tweets made in the various captical cities by all users. The result will be a table of the form (where the numbers are representative). 
+
+For this task, ignore tweets made by users in rural location, e.g. *lrnsw* (Rural New South Wales), *1rvic* (Rural Victoria) etc.
+
+**Task 3 Question**: The solution should identify those tweeters that have a tweeted in the most Greater Capital cities and the number of times they have tweeted from those locations. The top 10 tweeters making tweets from the most different locations should be returned and if there are equal number of locations, then these should be ranked by the number of tweets. Only those tweets made in Greater Capital cities should be counted.
 
 For complete assignment 1 report, please check [overleaf](https://www.overleaf.com/read/sdsczmmdxzvq).
 
