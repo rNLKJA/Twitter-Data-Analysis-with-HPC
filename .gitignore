@@ -141,3 +141,6 @@ data/twitter-data-small.json.tar.gz
 *.json
 .DS_Store
 *.log
+
+data/result/
+data/
