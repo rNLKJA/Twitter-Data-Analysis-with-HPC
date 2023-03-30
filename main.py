@@ -77,12 +77,14 @@ if __name__ == '__main__':
     
     if rank == 0 if size > 1 else 1:    
         tweet_rdf1 = pd.concat(tweet_dfs, axis=0, ignore_index=True)[['author', '_id']].groupby('author').count().reset_index()
-        tweet_rdf1['rank'] = tweet_rdf1._id.rank(method="max", ascending=[False, True])
-        
+         
+        tweet_rdf1['rank'] = tweet_rdf1._id.rank(method="max", ascending=False)
+     
         tweet_rdf1.columns = ['Author Id', 'Number of Tweets Made', 'Rank']
-    
-        tweet_rdf1[tweet_rdf1['Rank'] < 11][['Rank', 'Author Id', 'Number of Tweets Made']].sort_values(by=['Rank', "Author Id"], ascending=True).to_csv(f'./data/result/task1-{twitter_file_name}.csv', index=False)
         
+        tweet_rdf1 = tweet_rdf1[tweet_rdf1['Rank'] < 11].sort_values(by=['Rank', "Author Id"], ascending=True)
+        tweet_rdf1[['Rank', 'Author Id', 'Number of Tweets Made']].to_csv(f'./data/result/task1-{twitter_file_name}.csv', index=False)
+
     # =================================== TASK 2 ===================================
     if rank == 0 if size > 1 else 2:
         tweet_rdf0 = pd.concat(tweet_dfs, axis=0, ignore_index=True)
@@ -122,7 +124,7 @@ if __name__ == '__main__':
         tweet_rdf8 = tweet_rdf7.groupby('author').apply(combine_gcc_twitter_count).reset_index(name='ngt')
 
         tweet_rdf9 = pd.merge(left=tweet_rdf6, right=tweet_rdf8, on='author', how='inner')
-        tweet_rdf9['rngt'] = tweet_rdf9.agg(lambda x: f"{x.ttc} {x.ngt}", axis=1)
+        tweet_rdf9['rngt'] = tweet_rdf9.agg(lambda x: f"{x.ugcc} {x.ngt}", axis=1)
         tweet_rdf9 = tweet_rdf9[['r', 'author', 'rngt']]
         tweet_rdf9.columns = ['Rank', 'Author Id', 'Number of Unique City Locations and #Tweets']
         tweet_rdf9.to_csv(f"./data/result/task3-{twitter_file_name}.csv", index=False)
