@@ -16,7 +16,7 @@ More information, please visit [project wiki](https://github.com/rNLKJA/2023-S1-
 
 ```
 A1
-|   |── data           
+|   |── data
 |       |── processed
 |── notebooks
 |── scripts
@@ -26,6 +26,12 @@ A1
 |   |── slurm
 |── requirements.txt
 └── README.md
+```
+
+## To start the program
+
+```bash
+mpiexec -n [NUM_PROCESSORS] python main.py -t [TWITTER_FILE] -s [SAL_FILE] --email [EMAIL_TARGET]
 ```
 
 ## Assignment Dependencies
