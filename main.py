@@ -117,14 +117,14 @@ if __name__ == '__main__':
                     count[row['gcc']] += row['_id']
                 else:
                     count[row['gcc']] = row['_id']
-            return '(' + " ,".join([f"#{str(v)}{k[1:]}" for k, v in count.items()]) + ')'
+            return " ,".join([f"#{str(v)}{k[1:]}" for k, v in count.items()])
         
         tweet_rdf7 = tweet_rdf3[['author', 'gcc', '_id']][tweet_rdf3.author.isin(tweet_rdf6['author'])]
         tweet_rdf7 = tweet_rdf7.groupby(['author', 'gcc']).count().reset_index()
         tweet_rdf8 = tweet_rdf7.groupby('author').apply(combine_gcc_twitter_count).reset_index(name='ngt')
 
         tweet_rdf9 = pd.merge(left=tweet_rdf6, right=tweet_rdf8, on='author', how='inner')
-        tweet_rdf9['rngt'] = tweet_rdf9.agg(lambda x: f"{x.ugcc} {x.ngt}", axis=1)
+        tweet_rdf9['rngt'] = tweet_rdf9.agg(lambda x: f"{x.ugcc} (#{x.ttc} - {x.ngt})", axis=1)
         tweet_rdf9 = tweet_rdf9[['r', 'author', 'rngt']]
         tweet_rdf9.columns = ['Rank', 'Author Id', 'Number of Unique City Locations and #Tweets']
         tweet_rdf9.to_csv(f"./data/result/task3-{twitter_file_name}.csv", index=False)
