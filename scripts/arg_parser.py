@@ -18,7 +18,7 @@ parser.add_argument('-s', '--sal',
                     required=True,
                     help='The name of the Sal.json data file')
 
-parser.add_argument('--email', '--email_target',
+parser.add_argument('-e', '--email', '--email_target',
                     type=str,
                     required=False,
                     help='indicate a email to submit the job')
