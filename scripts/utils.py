@@ -1,3 +1,6 @@
+"""
+Utility functions
+"""
 import logging
 import argparse
 from typing import Tuple, List, Optional
@@ -33,7 +36,10 @@ def obtain_email_target(parser: argparse.ArgumentParser) -> any:
     
 
 def split_file_into_chunks(path: Path, size: int) -> List[List]:
-
+    """
+    Split the total file bytes in to a list of [size] bytes,
+    which will tell the file reader where to start reading file.
+    """
     file_size: int = path.stat().st_size
     step_size: int = file_size // size
 
@@ -49,7 +55,6 @@ def split_file_into_chunks(path: Path, size: int) -> List[List]:
 
 def twitter_wrangler(filename: Path, size: int) -> pd.DataFrame:
     ...
-
     
 
 state_location = dict(zip([s.lower() for s in ['Australian Capital Territory', 
@@ -69,6 +74,10 @@ city_location = dict(zip([s.lower() for s in ['Canberra', 'Sydney', 'Darwin', 'B
                                               'ADE', 'HOB', 'MEL', 'PER']]))
     
 def normalise_location(location: str) -> str:
+    """
+    Normalise location where the location string should not
+    contains any puntuations also additional white spaces.
+    """
     text = location.lower()
     
     text = re.sub(r'[^\w\s]', '', text)
@@ -88,6 +97,9 @@ INVALID_LOCATION = ['act australia',
                 'wa australia', 'australia']
 
 def is_state_location(location):
+    """
+    Check current twitter location that is from a state or not.
+    """
     if location in INVALID_LOCATION:
         return True
     return False
