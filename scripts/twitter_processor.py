@@ -81,7 +81,7 @@ def twitter_processor(filename: Path, cs: int, ce: int) -> pd.DataFrame:
     # convert result in a dataframe
     tweet_df = pd.DataFrame([tweet.__dict__ for tweet in tweet_lst])
     tweet_df.location = tweet_df.location.apply(lambda x: normalise_location(x))
-    tweet_df = tweet_df[~tweet_df.location.apply(lambda x: is_state_location(x))]
+    # tweet_df = tweet_df[~tweet_df.location.apply(lambda x: is_state_location(x))]
     
     return tweet_df
 
