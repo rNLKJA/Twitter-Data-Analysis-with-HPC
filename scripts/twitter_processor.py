@@ -5,11 +5,12 @@ from dataclasses import dataclass
 import re
 from .utils import normalise_location, is_state_location
 
-# from .logger import twitter_logger as log
-
-
 @dataclass
 class Twitter:
+    """
+    Twitter object contains information including 
+    twitter_id, author_id, and lcoation string
+    """
     _id: int = None
     author: str = None
     location: str = None
@@ -52,16 +53,19 @@ def twitter_processor(filename: Path, cs: int, ce: int) -> pd.DataFrame:
         while not EOF:
             line = f.readline().decode()  # decode the current line from bytes
 
+            # find target twitter id
             match_id = re.search(r'"_id":\s*"([^"]+)"', line)
             if match_id:
                 _id = match_id.group(1)
                 tweet_lst.append(Twitter(_id=_id))
 
+            # find target author id
             match_author = re.search(r'"author_id":\s*"([^"]+)"', line)
             if match_author and tweet_lst:
                 author = match_author.group(1)
                 tweet_lst[-1].author = author
 
+            # find target location name
             match_location = re.search(r'"full_name":\s*"([^"]+)"', line)
             if match_location and tweet_lst:
                 location = match_location.group(1)
@@ -73,7 +77,8 @@ def twitter_processor(filename: Path, cs: int, ce: int) -> pd.DataFrame:
                     continue
                 else:
                     EOF = True
-
+    
+    # convert result in a dataframe
     tweet_df = pd.DataFrame([tweet.__dict__ for tweet in tweet_lst])
     tweet_df.location = tweet_df.location.apply(lambda x: normalise_location(x))
     tweet_df = tweet_df[~tweet_df.location.apply(lambda x: is_state_location(x))]
