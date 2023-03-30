@@ -7,8 +7,15 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from .logger import FULL_PATH  # import log file path
 
-# send log file to developer's email for status check & running time collection
-def send_log():
+def send_log(target: str) -> None:
+    """
+    # send log file to developer's email for status check & running time collection
+    """
+
+    if target == 'rin':
+        email = "sunchuangyuh@student.unimelb.edu.au"
+    elif target == 'wei':
+        email = 'zw0432751551@gmail.com'
 
     # define smtp server and port
     smtp_server = 'smtp.163.com'
@@ -31,9 +38,11 @@ def send_log():
 
     # set the email header
     message['From'] = 'zw0432751551@163.com'
-    message['To'] = 'zw0432751551@gmail.com'
+    message['To'] = email
     message['Subject'] = 'Log file'
 
     # send the email
     smtp_connection.sendmail(smtp_username, 'zw0432751551@gmail.com', message.as_string())
     smtp_connection.quit()
+
+    return

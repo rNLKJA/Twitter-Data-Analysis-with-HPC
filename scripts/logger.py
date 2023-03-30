@@ -4,7 +4,6 @@ Twitter Analyzer logger
 import logging
 from pathlib import Path
 from datetime import datetime
-from scripts.utils import obtain_args
 
 time_string = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 

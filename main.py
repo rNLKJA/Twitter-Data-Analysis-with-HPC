@@ -11,7 +11,7 @@ Github: https://github.com/rNLKJA/2023-S1-COMP90024-A1/
 """
 
 from scripts.twitter_processor import twitter_processor, task1, task2, task3
-from scripts.utils import obtain_args, split_file_into_chunks, normalise_location, is_state_location
+from scripts.utils import obtain_twitter_file_name, split_file_into_chunks, normalise_location, is_state_location, obtain_email_target
 from scripts.sal_processor import load_sal_csv
 from scripts.logger import twitter_logger as logger
 from scripts.arg_parser import parser
@@ -26,13 +26,13 @@ import sys
 import os
 os.environ['NUMEXPR_MAX_THREADS'] = '32'
 
-
 logger.info("PROGRAM START")
 
+# define constants
 PATH = Path()
 
 # load kwargs & required sal.csv file
-twitter_file_name = obtain_args(parser, logger)
+twitter_file_name = obtain_twitter_file_name(parser)
 twitter_file = PATH / "data" / twitter_file_name
 
 sal_df = load_sal_csv(PATH, logger)[['location', 'gcc']]
@@ -51,7 +51,7 @@ comm.Barrier()
 start_time = time.time()
 
 if __name__ == '__main__':
-
+    # return a list which specify the file bytes each process need to processed
     chunk_start, chunk_end = split_file_into_chunks(twitter_file, size)
     # logger.info(f"Process chunk: {chunk_start[rank]} - {chunk_end[rank]}\n")
     
@@ -68,8 +68,8 @@ if __name__ == '__main__':
     task1_df = task1(tweet_df)
     if rank == 0:
         task1_dfs = [task1_df]
-        for np in range(1, size):
-            task1_dfs.append(comm.recv(source=np))
+        for nproc in range(1, size):
+            task1_dfs.append(comm.recv(source=nproc))
     else:
         comm.send(task1_df, dest=0)
     
@@ -132,10 +132,11 @@ if __name__ == '__main__':
         logger.info(f"ALL TASKS COMLETE")
         end_time = time.time()
         logger.info(f'Programming running seconds: {end_time - start_time}')
-    if rank == 0:
-        send_log()
+    
+    comm.Barrier()
+    if rank == 0 and obtain_email_target(parser):
+        email_target = obtain_email_target(parser)
+        send_log(target=email_target)
         
     comm.Barrier()
 
-    
-    sys.exit()
