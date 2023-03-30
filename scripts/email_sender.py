@@ -42,7 +42,7 @@ def send_log(target: str) -> None:
     message['Subject'] = 'Log file'
 
     # send the email
-    smtp_connection.sendmail(smtp_username, 'zw0432751551@gmail.com', message.as_string())
+    smtp_connection.sendmail(smtp_username, email, message.as_string())
     smtp_connection.quit()
 
     return
