@@ -46,11 +46,51 @@ Main Python dependencies: python=3.7.4, mpi4py=3.0.4, numpy, pandas.
 
 **Task 1 Question**: The solution should count the number of tweets made by the same individual based on the bigTwitter.json file and returned the top 10 tweeters in terms of the number of tweets made irrespective of where they tweeted. The result will be of the form (where the author Ids and tweet numbers are representative).
 
+|Rank | Author Id | Number of Tweets Made |
+| :----: | :---- | :---- : |
+|1|719139700318081024|15311|
+|2|895324410395021312|8072|
+|3|93730228|8071|
+|4|15015082|7712|
+|5|1402087599255089155|7658|
+|6|156974829|7471|
+|7|1172400317104709632|7091|
+|8|34172405|7063|
+|9|3005691210|6983|
+|10|1159996035818590208|6762|
+
 **Task 2 Question**: Using the *bigTwitter.json* and *sal.json* file you will then count the number of tweets made in the various captical cities by all users. The result will be a table of the form (where the numbers are representative). 
 
 For this task, ignore tweets made by users in rural location, e.g. *lrnsw* (Rural New South Wales), *1rvic* (Rural Victoria) etc.
 
+
+| Greater Capital City | Number of Tweets Made |
+| :----: | :----: |
+| 1gsyd | 2122 |
+|2gmel|14665|
+|3gbri|1746|
+|4gade|11426|
+|5gper|578882|
+|6ghob|695|
+|7gdar|36|
+|8acte|193835|
+|9oter|3|
+
 **Task 3 Question**: The solution should identify those tweeters that have a tweeted in the most Greater Capital cities and the number of times they have tweeted from those locations. The top 10 tweeters making tweets from the most different locations should be returned and if there are equal number of locations, then these should be ranked by the number of tweets. Only those tweets made in Greater Capital cities should be counted.
+
+|Rank|Author Id|Number of Unique City Locations and #Tweets|
+| :----: | :---- | :---- |
+|1|133391271|24 (#23gper ,#1acte)|
+|2|702290904460169216|2 (#1gsyd ,#1gper)|
+|3|774694926135222272|2 (#1gper ,#1acte)|
+|4|191761621|267 (#267gper)|
+|5|125515417|242 (#242acte)|
+|6|120212120|216 (#216gper)|
+|7|1348502962050535428|213 (#213acte)|
+|8|51378153|199 (#199gper)|
+|9|266010557|170 (#170gper) | 
+|10|719139700318081024|170 (#170gper) |
+
 
 For complete assignment 1 report, please check [overleaf](https://www.overleaf.com/read/sdsczmmdxzvq).
 
