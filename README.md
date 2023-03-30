@@ -47,7 +47,7 @@ Main Python dependencies: python=3.7.4, mpi4py=3.0.4, numpy, pandas.
 **Task 1 Question**: The solution should count the number of tweets made by the same individual based on the bigTwitter.json file and returned the top 10 tweeters in terms of the number of tweets made irrespective of where they tweeted. The result will be of the form (where the author Ids and tweet numbers are representative).
 
 |Rank | Author Id | Number of Tweets Made |
-| :----: | :---- | :---- : |
+| :----: | :---- | :----: |
 |1|719139700318081024|15311|
 |2|895324410395021312|8072|
 |3|93730228|8071|
@@ -80,16 +80,16 @@ For this task, ignore tweets made by users in rural location, e.g. *lrnsw* (Rura
 
 |Rank|Author Id|Number of Unique City Locations and #Tweets|
 | :----: | :---- | :---- |
-|1|133391271|24 (#23gper ,#1acte)|
-|2|702290904460169216|2 (#1gsyd ,#1gper)|
-|3|774694926135222272|2 (#1gper ,#1acte)|
-|4|191761621|267 (#267gper)|
-|5|125515417|242 (#242acte)|
-|6|120212120|216 (#216gper)|
-|7|1348502962050535428|213 (#213acte)|
-|8|51378153|199 (#199gper)|
-|9|266010557|170 (#170gper) | 
-|10|719139700318081024|170 (#170gper) |
+|1|702290904460169216|8 (#206 - #5gsyd ,#12gmel ,#7gbri ,#8gade ,#127gper ,#2ghob ,#1gdar ,#44acte)|
+|2|87188071|5 (#82 - #1gsyd ,#2gmel ,#1gbri ,#45gper ,#33acte)|
+|3|61220731|4 (#646 - #109gmel ,#39gbri ,#29gade ,#469acte)"|
+|4|921197448885886977|4 (#39 - #2gmel ,#4gade ,#27gper ,#6acte)|
+|5|228664718|4 (#36 - #4gsyd ,#1gbri ,#27gper ,#4acte)|
+|6|2225880756|4 (#13 - #4gsyd ,#5gdar ,#3acte ,#1oter)|
+|7|1482557020528332801|4 (#6 - #1gsyd ,#2gbri ,#2gper ,#1acte)|
+|8|987122373395595264|4 (#5 - #1gsyd ,#1gbri ,#1gade ,#2acte)|
+|9|355186886|3 (#404 - #358gmel ,#1gper ,#45acte)|
+|10|565012072|3 (#111 - #1gsyd ,#1gper ,#109acte)|
 
 
 For complete assignment 1 report, please check [overleaf](https://www.overleaf.com/read/sdsczmmdxzvq).
