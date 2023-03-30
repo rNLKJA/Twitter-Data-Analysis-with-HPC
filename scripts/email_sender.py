@@ -16,6 +16,8 @@ def send_log(target: str) -> None:
         email = "sunchuangyuh@student.unimelb.edu.au"
     elif target == 'wei':
         email = 'zw0432751551@gmail.com'
+    else:
+        return
 
     # define smtp server and port
     smtp_server = 'smtp.163.com'

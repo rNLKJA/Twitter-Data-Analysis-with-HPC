@@ -134,10 +134,10 @@ if __name__ == '__main__':
         logger.info(f'Programming running seconds: {end_time - start_time}')
     
     comm.Barrier()
-    if rank == 0 and obtain_email_target(parser):
+    if rank == 0:
         email_target = obtain_email_target(parser)
         send_log(target=email_target)
         
     comm.Barrier()
 
-sys.exit()
+    sys.exit()
