@@ -12,7 +12,7 @@ Github: https://github.com/rNLKJA/2023-S1-COMP90024-A1/
 
 from scripts.twitter_processor import twitter_processor, task1, task2, task3
 from scripts.utils import obtain_twitter_file_name, split_file_into_chunks, normalise_location, is_state_location, obtain_email_target
-from scripts.sal_processor import load_sal_csv
+from scripts.sal_processor import load_sal_csv, process_salV1
 from scripts.logger import twitter_logger as logger
 from scripts.arg_parser import parser
 from scripts.email_sender import send_log
@@ -32,10 +32,9 @@ logger.info("PROGRAM START")
 PATH = Path()
 
 # load kwargs & required sal.csv file
-twitter_file_name = obtain_twitter_file_name(parser)
-twitter_file = PATH / "data" / twitter_file_name
+twitter_file = PATH / "data" / obtain_twitter_file_name(parser)
 
-sal_df = load_sal_csv(PATH, logger)
+sal_df = process_salV1(path=PATH, logger=logger)
 
 # define MPI tools
 comm = MPI.COMM_WORLD
