@@ -82,7 +82,7 @@ if __name__ == '__main__':
                      .sort_values(by='gcc', ascending=True)
         t1rdf.to_csv(PATH / 'data/result' / f"task1-{twitter_file_name.replace('json', '')}.csv", 
                      index=False)
-        
+    
     comm.Barrier()
     # =================================== TASK 2 ===================================
     task2_df = task2(tweet_df)
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     comm.Barrier()
     
     if rank == 0:
-        t3rdf = t2rdf = pd.concat(task3_dfs, axis=0, ignore_index=True)
+        t3rdf = pd.concat(task3_dfs, axis=0, ignore_index=True)
         t3rdf = t3rdf.groupby('author').sum()\
                      .reset_index()\
                      .sort_values(by='gcc', ascending=False)\

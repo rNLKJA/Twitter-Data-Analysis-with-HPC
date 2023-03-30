@@ -1,4 +1,8 @@
 # /usr/bin/env python3
+"""
+Sal.json Processing Script, involving a processed sal.json file
+and load the csv into a pandas dataframe
+"""
 import pandas as pd
 import re
 from pathlib import Path
@@ -6,6 +10,7 @@ import logging
 from .utils import obtain_sal_file_name
 from .arg_parser import parser
 
+sal_file_name = obtain_sal_file_name(parser=parser)
 def process_sal(path: Path, logger: logging) -> pd.DataFrame:
     """
     Process sal.json file by removing irrelevant attributes,
@@ -17,7 +22,6 @@ def process_sal(path: Path, logger: logging) -> pd.DataFrame:
 
     path (Path): root directory
     """
-    sal_file_name = obtain_sal_file_name(parser=parser)
     logger.info("Loading sal.json into pandas")
     # load sal.json file & reset index
     df = pd.read_json(path / f"data/{sal_file_name}", orient="index")
@@ -69,7 +73,7 @@ def load_sal_csv(path: Path, logger: logging) -> pd.DataFrame:
     """
     Load sal.csv into a pandas dataframe
     """
-    logger.info("Loading sal.csv")
+    logger.info("Prepare to load sal.csv")
     sal_file = path / "data/processed/sal.csv"
     # if not sal_csv_exist(sal_file, logger):
     #     logger.info("Missing required sal.csv file, start processing")
