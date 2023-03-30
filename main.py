@@ -32,7 +32,8 @@ logger.info("PROGRAM START")
 PATH = Path()
 
 # load kwargs & required sal.csv file
-twitter_file = PATH / "data" / obtain_twitter_file_name(parser)
+twitter_file_name = obtain_twitter_file_name(parser)
+twitter_file = PATH / "data" / twitter_file_name
 
 sal_df = process_salV1(path=PATH, logger=logger)
 
