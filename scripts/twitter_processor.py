@@ -48,8 +48,8 @@ def twitter_processor(filename: Path, cs: int, ce: int) -> pd.DataFrame:
         # seek the start of the file
         f.seek(cs)
 
-        breaker = False
-        while not breaker:
+        EOF = False
+        while not EOF:
             line = f.readline().decode()  # decode the current line from bytes
 
             match_id = re.search(r'"_id":\s*"([^"]+)"', line)
@@ -72,7 +72,7 @@ def twitter_processor(filename: Path, cs: int, ce: int) -> pd.DataFrame:
                 if tweet_lst[-1].location is None:
                     continue
                 else:
-                    breaker = True
+                    EOF = True
 
     tweet_df = pd.DataFrame([tweet.__dict__ for tweet in tweet_lst])
     tweet_df.location = tweet_df.location.apply(lambda x: normalise_location(x))
