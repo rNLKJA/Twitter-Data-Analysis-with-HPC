@@ -1,6 +1,6 @@
 import logging
 import argparse
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -10,20 +10,27 @@ from mpi4py import MPI
 import re
 
 
-def obtain_args(parser: argparse.ArgumentParser,
-                logger: logging) -> Tuple[str]:
+def obtain_twitter_file_name(parser: argparse.ArgumentParser) -> str:
     """
-    Obtain kwargs and return a tuple
+    Obtain twitter file name
     """
-    # obtain clt input
-    logger.info("Parsing kwargs")
     args = parser.parse_args()
-    twitter_file = args.twitter_file_name
+    return args.twitter_file_name
 
-    twitter_file = twitter_file
+def obtain_sal_file_name(parser: argparse.ArgumentParser) -> str:
+    """
+    Obtain specify which sal.json should be used
+    """
+    args = parser.parse_args()
+    return args.sal
 
-    return twitter_file
-
+def obtain_email_target(parser: argparse.ArgumentParser) -> any:
+    """
+    Specify who should receive the log file.
+    """
+    args = parser.parse_args()
+    return args.email
+    
 
 def split_file_into_chunks(path: Path, size: int) -> List[List]:
 
