@@ -12,6 +12,7 @@ from .arg_parser import parser
 
 sal_file_name = obtain_sal_file_name(parser=parser)
 
+
 def process_salV1(path: Path, logger: logging) -> pd.DataFrame:
     """
     Process sal.json file by removing irrelevant attributes,
@@ -27,7 +28,7 @@ def process_salV1(path: Path, logger: logging) -> pd.DataFrame:
     # load sal.json file & reset index
     df = pd.read_json(path / f"data/{sal_file_name}", orient="index")
     df = df.reset_index().rename(columns={'index': 'location'})
-    
+
     df.drop(['ste', 'sal'], axis=1, inplace=True)
 
     # case1: replace all brackets with an empty string
@@ -60,7 +61,7 @@ def process_sal(path: Path, logger: logging) -> pd.DataFrame:
     # load sal.json file & reset index
     df = pd.read_json(path / f"data/{sal_file_name}", orient="index")
     df = df.reset_index().rename(columns={'index': 'location'})
-    
+
     # drop unused columns
     df.drop(['ste', 'sal'], axis=1, inplace=True)
 
@@ -84,7 +85,7 @@ def process_sal(path: Path, logger: logging) -> pd.DataFrame:
     # add a super location as a search string
     # gcc_dict = dict(zip(df.gcc.unique(), [g[2::] for g in df.gcc.unique()]))
     # df['location_x'] = df.agg(lambda x: x.location + ' ' + gcc_dict[x.gcc], axis=1)
-    
+
     # store result to a csv file
     logger.info("Store sal.csv file.")
     df.to_csv(path/"data/processed/sal.csv", index=False)
