@@ -2,7 +2,7 @@
 #SBATCH --job-name=bigTwitter_1_core_8_node
 
 ##set task request resources
-#SBATCH --time=00:10:00
+#SBATCH --time=00:20:00
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=8
 #SBATCH --cpus-per-task=1
