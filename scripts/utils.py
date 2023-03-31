@@ -20,6 +20,7 @@ def obtain_twitter_file_name(parser: argparse.ArgumentParser) -> str:
     args = parser.parse_args()
     return args.twitter_file_name
 
+
 def obtain_sal_file_name(parser: argparse.ArgumentParser) -> str:
     """
     Obtain specify which sal.json should be used
@@ -27,13 +28,14 @@ def obtain_sal_file_name(parser: argparse.ArgumentParser) -> str:
     args = parser.parse_args()
     return args.sal
 
+
 def obtain_email_target(parser: argparse.ArgumentParser) -> any:
     """
     Specify who should receive the log file.
     """
     args = parser.parse_args()
     return args.email
-    
+
 
 def split_file_into_chunks(path: Path, size: int) -> List[List]:
     """
@@ -55,46 +57,49 @@ def split_file_into_chunks(path: Path, size: int) -> List[List]:
 
 def twitter_wrangler(filename: Path, size: int) -> pd.DataFrame:
     ...
-    
 
-state_location = dict(zip([s.lower() for s in ['Australian Capital Territory', 
-                                               'New South Wales', 
-                                               'Northern Territory', 
-                                               'Queensland', 
-                                               'South Australia', 
-                                               'Tasmania', 'Victoria', 
-                                               'Western Australia']], 
-                         [s.lower() for s in ['ACT', 'NSW', 
-                                              'NT', 'QLD', 'SA', 
-                                              'TAS', 'VIC', 'WA']]))
 
-city_location = dict(zip([s.lower() for s in ['Canberra', 'Sydney', 'Darwin', 'Brisbane', 
+state_location = dict(zip([s.lower() for s in ['Australian Capital Territory',
+                                               'New South Wales',
+                                               'Northern Territory',
+                                               'Queensland',
+                                               'South Australia',
+                                               'Tasmania', 'Victoria',
+                                               'Western Australia']],
+                          [s.lower() for s in ['ACT', 'NSW',
+                                               'NT', 'QLD', 'SA',
+                                               'TAS', 'VIC', 'WA']]))
+
+city_location = dict(zip([s.lower() for s in ['Canberra', 'Sydney', 'Darwin', 'Brisbane',
                                               'Adelaide', 'Hobart', 'Melbourne', 'Perth']],
-                         [s.lower() for s in ['CAN', 'SYD', 'DAR', 'BRI', 
+                         [s.lower() for s in ['CAN', 'SYD', 'DAR', 'BRI',
                                               'ADE', 'HOB', 'MEL', 'PER']]))
-    
+
+
 def normalise_location(location: str) -> str:
     """
     Normalise location where the location string should not
     contains any puntuations also additional white spaces.
     """
     text = location.lower()
-    
+
     text = re.sub(r'[^\w\s]', '', text)
     text = re.sub(r' - ', '', text)
-    
+
     for key, value in state_location.items():
         text = re.sub(key, value, text)
 
     return text
 
-INVALID_LOCATION = ['act australia', 
-                'nsw australia', 
-                'nt australia', 
-                'qld Australia', 
-                'sa australia', 
-                'tas australia', 'vic australia', 
-                'wa australia', 'australia']
+
+INVALID_LOCATION = ['act australia',
+                    'nsw australia',
+                    'nt australia',
+                    'qld Australia',
+                    'sa australia',
+                    'tas australia', 'vic australia',
+                    'wa australia', 'australia']
+
 
 def is_state_location(location):
     """
@@ -103,3 +108,13 @@ def is_state_location(location):
     if location in INVALID_LOCATION:
         return True
     return False
+
+
+def combine_gcc_twitter_count(x):
+    count = {}
+    for _, row in x.iterrows():
+        if row['gcc'] in count:
+            count[row['gcc']] += row['_id']
+        else:
+            count[row['gcc']] = row['_id']
+    return " ,".join([f"#{str(v)}{k[1:]}" for k, v in count.items()])
