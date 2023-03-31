@@ -118,6 +118,9 @@ if __name__ == '__main__':
         tweet_rdf6.sort_values(by=['ugcc', 'ttc', 'author'], ascending=[
                                False, False, True], inplace=True)
         tweet_rdf6.reset_index(drop=True, inplace=True)
+
+        tweet_rdf6.to_csv(f"./data/processed/{twitter_file_name}", index=False)
+
         tweet_rdf6 = tweet_rdf6.loc[0:9]
         tweet_rdf6['r'] = np.arange(1, 11, 1)
 
