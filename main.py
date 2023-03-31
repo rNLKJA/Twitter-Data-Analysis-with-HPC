@@ -132,6 +132,8 @@ if __name__ == '__main__':
         tweet_rdf3 = pd.read_csv(
             f"./data/processed/task2.csv")
 
+        tweet_rdf3 = tweet_rdf3[~tweet_rdf3.gcc.str.contains(r'\dr[a-z]{3}')]
+
         tweet_rdf4 = tweet_rdf3[['author', 'gcc']].groupby(
             'author').nunique('gcc').reset_index()
         tweet_rdf5 = tweet_rdf3[['author', '_id']].groupby(
