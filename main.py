@@ -11,7 +11,7 @@ Github: https://github.com/rNLKJA/2023-S1-COMP90024-A1/
 """
 
 from scripts.twitter_processor import twitter_processor
-from scripts.utils import obtain_twitter_file_name, split_file_into_chunks, obtain_email_target
+from scripts.utils import obtain_twitter_file_name, split_file_into_chunks, obtain_email_target, combine_gcc_twitter_count
 from scripts.sal_processor import process_salV1
 from scripts.logger import twitter_logger as logger
 from scripts.arg_parser import parser
@@ -110,6 +110,9 @@ if __name__ == '__main__':
         tweet_rdf2['gcc'] = tweet_rdf2.fillna(np.nan).agg(
             lambda x: return_gcc(x.gcc_x, x.gcc_y), axis=1)
 
+        tweet_rdf2[['_id', 'author', 'location', 'gcc']].to_csv(
+            "./data/processed/task2.csv", index=False)
+
         tweet_rdf3 = pd.concat([tweet_rdf0[~tweet_rdf0.gcc.isna()][[
             'gcc', '_id']], tweet_rdf2[['gcc', '_id']]], axis=0, ignore_index=True)
 
@@ -121,11 +124,13 @@ if __name__ == '__main__':
         tweet_rdf3.to_csv(
             f"./data/result/task2-{twitter_file_name}.csv", index=False)
 
+    comm.Barrier()
+
     # =================================== TASK 3 ===================================
-    if rank == 0 if size > 1 else 3:
-        tweet_rdf0 = pd.concat(tweet_dfs, axis=0, ignore_index=True).dropna()
-        tweet_rdf3 = tweet_rdf0[~tweet_rdf0['gcc'].str.contains(
-            r"\dr[a-z]{3}")]
+    if rank == 0 if size > 1 else 2:
+
+        tweet_rdf3 = pd.read_csv(
+            f"./data/processed/task2.csv")
 
         tweet_rdf4 = tweet_rdf3[['author', 'gcc']].groupby(
             'author').nunique('gcc').reset_index()
@@ -140,20 +145,10 @@ if __name__ == '__main__':
                                False, False, True], inplace=True)
         tweet_rdf6.reset_index(drop=True, inplace=True)
 
-        tweet_rdf6.to_csv(
-            f"./data/processed/{twitter_file_name}", index=False)
+        tweet_rdf6['r'] = tweet_rdf6[['ugcc', 'ttc']].apply(
+            tuple, axis=1).rank(method='min', ascending=False).astype(int)
 
-        tweet_rdf6 = tweet_rdf6.loc[0:9]
-        tweet_rdf6['r'] = np.arange(1, 11, 1)
-
-        def combine_gcc_twitter_count(x):
-            count = {}
-            for _, row in x.iterrows():
-                if row['gcc'] in count:
-                    count[row['gcc']] += row['_id']
-                else:
-                    count[row['gcc']] = row['_id']
-            return " ,".join([f"#{str(v)}{k[1:]}" for k, v in count.items()])
+        tweet_rdf6 = tweet_rdf6[tweet_rdf6['r'] < 11]
 
         tweet_rdf7 = tweet_rdf3[['author', 'gcc', '_id']
                                 ][tweet_rdf3.author.isin(tweet_rdf6['author'])]
