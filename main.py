@@ -12,7 +12,7 @@ Github: https://github.com/rNLKJA/2023-S1-COMP90024-A1/
 
 from scripts.twitter_processor import twitter_processor
 from scripts.utils import obtain_twitter_file_name, split_file_into_chunks, obtain_email_target
-from scripts.sal_processor import load_sal_csv, process_salV1
+from scripts.sal_processor import process_salV1
 from scripts.logger import twitter_logger as logger
 from scripts.arg_parser import parser
 from scripts.email_sender import send_log
