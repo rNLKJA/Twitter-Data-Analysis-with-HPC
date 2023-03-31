@@ -61,7 +61,7 @@ if __name__ == '__main__':
     tweet_df = twitter_processor(
         twitter_file, chunk_start[rank], chunk_end[rank])
     tweet_df = pd.merge(
-        tweet_df, sal_df, left_on='location', right_on='location')
+        tweet_df, sal_df, left_on='location', right_on='location', how="left")
 
     logger.info("File read complete")
     comm.Barrier()
@@ -74,24 +74,31 @@ if __name__ == '__main__':
     else:
         comm.send(tweet_df, dest=0)
 
+    comm.Barrier()
+
     # =================================== TASK 1 ===================================
 
     if rank == 0 if size > 1 else 1:
-        tweet_rdf1 = pd.concat(tweet_dfs, axis=0, ignore_index=True)[
+        tweet_rdf0 = pd.concat(tweet_dfs, axis=0, ignore_index=True)
+        tweet_rdf1 = tweet_rdf0[
             ['author', '_id']].groupby('author').count().reset_index()
-
-        tweet_rdf1['rank'] = tweet_rdf1._id.rank(method="max", ascending=False)
+        tweet_rdf1['rank'] = tweet_rdf1._id.rank(
+            method="first", ascending=False)
 
         tweet_rdf1.columns = ['Author Id', 'Number of Tweets Made', 'Rank']
 
+        tweet_rdf1.sort_values(
+            by=['Rank', "Author Id"], ascending=True).to_csv(
+            f'./data/result/task1-{twitter_file_name}00.csv', index=False)
         tweet_rdf1 = tweet_rdf1[tweet_rdf1['Rank'] < 11].sort_values(
             by=['Rank', "Author Id"], ascending=True)
+
         tweet_rdf1[['Rank', 'Author Id', 'Number of Tweets Made']].to_csv(
             f'./data/result/task1-{twitter_file_name}.csv', index=False)
 
     # =================================== TASK 2 ===================================
     if rank == 0 if size > 1 else 2:
-        tweet_rdf0 = pd.concat(tweet_dfs, axis=0, ignore_index=True)
+        tweet_rdf0 = pd.concat(tweet_dfs, axis=0, ignore_index=True).dropna()
         tweet_rdf2 = tweet_rdf0[~tweet_rdf0['gcc'].str.contains(
             r"\dr[a-z]{3}")][['gcc', '_id']].groupby('gcc').count().reset_index()
 
@@ -102,7 +109,7 @@ if __name__ == '__main__':
 
     # =================================== TASK 3 ===================================
     if rank == 0 if size > 1 else 3:
-        tweet_rdf0 = pd.concat(tweet_dfs, axis=0, ignore_index=True)
+        tweet_rdf0 = pd.concat(tweet_dfs, axis=0, ignore_index=True).dropna()
         tweet_rdf3 = tweet_rdf0[~tweet_rdf0['gcc'].str.contains(
             r"\dr[a-z]{3}")]
 
