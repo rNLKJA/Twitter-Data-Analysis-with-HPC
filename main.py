@@ -55,16 +55,17 @@ if __name__ == '__main__':
     # return a list which specify the file bytes each process need to processed
     chunk_start, chunk_end = split_file_into_chunks(twitter_file, size)
     # logger.info(f"Process chunk: {chunk_start[rank]} - {chunk_end[rank]}\n")
-    
+
     comm.Barrier()
-    
+
     tweet_df = twitter_processor(
         twitter_file, chunk_start[rank], chunk_end[rank])
-    tweet_df = pd.merge(tweet_df, sal_df, left_on='location', right_on='location')
-    
+    tweet_df = pd.merge(
+        tweet_df, sal_df, left_on='location', right_on='location')
+
     logger.info("File read complete")
     comm.Barrier()
-    
+
     # defined a merged dataframe
     if rank == 0:
         tweet_dfs = [tweet_df]
@@ -72,44 +73,54 @@ if __name__ == '__main__':
             tweet_dfs.append(comm.recv(source=nproc))
     else:
         comm.send(tweet_df, dest=0)
-        
+
     # =================================== TASK 1 ===================================
-    
-    if rank == 0 if size > 1 else 1:    
-        tweet_rdf1 = pd.concat(tweet_dfs, axis=0, ignore_index=True)[['author', '_id']].groupby('author').count().reset_index()
-         
+
+    if rank == 0 if size > 1 else 1:
+        tweet_rdf1 = pd.concat(tweet_dfs, axis=0, ignore_index=True)[
+            ['author', '_id']].groupby('author').count().reset_index()
+
         tweet_rdf1['rank'] = tweet_rdf1._id.rank(method="max", ascending=False)
-     
+
         tweet_rdf1.columns = ['Author Id', 'Number of Tweets Made', 'Rank']
-        
-        tweet_rdf1 = tweet_rdf1[tweet_rdf1['Rank'] < 11].sort_values(by=['Rank', "Author Id"], ascending=True)
-        tweet_rdf1[['Rank', 'Author Id', 'Number of Tweets Made']].to_csv(f'./data/result/task1-{twitter_file_name}.csv', index=False)
+
+        tweet_rdf1 = tweet_rdf1[tweet_rdf1['Rank'] < 11].sort_values(
+            by=['Rank', "Author Id"], ascending=True)
+        tweet_rdf1[['Rank', 'Author Id', 'Number of Tweets Made']].to_csv(
+            f'./data/result/task1-{twitter_file_name}.csv', index=False)
 
     # =================================== TASK 2 ===================================
     if rank == 0 if size > 1 else 2:
         tweet_rdf0 = pd.concat(tweet_dfs, axis=0, ignore_index=True)
-        tweet_rdf2 = tweet_rdf0[~tweet_rdf0['gcc'].str.contains(r"\dr[a-z]{3}")][['gcc', '_id']].groupby('gcc').count().reset_index()
-        
+        tweet_rdf2 = tweet_rdf0[~tweet_rdf0['gcc'].str.contains(
+            r"\dr[a-z]{3}")][['gcc', '_id']].groupby('gcc').count().reset_index()
+
         tweet_rdf2.columns = ['Greater Capital City', 'Number of Tweets Made']
-        
-        tweet_rdf2.to_csv(f"./data/result/task2-{twitter_file_name}.csv", index=False)
-   
+
+        tweet_rdf2.to_csv(
+            f"./data/result/task2-{twitter_file_name}.csv", index=False)
+
     # =================================== TASK 3 ===================================
     if rank == 0 if size > 1 else 3:
         tweet_rdf0 = pd.concat(tweet_dfs, axis=0, ignore_index=True)
-        tweet_rdf3 = tweet_rdf0[~tweet_rdf0['gcc'].str.contains(r"\dr[a-z]{3}")]
-        
-        tweet_rdf4 = tweet_rdf3[['author', 'gcc']].groupby('author').nunique('gcc').reset_index()
-        tweet_rdf5 = tweet_rdf3[['author', '_id']].groupby('author').count().reset_index()
-        
-        tweet_rdf6 = pd.merge(left=tweet_rdf4, right=tweet_rdf5, on='author', how='inner')
+        tweet_rdf3 = tweet_rdf0[~tweet_rdf0['gcc'].str.contains(
+            r"\dr[a-z]{3}")]
+
+        tweet_rdf4 = tweet_rdf3[['author', 'gcc']].groupby(
+            'author').nunique('gcc').reset_index()
+        tweet_rdf5 = tweet_rdf3[['author', '_id']].groupby(
+            'author').count().reset_index()
+
+        tweet_rdf6 = pd.merge(
+            left=tweet_rdf4, right=tweet_rdf5, on='author', how='inner')
         tweet_rdf6.columns = ['author', 'ugcc', 'ttc']
 
-        tweet_rdf6.sort_values(by=['ugcc', 'ttc', 'author'], ascending=[False, False, True], inplace=True)
+        tweet_rdf6.sort_values(by=['ugcc', 'ttc', 'author'], ascending=[
+                               False, False, True], inplace=True)
         tweet_rdf6.reset_index(drop=True, inplace=True)
         tweet_rdf6 = tweet_rdf6.loc[0:9]
         tweet_rdf6['r'] = np.arange(1, 11, 1)
-        
+
         def combine_gcc_twitter_count(x):
             count = {}
             for _, row in x.iterrows():
@@ -118,16 +129,23 @@ if __name__ == '__main__':
                 else:
                     count[row['gcc']] = row['_id']
             return " ,".join([f"#{str(v)}{k[1:]}" for k, v in count.items()])
-        
-        tweet_rdf7 = tweet_rdf3[['author', 'gcc', '_id']][tweet_rdf3.author.isin(tweet_rdf6['author'])]
-        tweet_rdf7 = tweet_rdf7.groupby(['author', 'gcc']).count().reset_index()
-        tweet_rdf8 = tweet_rdf7.groupby('author').apply(combine_gcc_twitter_count).reset_index(name='ngt')
 
-        tweet_rdf9 = pd.merge(left=tweet_rdf6, right=tweet_rdf8, on='author', how='inner')
-        tweet_rdf9['rngt'] = tweet_rdf9.agg(lambda x: f"{x.ugcc} (#{x.ttc} - {x.ngt})", axis=1)
+        tweet_rdf7 = tweet_rdf3[['author', 'gcc', '_id']
+                                ][tweet_rdf3.author.isin(tweet_rdf6['author'])]
+        tweet_rdf7 = tweet_rdf7.groupby(
+            ['author', 'gcc']).count().reset_index()
+        tweet_rdf8 = tweet_rdf7.groupby('author').apply(
+            combine_gcc_twitter_count).reset_index(name='ngt')
+
+        tweet_rdf9 = pd.merge(
+            left=tweet_rdf6, right=tweet_rdf8, on='author', how='inner')
+        tweet_rdf9['rngt'] = tweet_rdf9.agg(
+            lambda x: f"{x.ugcc} (#{x.ttc} - {x.ngt})", axis=1)
         tweet_rdf9 = tweet_rdf9[['r', 'author', 'rngt']]
-        tweet_rdf9.columns = ['Rank', 'Author Id', 'Number of Unique City Locations and #Tweets']
-        tweet_rdf9.to_csv(f"./data/result/task3-{twitter_file_name}.csv", index=False)
+        tweet_rdf9.columns = ['Rank', 'Author Id',
+                              'Number of Unique City Locations and #Tweets']
+        tweet_rdf9.to_csv(
+            f"./data/result/task3-{twitter_file_name}.csv", index=False)
 
     comm.Barrier()
     # ================================== END TASKS ==================================
@@ -138,7 +156,7 @@ if __name__ == '__main__':
 
         email_target = obtain_email_target(parser)
         send_log(target=email_target)
-        
+
     comm.Barrier()
 
     sys.exit()
