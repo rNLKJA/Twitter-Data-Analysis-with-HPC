@@ -47,8 +47,8 @@ def twitter_processor(filename: Path, cs: int, ce: int) -> pd.DataFrame:
     AUTHOR_ID = r'"author_id":\s*"([^"]+)"'
     LOCATION_ID = r'"full_name":\s*"([^"]+)"'
 
-    SKIP_LINES_1 = 15
-    SKIP_LINES_2 = 15
+    SKIP_LINES_1 = 17  # MAGICS NUMBERS
+    SKIP_LINES_2 = 20
 
     # define results list
     tweet_lst = []

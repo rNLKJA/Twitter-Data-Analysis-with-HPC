@@ -99,86 +99,9 @@ if __name__ == '__main__':
 
     comm.Barrier()
     # =================================== TASK 2 ===================================
-    if rank == 0:
-        logger.info("Start Task 2")
-        tweet_rdf0 = pd.concat(tweet_dfs, axis=0, ignore_index=True)
 
-        tweet_rdf01 = tweet_rdf0[tweet_rdf0.gcc.isna()].copy()
-        tweet_rdf01['location'] = tweet_rdf01.agg(
-            lambda x: x.location.split(' ')[0], axis=1)
-
-        tweet_rdf2 = pd.merge(left=tweet_rdf01, right=sal_df,
-                              on='location', how='inner')
-
-        def return_gcc(gcc_x, gcc_y):
-            return gcc_x if gcc_x == np.nan else gcc_y
-
-        tweet_rdf2['gcc'] = tweet_rdf2.fillna(np.nan).agg(
-            lambda x: return_gcc(x.gcc_x, x.gcc_y), axis=1)
-
-        tweet_rdf2[['_id', 'author', 'location', 'gcc']].to_csv(
-            "./data/processed/task2.csv", index=False)
-
-        tweet_rdf3 = pd.concat([tweet_rdf0[~tweet_rdf0.gcc.isna()][[
-            'gcc', '_id']], tweet_rdf2[['gcc', '_id']]], axis=0, ignore_index=True)
-
-        tweet_rdf3 = tweet_rdf3[~tweet_rdf3.gcc.str.contains('\dr[a-z]{3}')]
-
-        tweet_rdf3 = tweet_rdf3.groupby('gcc').count().reset_index()
-        tweet_rdf3.columns = ['Greater Capital City', 'Number of Tweets Made']
-
-        tweet_rdf3.to_csv(
-            f"./data/result/task2-{twitter_file_name}.csv", index=False)
-
-        logger.info("END TASK 2")
-
-    comm.Barrier()
     # =================================== TASK 3 ===================================
-    if rank == 0:
-        logger.info("Start Task 3")
-        tweet_rdf3 = pd.read_csv(
-            f"./data/processed/task2.csv")
 
-        tweet_rdf3 = tweet_rdf3[~tweet_rdf3.gcc.str.contains(r'\dr[a-z]{3}')]
-
-        tweet_rdf4 = tweet_rdf3[['author', 'gcc']].groupby(
-            'author').nunique('gcc').reset_index()
-        tweet_rdf5 = tweet_rdf3[['author', '_id']].groupby(
-            'author').count().reset_index()
-
-        tweet_rdf6 = pd.merge(
-            left=tweet_rdf4, right=tweet_rdf5, on='author', how='inner')
-        tweet_rdf6.columns = ['author', 'ugcc', 'ttc']
-
-        tweet_rdf6.sort_values(by=['ugcc', 'ttc', 'author'], ascending=[
-                               False, False, True], inplace=True)
-        tweet_rdf6.reset_index(drop=True, inplace=True)
-
-        tweet_rdf6['r'] = tweet_rdf6[['ugcc', 'ttc']].apply(
-            tuple, axis=1).rank(method='min', ascending=False).astype(int)
-
-        tweet_rdf6 = tweet_rdf6[tweet_rdf6['r'] < 11]
-
-        tweet_rdf7 = tweet_rdf3[['author', 'gcc', '_id']
-                                ][tweet_rdf3.author.isin(tweet_rdf6['author'])]
-        tweet_rdf7 = tweet_rdf7.groupby(
-            ['author', 'gcc']).count().reset_index()
-        tweet_rdf8 = tweet_rdf7.groupby('author').apply(
-            combine_gcc_twitter_count).reset_index(name='ngt')
-
-        tweet_rdf9 = pd.merge(
-            left=tweet_rdf6, right=tweet_rdf8, on='author', how='inner')
-        tweet_rdf9['rngt'] = tweet_rdf9.agg(
-            lambda x: f"{x.ugcc} (#{x.ttc} - {x.ngt})", axis=1)
-        tweet_rdf9 = tweet_rdf9[['r', 'author', 'rngt']]
-        tweet_rdf9.columns = ['Rank', 'Author Id',
-                              'Number of Unique City Locations and #Tweets']
-        tweet_rdf9.to_csv(
-            f"./data/result/task3-{twitter_file_name}.csv", index=False)
-
-        logger.info("END TASK 3")
-
-    comm.Barrier()
     # ================================== END TASKS ==================================
     if rank == 0:
         logger.info(f"ALL TASKS COMLETE")
