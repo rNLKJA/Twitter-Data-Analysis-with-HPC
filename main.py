@@ -67,6 +67,7 @@ if __name__ == '__main__':
     comm.Barrier()
 
     # defined a merged dataframe
+    logger.info("Merge data into a single dataframe")
     if rank == 0:
         tweet_dfs = [tweet_df]
         for nproc in range(1, size):
@@ -79,6 +80,7 @@ if __name__ == '__main__':
     # =================================== TASK 1 ===================================
 
     if rank == 0 if size > 1 else 1:
+        logger.info("Start Task 1")
         tweet_rdf0 = pd.concat(tweet_dfs, axis=0, ignore_index=True)
         tweet_rdf1 = tweet_rdf0[
             ['author', '_id']].groupby('author').count().reset_index()
@@ -93,8 +95,10 @@ if __name__ == '__main__':
         tweet_rdf1[['Rank', 'Author Id', 'Number of Tweets Made']].to_csv(
             f'./data/result/task1-{twitter_file_name}.csv', index=False)
 
+        logger.info("END TASK 1")
     # =================================== TASK 2 ===================================
     if rank == 0 if size > 1 else 2:
+        logger.info("Start Task 2")
         tweet_rdf0 = pd.concat(tweet_dfs, axis=0, ignore_index=True)
 
         tweet_rdf01 = tweet_rdf0[tweet_rdf0.gcc.isna()].copy()
@@ -124,11 +128,12 @@ if __name__ == '__main__':
         tweet_rdf3.to_csv(
             f"./data/result/task2-{twitter_file_name}.csv", index=False)
 
+        logger.info("END TASK 2")    
     comm.Barrier()
 
     # =================================== TASK 3 ===================================
     if rank == 0 if size > 1 else 2:
-
+        logger.info("Start Task 3")
         tweet_rdf3 = pd.read_csv(
             f"./data/processed/task2.csv")
 
@@ -169,6 +174,7 @@ if __name__ == '__main__':
         tweet_rdf9.to_csv(
             f"./data/result/task3-{twitter_file_name}.csv", index=False)
 
+        logger.info("END TASK 3")
     comm.Barrier()
     # ================================== END TASKS ==================================
     if rank == 0:
