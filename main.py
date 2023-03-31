@@ -79,7 +79,7 @@ if __name__ == '__main__':
 
     # =================================== TASK 1 ===================================
 
-    if rank == 0 if size > 1 else 1:
+    if rank == 0:
         logger.info("Start Task 1")
         tweet_rdf0 = pd.concat(tweet_dfs, axis=0, ignore_index=True)
         tweet_rdf1 = tweet_rdf0[
@@ -96,8 +96,10 @@ if __name__ == '__main__':
             f'./data/result/task1-{twitter_file_name}.csv', index=False)
 
         logger.info("END TASK 1")
+
+    comm.Barrier()
     # =================================== TASK 2 ===================================
-    if rank == 0 if size > 1 else 2:
+    if rank == 0:
         logger.info("Start Task 2")
         tweet_rdf0 = pd.concat(tweet_dfs, axis=0, ignore_index=True)
 
@@ -128,11 +130,11 @@ if __name__ == '__main__':
         tweet_rdf3.to_csv(
             f"./data/result/task2-{twitter_file_name}.csv", index=False)
 
-        logger.info("END TASK 2")    
-    comm.Barrier()
+        logger.info("END TASK 2")
 
+    comm.Barrier()
     # =================================== TASK 3 ===================================
-    if rank == 0 if size > 1 else 2:
+    if rank == 0:
         logger.info("Start Task 3")
         tweet_rdf3 = pd.read_csv(
             f"./data/processed/task2.csv")
@@ -175,6 +177,7 @@ if __name__ == '__main__':
             f"./data/result/task3-{twitter_file_name}.csv", index=False)
 
         logger.info("END TASK 3")
+
     comm.Barrier()
     # ================================== END TASKS ==================================
     if rank == 0:
@@ -184,7 +187,5 @@ if __name__ == '__main__':
 
         email_target = obtain_email_target(parser)
         send_log(target=email_target)
-
-    comm.Barrier()
 
     sys.exit()

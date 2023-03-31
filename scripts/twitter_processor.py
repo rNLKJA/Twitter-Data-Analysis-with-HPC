@@ -47,6 +47,9 @@ def twitter_processor(filename: Path, cs: int, ce: int) -> pd.DataFrame:
     AUTHOR_ID = r'"author_id":\s*"([^"]+)"'
     LOCATION_ID = r'"full_name":\s*"([^"]+)"'
 
+    SKIP_LINES_1 = 15
+    SKIP_LINES_2 = 15
+
     # define results list
     tweet_lst = []
 
@@ -64,17 +67,26 @@ def twitter_processor(filename: Path, cs: int, ce: int) -> pd.DataFrame:
                 _id = match_id.group(1)
                 tweet_lst.append(Twitter(_id=_id))
 
+                next(f, None)
+                next(f, None)
+
             # find target author id
             match_author = re.search(AUTHOR_ID, line)
             if match_author and tweet_lst:
                 author = match_author.group(1)
                 tweet_lst[-1].author = author
 
+                for _ in range(SKIP_LINES_1):  # skip 20 lines
+                    next(f, None)
+
             # find target location name
             match_location = re.search(LOCATION_ID, line)
             if match_location and tweet_lst:
                 location = match_location.group(1)
                 tweet_lst[-1].location = location
+
+                for _ in range(SKIP_LINES_2):  # skip 20 lines
+                    next(f, None)
 
             # break condition check
             if f.tell() >= ce:
