@@ -46,18 +46,20 @@ Main Python dependencies: python=3.7.4, mpi4py=3.0.4, numpy, pandas.
 
 **Task 1 Question**: The solution should count the number of tweets made by the same individual based on the bigTwitter.json file and returned the top 10 tweeters in terms of the number of tweets made irrespective of where they tweeted. The result will be of the form (where the author Ids and tweet numbers are representative).
 
-|Rank | Author Id | Number of Tweets Made |
-| :----: | :---- | :----: |
-|1|719139700318081024|15311|
-|2|895324410395021312|8072|
-|3|93730228|8071|
-|4|15015082|7712|
-|5|1402087599255089155|7658|
-|6|156974829|7471|
-|7|1172400317104709632|7091|
-|8|34172405|7063|
-|9|3005691210|6983|
-|10|1159996035818590208|6762|
+| Rank | Author Id | Number of Tweets Made |
+|----|----|----|
+| 1	| 1498063511204760000|  	68477| 
+| 2	| 1089023364973210000|  	28128| 
+| 3	| 826332877457481000 | 	27718| 
+| 4	| 1250331934242120000 | 	25350| 
+| 5	| 1423662808311280000 | 	21034| 
+| 6	| 1183144981252280000 | 	20765| 
+| 7	| 1270672820792500000 | 	20503| 
+| 8	| 820431428835885000 | 	20063| 
+| 9	| 778785859030003000 | 	19403| 
+| 10| 	1104295492433760000 | 	18781| 
+
+
 
 **Task 2 Question**: Using the *bigTwitter.json* and *sal.json* file you will then count the number of tweets made in the various captical cities by all users. The result will be a table of the form (where the numbers are representative). 
 
