@@ -83,13 +83,10 @@ if __name__ == '__main__':
         tweet_rdf1 = tweet_rdf0[
             ['author', '_id']].groupby('author').count().reset_index()
         tweet_rdf1['rank'] = tweet_rdf1._id.rank(
-            method="first", ascending=False)
+            method="min", ascending=False)
 
         tweet_rdf1.columns = ['Author Id', 'Number of Tweets Made', 'Rank']
 
-        tweet_rdf1.sort_values(
-            by=['Rank', "Author Id"], ascending=True).to_csv(
-            f'./data/result/task1-{twitter_file_name}00.csv', index=False)
         tweet_rdf1 = tweet_rdf1[tweet_rdf1['Rank'] < 11].sort_values(
             by=['Rank', "Author Id"], ascending=True)
 
@@ -98,13 +95,30 @@ if __name__ == '__main__':
 
     # =================================== TASK 2 ===================================
     if rank == 0 if size > 1 else 2:
-        tweet_rdf0 = pd.concat(tweet_dfs, axis=0, ignore_index=True).dropna()
-        tweet_rdf2 = tweet_rdf0[~tweet_rdf0['gcc'].str.contains(
-            r"\dr[a-z]{3}")][['gcc', '_id']].groupby('gcc').count().reset_index()
+        tweet_rdf0 = pd.concat(tweet_dfs, axis=0, ignore_index=True)
 
-        tweet_rdf2.columns = ['Greater Capital City', 'Number of Tweets Made']
+        tweet_rdf01 = tweet_rdf0[tweet_rdf0.gcc.isna()].copy()
+        tweet_rdf01['location'] = tweet_rdf01.agg(
+            lambda x: x.location.split(' ')[0], axis=1)
 
-        tweet_rdf2.to_csv(
+        tweet_rdf2 = pd.merge(left=tweet_rdf01, right=sal_df,
+                              on='location', how='inner')
+
+        def return_gcc(gcc_x, gcc_y):
+            return gcc_x if gcc_x == np.nan else gcc_y
+
+        tweet_rdf2['gcc'] = tweet_rdf2.fillna(np.nan).agg(
+            lambda x: return_gcc(x.gcc_x, x.gcc_y), axis=1)
+
+        tweet_rdf3 = pd.concat([tweet_rdf0[~tweet_rdf0.gcc.isna()][[
+            'gcc', '_id']], tweet_rdf2[['gcc', '_id']]], axis=0, ignore_index=True)
+
+        tweet_rdf3 = tweet_rdf3[~tweet_rdf3.gcc.str.contains('\dr[a-z]{3}')]
+
+        tweet_rdf3 = tweet_rdf3.groupby('gcc').count().reset_index()
+        tweet_rdf3.columns = ['Greater Capital City', 'Number of Tweets Made']
+
+        tweet_rdf3.to_csv(
             f"./data/result/task2-{twitter_file_name}.csv", index=False)
 
     # =================================== TASK 3 ===================================
@@ -126,7 +140,8 @@ if __name__ == '__main__':
                                False, False, True], inplace=True)
         tweet_rdf6.reset_index(drop=True, inplace=True)
 
-        tweet_rdf6.to_csv(f"./data/processed/{twitter_file_name}", index=False)
+        tweet_rdf6.to_csv(
+            f"./data/processed/{twitter_file_name}", index=False)
 
         tweet_rdf6 = tweet_rdf6.loc[0:9]
         tweet_rdf6['r'] = np.arange(1, 11, 1)
