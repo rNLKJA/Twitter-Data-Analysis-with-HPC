@@ -287,10 +287,10 @@ def count_number_of_tweets_by_author(tdf: pl.DataFrame) -> pl.DataFrame:
     return author_tweet_count
 
 
-def calculate_rank(tdf: pl.DataFrame, method: str) -> pl.DataFrame:
+def calculate_rank(tdf: pl.DataFrame, method: str, column: str) -> pl.DataFrame:
     """ """
     return tdf.with_columns(
-        pl.col("tweet_count").rank(method=method, descending=True).alias("rank")
+        pl.col(column).rank(method=method, descending=True).alias("rank")
     )
 
 
@@ -348,3 +348,93 @@ def return_gcc_with_tweets_count(
         return
     else:
         return tdf
+
+def return_author_tweets_from_most_different_gcc(tdf: pl.DataFrame) -> pl.DataFrame:
+    """
+    Count the most different gcc for each author
+    """
+
+    tdf1 = (
+        tdf.filter(~pl.col("gcc").is_null())
+        .filter(~pl.col("gcc").str.contains(r"\dr[a-z]{3}"))
+        .select('author_id', 'gcc', 'tweet_id')
+        .groupby(['author_id', 'gcc'])
+        .agg(pl.count('tweet_id').alias('tweet_count'))
+    )
+    
+    return tdf1
+
+def generate_task_3_result(tdf: pl.DataFrame, save: bool, path: Path) -> pl.DataFrame:
+    """
+    Generate the result for task 3
+    
+    Args:
+        tdf (pl.DataFrame): a polars dataframe contains author_id, gcc, tweet_count
+        save (bool): whether to save the result to csv file
+        path (Path): the path to save the result
+    Return:
+        pl.DataFrame: a polars dataframe contains author_id, gcc, tweet_count
+    """
+    
+    tdf1 = tdf.groupby('author_id').agg(
+        pl.col('gcc').n_unique().alias('gcc_count'),
+        pl.col('tweet_count').sum()
+    ).sort('gcc_count', 'tweet_count', 'author_id', descending=[True, True, False])
+    
+    tdf1 = tdf1.with_columns(pl.col('gcc_count').rank(method='ordinal', descending=True).alias('rank'))
+    tdf1 = tdf1.filter(pl.col('rank') < 11)
+    
+    tdf2 = tdf.filter(pl.col('author_id').is_in(tdf1['author_id'])).groupby('author_id', 'gcc').agg(
+        pl.col('tweet_count').sum()
+    ).sort('tweet_count', 'author_id', descending=[True, True])
+    
+    # store current dataframe for visualisation purpose
+    tdf2.write_csv(path / 'data/result/task3_1.csv')
+    
+    tdf3 = concate_count_dict_with_rank_df(generate_count_dict(tdf2))
+    
+    tdf4 = tdf1.join(tdf3, on='author_id')
+    
+    
+    
+    tdf4 = tdf4.with_columns([pl.concat_str([pl.col('gcc_count'), pl.lit(' (#'), pl.col('tweet_count'), pl.lit(' - '), pl.col('nugt'), pl.lit(')')]).alias('gtc')]).select('rank', 'author_id', 'gtc')
+    tdf4.columns = ['Rank', 'Author Id', 'Number of Unique City Locations and #Tweets']
+
+    if save:
+        tdf4.sort('Rank').write_csv(path / "data/result/task3.csv")
+        return
+    return tdf4
+    
+def generate_count_dict(tdf: pl.DataFrame) -> dict:
+    """
+    Generate a dictionary contains the count of each gcc for each author
+    
+    Args:
+        tdf (pl.DataFrame): a polars dataframe contains author_id, gcc, tweet_count
+    """
+    count_dict = dict()
+    for row in tdf.iter_rows():
+        key = row[0]
+        if key not in count_dict:
+            count_dict[key] = {row[1]: 0}
+            
+        if row[1] not in count_dict[key]:
+            count_dict[key][row[1]] = row[2]
+        else:
+            count_dict[key][row[1]] += row[2]
+    return count_dict
+    
+def concate_count_dict_with_rank_df(count_dict: dict) -> pl.DataFrame:
+    """
+    concate the count_dict with the rank dataframe, generate a dataframe contains author_id, gcc_count, tweet_count, nugt where nugt is a string representation of gcc_count, tweet_count
+    
+    Args:
+        count_dict (dict): a dictionary contains the count of each gcc for each author
+    Return:
+        pl.DataFrame: a polars dataframe contains author_id, gcc_count, tweet_count, nugt
+    """
+    strings = []
+    for key in count_dict.keys():
+        strings.append(", ".join([f"#{v}{k[1:]}" for k, v in count_dict[key].items()]))
+        
+    return pl.DataFrame({'author_id': count_dict.keys(), 'nugt': strings})
