@@ -9,11 +9,20 @@ from pathlib import Path
 import logging
 from .utils import obtain_sal_file_name
 from .arg_parser import parser
+import polars as pl
 
 sal_file_name = obtain_sal_file_name(parser=parser)
 
+# location dictionary for ambigious place, these place 
+# should be include / count as gcc
 
-def process_salV1(path: Path, logger: logging) -> pd.DataFrame:
+location_dict = {
+    "sydney nsw": "sydney",
+    "melbourne vic": "melbourne",
+    "brisbane qld": "brisbane",
+} 
+
+def process_salV1(path: Path, logger: logging) -> pl.DataFrame:
     """
     Process sal.json file by removing irrelevant attributes,
     case 0: remove any gcc containing char r (r represents rural)
@@ -43,7 +52,7 @@ def process_salV1(path: Path, logger: logging) -> pd.DataFrame:
     logger.info("Substitude \. with an empty string")
     df.location = df.agg(lambda x: re.sub("\.", "", x.location), axis=1)
 
-    return df
+    return pl.from_pandas(df)
 
 
 def process_sal(path: Path, logger: logging) -> pd.DataFrame:

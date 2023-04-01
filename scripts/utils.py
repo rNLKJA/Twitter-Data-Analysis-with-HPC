@@ -11,6 +11,7 @@ import math
 import copy
 from mpi4py import MPI
 import re
+from scripts.logger import twitter_logger as logger
 
 
 def obtain_twitter_file_name(parser: argparse.ArgumentParser) -> str:
@@ -70,8 +71,9 @@ state_location = dict(zip([s.lower() for s in ['Australian Capital Territory',
                                                'NT', 'QLD', 'SA',
                                                'TAS', 'VIC', 'WA']]))
 
-city_location = dict(zip([s.lower() for s in ['Canberra', 'Sydney', 'Darwin', 'Brisbane',
-                                              'Adelaide', 'Hobart', 'Melbourne', 'Perth']],
+gccs = ['Canberra', 'Sydney', 'Darwin', 'Brisbane',
+        'Adelaide', 'Hobart', 'Melbourne', 'Perth']
+city_location = dict(zip([s.lower() for s in gccs],
                          [s.lower() for s in ['CAN', 'SYD', 'DAR', 'BRI',
                                               'ADE', 'HOB', 'MEL', 'PER']]))
 
@@ -86,10 +88,14 @@ def normalise_location(location: str) -> str:
     text = re.sub(r'[^\w\s]', '', text)
     text = re.sub(r' - ', '', text)
 
+    if location.split(',')[0] in gccs:
+        text = location.split(',')[0].lower()
+
     for key, value in state_location.items():
         text = re.sub(key, value, text)
 
-    return text
+    
+    return re.sub(' +', ' ', text)
 
 
 INVALID_LOCATION = ['act australia',
@@ -118,3 +124,20 @@ def combine_gcc_twitter_count(x):
         else:
             count[row['gcc']] = row['_id']
     return " ,".join([f"#{str(v)}{k[1:]}" for k, v in count.items()])
+
+def log_current_information(twitter_file_name: str, size: int, rank: int):
+    """
+    Log current information about the current process.
+    """
+    if rank == 0:
+        logger.info(f"Current running on {size} nodes\n")
+        logger.info(f"Target file: {twitter_file_name}\n")
+    return
+
+def log_system_information():
+    """
+    Log system information
+    """
+    logger.info(f"System information: {MPI.Get_processor_name()}\n")
+    return
+
