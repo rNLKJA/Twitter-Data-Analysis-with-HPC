@@ -63,6 +63,7 @@ if __name__ == "__main__":
     
     t1_tdf = count_number_of_tweets_by_author(tdf)
     t2_tdf = count_number_of_tweets_by_gcc(tdf)
+    t3_tdf = return_author_tweets_from_most_different_gcc(tdf)
 
     # =================================== TASK 1 ===================================
 
@@ -75,7 +76,7 @@ if __name__ == "__main__":
 
     if rank == task1_rank:
         t1_tdfs = combine_tdf(t1_tdfs).groupby("author_id").sum()
-        t1_tdfs = calculate_rank(tdf=t1_tdfs, method="min")
+        t1_tdfs = calculate_rank(tdf=t1_tdfs, method="min", column="tweet_count")
         return_author_with_most_tweets(t1_tdfs, top=10, save=True, path=PATH)
 
     # =================================== TASK 2 ===================================
@@ -91,7 +92,16 @@ if __name__ == "__main__":
         return_gcc_with_tweets_count(t2_tdfs, save=True, path=PATH)
 
     # =================================== TASK 3 ===================================
+    if rank == task3_rank:
+        t3_tdfs = [t3_tdf]
+        for nproc in [i for i in range(size) if i != task3_rank]:
+            t3_tdfs.append(comm.recv(source=nproc))
+    else:
+        comm.send(t3_tdf, dest=task3_rank)
 
+    if rank == task3_rank:
+        t3_tdfs = combine_tdf(t3_tdfs)
+        generate_task_3_result(t3_tdfs, save=True, path=PATH)
 
     # ================================== END TASKS ==================================
     if rank == 0:

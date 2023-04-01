@@ -80,18 +80,18 @@ For this task, ignore tweets made by users in rural location, e.g. _lrnsw_ (Rura
 
 **Task 3 Question**: The solution should identify those tweeters that have a tweeted in the most Greater Capital cities and the number of times they have tweeted from those locations. The top 10 tweeters making tweets from the most different locations should be returned and if there are equal number of locations, then these should be ranked by the number of tweets. Only those tweets made in Greater Capital cities should be counted.
 
-| Rank | Author Id           | Number of Unique City Locations and #Tweets                                   |
-| :--: | :------------------ | :---------------------------------------------------------------------------- |
-|  1   | 702290904460169216  | 8 (#206 - #5gsyd ,#12gmel ,#7gbri ,#8gade ,#127gper ,#2ghob ,#1gdar ,#44acte) |
-|  2   | 87188071            | 5 (#82 - #1gsyd ,#2gmel ,#1gbri ,#45gper ,#33acte)                            |
-|  3   | 61220731            | 4 (#646 - #109gmel ,#39gbri ,#29gade ,#469acte)"                              |
-|  4   | 921197448885886977  | 4 (#39 - #2gmel ,#4gade ,#27gper ,#6acte)                                     |
-|  5   | 228664718           | 4 (#36 - #4gsyd ,#1gbri ,#27gper ,#4acte)                                     |
-|  6   | 2225880756          | 4 (#13 - #4gsyd ,#5gdar ,#3acte ,#1oter)                                      |
-|  7   | 1482557020528332801 | 4 (#6 - #1gsyd ,#2gbri ,#2gper ,#1acte)                                       |
-|  8   | 987122373395595264  | 4 (#5 - #1gsyd ,#1gbri ,#1gade ,#2acte)                                       |
-|  9   | 355186886           | 3 (#404 - #358gmel ,#1gper ,#45acte)                                          |
-|  10  | 565012072           | 3 (#111 - #1gsyd ,#1gper ,#109acte)                                           |
+| Rank | Author Id           | Number of Unique City Locations and #Tweets                                             |
+| :--: | :------------------ | :-------------------------------------------------------------------------------------- |
+|  #1  | 1429984556451389440 | 8 (#1920 - #1879gmel, #13acte, #11gsyd, #7gper, #6gbri, #2gade, #1gdar, #1ghob)         |
+|  #3  | 17285408            | 8 (#1209 - #1061gsyd, #60gmel, #40gbri, #23acte, #11ghob, #7gper, #4gdar, #3gade)       |
+|  #2  | 702290904460169216  | 8 (#1231 - #336gsyd, #255gmel, #235gbri, #156gper, #127gade, #56acte, #45ghob, #21gdar) |
+|  #7  | 502381727           | 8 (#250 - #214gmel, #10acte, #8gbri, #8ghob, #4gade, #3gper, #2gsyd, #1gdar)            |
+|  #6  | 1361519083          | 8 (#266 - #193gdar, #36gmel, #18gsyd, #9gade, #6acte, #2ghob, #1gbri, #1gper)           |
+|  #4  | 87188071            | 8 (#407 - #116gsyd, #86gmel, #68gbri, #52gper, #37acte, #28gade, #15ghob, #5gdar)       |
+|  #8  | 921197448885886977  | 8 (#207 - #56gmel, #49gsyd, #37gbri, #28gper, #24gade, #8acte, #4ghob, #1gdar)          |
+|  #9  | 601712763           | 8 (#146 - #44gsyd, #39gmel, #19gade, #14gper, #11gbri, #10acte, #8ghob, #1gdar)         |
+|  #5  | 774694926135222272  | 8 (#272 - #38gmel, #37gbri, #37gsyd, #36ghob, #34acte, #34gper, #28gdar, #28gade)       |
+| #10  | 2647302752          | 8 (#80 - #32gbri, #16gmel, #13gsyd, #5ghob, #4gper, #4acte, #3gade, #3gdar)             |
 
 For complete assignment 1 report, please check [overleaf](https://www.overleaf.com/read/sdsczmmdxzvq).
 
