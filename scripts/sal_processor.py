@@ -9,16 +9,26 @@ from pathlib import Path
 import logging
 from .utils import obtain_sal_file_name
 from .arg_parser import parser
+import polars as pl
 
 sal_file_name = obtain_sal_file_name(parser=parser)
 
+# location dictionary for ambigious place, these place
+# should be include / count as gcc
 
-def process_salV1(path: Path, logger: logging) -> pd.DataFrame:
+location_dict = {
+    "sydney nsw": "sydney",
+    "melbourne vic": "melbourne",
+    "brisbane qld": "brisbane",
+}
+
+
+def process_salV1(path: Path, logger: logging) -> pl.DataFrame:
     """
     Process sal.json file by removing irrelevant attributes,
     case 0: remove any gcc containing char r (r represents rural)
     case 1: remove all brackets
-    case 2: remove all " - " 
+    case 2: remove all " - "
     case 3: remove all "\."
     Then store the final result into a csv file.
 
@@ -27,9 +37,9 @@ def process_salV1(path: Path, logger: logging) -> pd.DataFrame:
     logger.info("Loading sal.json into pandas")
     # load sal.json file & reset index
     df = pd.read_json(path / f"data/{sal_file_name}", orient="index")
-    df = df.reset_index().rename(columns={'index': 'location'})
+    df = df.reset_index().rename(columns={"index": "location"})
 
-    df.drop(['ste', 'sal'], axis=1, inplace=True)
+    df.drop(["ste", "sal"], axis=1, inplace=True)
 
     # case1: replace all brackets with an empty string
     logger.info("Substitute brackets in location")
@@ -42,8 +52,22 @@ def process_salV1(path: Path, logger: logging) -> pd.DataFrame:
     # case3: replace "\." with ""
     logger.info("Substitude \. with an empty string")
     df.location = df.agg(lambda x: re.sub("\.", "", x.location), axis=1)
+    
+    # case 4: consider ngram like locations
+    # generate a new dataframe and concate to the original one
+    def split_location_into_ngrams(location):
+        words = location.split(' ')
+        if len(words) > 2:
+            return [' '.join(x) for x in zip(words, words[1:])]
+        return None
 
-    return df
+    df1 = df.copy()
+    df1['location'] = df1.location.apply(lambda x: split_location_into_ngrams(x))
+    df1 = df1.dropna()[['location', 'gcc']].explode('location')
+    
+    df = pd.concat([df, df1], ignore_index=True, axis=0)
+
+    return pl.from_pandas(df)
 
 
 def process_sal(path: Path, logger: logging) -> pd.DataFrame:
@@ -51,7 +75,7 @@ def process_sal(path: Path, logger: logging) -> pd.DataFrame:
     Process sal.json file by removing irrelevant attributes,
     case 0: remove any gcc containing char r (r represents rural)
     case 1: remove all brackets
-    case 2: remove all " - " 
+    case 2: remove all " - "
     case 3: remove all "\."
     Then store the final result into a csv file.
 
@@ -60,10 +84,10 @@ def process_sal(path: Path, logger: logging) -> pd.DataFrame:
     logger.info("Loading sal.json into pandas")
     # load sal.json file & reset index
     df = pd.read_json(path / f"data/{sal_file_name}", orient="index")
-    df = df.reset_index().rename(columns={'index': 'location'})
+    df = df.reset_index().rename(columns={"index": "location"})
 
     # drop unused columns
-    df.drop(['ste', 'sal'], axis=1, inplace=True)
+    df.drop(["ste", "sal"], axis=1, inplace=True)
 
     # case0: drop any rural sal value, this won't be use in the future
     # logger.info("Remove any location not in city")
@@ -88,7 +112,7 @@ def process_sal(path: Path, logger: logging) -> pd.DataFrame:
 
     # store result to a csv file
     logger.info("Store sal.csv file.")
-    df.to_csv(path/"data/processed/sal.csv", index=False)
+    df.to_csv(path / "data/processed/sal.csv", index=False)
 
 
 def sal_csv_exist(path: Path, logger: logging):
