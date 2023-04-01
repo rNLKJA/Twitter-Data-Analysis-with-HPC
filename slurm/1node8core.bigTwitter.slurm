@@ -21,7 +21,7 @@ module --force purge
 module load mpi4py/3.0.2-timed-pingpong
 
 source ~/virtualenv/python3.7.4/bin/activate
-pip install numpy pandas polars 
+pip install numpy pandas 'polars[all]' 
 
 ##run main program here
 mpiexec -n 8 python main.py -t "bigTwitter.json" -s "sal.json"
