@@ -47,17 +47,17 @@ Main Python dependencies: python=3.7.4, mpi4py=3.0.4, numpy, pandas.
 **Task 1 Question**: The solution should count the number of tweets made by the same individual based on the bigTwitter.json file and returned the top 10 tweeters in terms of the number of tweets made irrespective of where they tweeted. The result will be of the form (where the author Ids and tweet numbers are representative).
 
 | Rank | Author Id           | Number of Tweets Made |
-| ---- | ------------------- | --------------------- |
-| 1    | 1498063511204760000 | 68477                 |
-| 2    | 1089023364973210000 | 28128                 |
-| 3    | 826332877457481000  | 27718                 |
-| 4    | 1250331934242120000 | 25350                 |
-| 5    | 1423662808311280000 | 21034                 |
-| 6    | 1183144981252280000 | 20765                 |
-| 7    | 1270672820792500000 | 20503                 |
-| 8    | 820431428835885000  | 20063                 |
-| 9    | 778785859030003000  | 19403                 |
-| 10   | 1104295492433760000 | 18781                 |
+| :--- | ------------------- | :-------------------: |
+| #1   | 1498063511204760000 |        68,477         |
+| #2   | 1089023364973210000 |        28,128         |
+| #3   | 826332877457481000  |        27,718         |
+| #4   | 1250331934242120000 |        25,350         |
+| #5   | 1423662808311280000 |        21,034         |
+| #6   | 1183144981252280000 |        20,765         |
+| #7   | 1270672820792500000 |        20,503         |
+| #8   | 820431428835885000  |        20,063         |
+| #9   | 778785859030003000  |        19,403         |
+| #10  | 1104295492433760000 |        18,781         |
 
 **Task 2 Question**: Using the _bigTwitter.json_ and _sal.json_ file you will then count the number of tweets made in the various captical cities by all users. The result will be a table of the form (where the numbers are representative).
 
@@ -65,14 +65,14 @@ For this task, ignore tweets made by users in rural location, e.g. _lrnsw_ (Rura
 
 | Greater Capital City | Number of Tweets Made |
 | :------------------: | :-------------------: |
-|        1gsyd         |        2114445        |
-|        2gmel         |        2280650        |
-|        3gbri         |        855383         |
-|        4gade         |        473982         |
-|        5gper         |        589204         |
-|        6ghob         |         90917         |
-|        7gdar         |         46376         |
-|        8acte         |        195459         |
+|        1gsyd         |       2,114,445       |
+|        2gmel         |       2,280,650       |
+|        3gbri         |        855,383        |
+|        4gade         |        473,982        |
+|        5gper         |        589,204        |
+|        6ghob         |        90,917         |
+|        7gdar         |        46,376         |
+|        8acte         |        195,459        |
 |        9oter         |          203          |
 
 **Task 3 Question**: The solution should identify those tweeters that have a tweeted in the most Greater Capital cities and the number of times they have tweeted from those locations. The top 10 tweeters making tweets from the most different locations should be returned and if there are equal number of locations, then these should be ranked by the number of tweets. Only those tweets made in Greater Capital cities should be counted.
