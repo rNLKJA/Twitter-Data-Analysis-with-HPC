@@ -10,8 +10,8 @@ Github: https://github.com/rNLKJA/2023-S1-COMP90024-A1/
 
 """
 
-from scripts.twitter_processor import twitter_processor
-from scripts.utils import obtain_twitter_file_name, split_file_into_chunks, obtain_email_target, combine_gcc_twitter_count
+from scripts.twitter_processor import *
+from scripts.utils import *
 from scripts.sal_processor import process_salV1
 from scripts.logger import twitter_logger as logger
 from scripts.arg_parser import parser
@@ -20,12 +20,16 @@ import time
 from pathlib import Path
 import pandas as pd
 import numpy as np
+import polars as pl
 
 from mpi4py import MPI
 
 import sys
 import os
-os.environ['NUMEXPR_MAX_THREADS'] = '32'
+
+os.environ["NUMEXPR_MAX_THREADS"] = "32"
+
+log_system_information()
 
 logger.info("PROGRAM START")
 
@@ -42,71 +46,62 @@ sal_df = process_salV1(path=PATH, logger=logger)
 comm = MPI.COMM_WORLD
 rank, size = comm.Get_rank(), comm.Get_size()
 
-if rank == 0:
-    logger.info(f"Current running on {size} nodes\n")
-    logger.info(f"Target file: {twitter_file_name}\n")
+log_current_information(twitter_file_name, size, rank)
 
-comm.Barrier()
+task1_rank = 0 if size == 1 else 0
+task2_rank = 0 if size == 1 else 1
+task3_rank = 0 if size == 1 else 2
 
 # define timer start
 start_time = time.time()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # return a list which specify the file bytes each process need to processed
     chunk_start, chunk_end = split_file_into_chunks(twitter_file, size)
-    # logger.info(f"Process chunk: {chunk_start[rank]} - {chunk_end[rank]}\n")
 
-    comm.Barrier()
+    tdf = twitter_processor(twitter_file, chunk_start[rank], chunk_end[rank], sal_df)
 
-    tweet_df = twitter_processor(
-        twitter_file, chunk_start[rank], chunk_end[rank])
-    tweet_df = pd.merge(
-        tweet_df, sal_df, left_on='location', right_on='location', how="left")
-
-    logger.info("File read complete")
-    comm.Barrier()
-
-    # defined a merged dataframe
-    logger.info("Merge data into a single dataframe")
-    if rank == 0:
-        tweet_dfs = [tweet_df]
-        for nproc in range(1, size):
-            tweet_dfs.append(comm.recv(source=nproc))
-    else:
-        comm.send(tweet_df, dest=0)
-
-    comm.Barrier()
-
+    t1_tdf = count_number_of_tweets_by_author(tdf)
+    t2_tdf = count_number_of_tweets_by_gcc(tdf)
     # =================================== TASK 1 ===================================
 
-    if rank == 0:
-        logger.info("Start Task 1")
-        tweet_rdf0 = pd.concat(tweet_dfs, axis=0, ignore_index=True)
-        tweet_rdf1 = tweet_rdf0[
-            ['author', '_id']].groupby('author').count().reset_index()
-        tweet_rdf1['rank'] = tweet_rdf1._id.rank(
-            method="min", ascending=False)
+    if rank == task1_rank:
+        t1_tdfs = [t1_tdf]
+        for nproc in [i for i in range(size) if i != task1_rank]:
+            t1_tdfs.append(comm.recv(source=nproc))
+    else:
+        comm.send(t1_tdf, dest=task1_rank)
 
-        tweet_rdf1.columns = ['Author Id', 'Number of Tweets Made', 'Rank']
+    if rank == task1_rank:
+        t1_tdfs = combine_tdf(t1_tdfs).groupby("author_id").sum()
+        t1_tdfs = calculate_rank(tdf=t1_tdfs, method="min")
+        return_author_with_most_tweets(t1_tdfs, top=10, save=True, path=PATH)
 
-        tweet_rdf1 = tweet_rdf1[tweet_rdf1['Rank'] < 11].sort_values(
-            by=['Rank', "Author Id"], ascending=True)
-
-        tweet_rdf1[['Rank', 'Author Id', 'Number of Tweets Made']].to_csv(
-            f'./data/result/task1-{twitter_file_name}.csv', index=False)
-
-        logger.info("END TASK 1")
-
-    comm.Barrier()
     # =================================== TASK 2 ===================================
+    if rank == task2_rank:
+        t2_tdfs = [t2_tdf]
+        for nproc in [i for i in range(size) if i != task2_rank]:
+            t2_tdfs.append(comm.recv(source=nproc))
+    else:
+        comm.send(t2_tdf, dest=task2_rank)
+
+    if rank == task2_rank:
+        t2_tdfs = combine_tdf(t2_tdfs).groupby("gcc").sum()
+        return_gcc_with_tweets_count(t2_tdfs, save=True, path=PATH)
+
+        logger.info("TASK 2 COMPLETE")
 
     # =================================== TASK 3 ===================================
+    if rank == 0:
+        logger.info("TASK 3 START")
+
+        logger.info("TASK 3 COMPLETE")
 
     # ================================== END TASKS ==================================
     if rank == 0:
         logger.info(f"ALL TASKS COMLETE")
         end_time = time.time()
-        logger.info(f'Programming running seconds: {end_time - start_time}')
+        logger.info(f"Programming running seconds: {end_time - start_time}")
 
         email_target = obtain_email_target(parser)
         send_log(target=email_target)
