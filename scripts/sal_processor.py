@@ -52,6 +52,20 @@ def process_salV1(path: Path, logger: logging) -> pl.DataFrame:
     # case3: replace "\." with ""
     logger.info("Substitude \. with an empty string")
     df.location = df.agg(lambda x: re.sub("\.", "", x.location), axis=1)
+    
+    # case 4: consider ngram like locations
+    # generate a new dataframe and concate to the original one
+    def split_location_into_ngrams(location):
+        words = location.split(' ')
+        if len(words) > 2:
+            return [' '.join(x) for x in zip(words, words[1:])]
+        return None
+
+    df1 = df.copy()
+    df1['location'] = df1.location.apply(lambda x: split_location_into_ngrams(x))
+    df1 = df1.dropna()[['location', 'gcc']].explode('location')
+    
+    df = pd.concat([df, df1], ignore_index=True, axis=0)
 
     return pl.from_pandas(df)
 
