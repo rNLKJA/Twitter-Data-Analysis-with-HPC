@@ -20,7 +20,7 @@
 module --force purge
 module load mpi4py/3.0.2-timed-pingpong
 module load python/3.7.4
-pip3 install numpy pandas 
+pip3 install numpy pandas polars
 
 ##run main program here
 mpiexec -n 8 python main.py -t "bigTwitter.json" -s "sal.json"
