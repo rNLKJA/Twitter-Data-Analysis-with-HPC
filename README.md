@@ -16,36 +16,37 @@ More information, please visit [project wiki](https://github.com/rNLKJA/2023-S1-
 
 ```
 A1
-|   |── data
-|       |── processed
-|       |── result
-|── notebooks
-|── scripts
-|── slurm
+|   |── data             # store raw data
+|       |── processed    # store processed data
+|       |── result       # store output files
+|── notebooks            # processing and visualisation notebooks
+|── scripts              # main program scripts
+|── slurm                # slurm job scripts
 |── doc
-|   |── log
+|   |── log              # program log file
 |   |── slurm
-|       |── stderr
-|       |── stdout
-|── requirements.txt
+|       |── stderr       # slurm standard error
+|       |── stdout       # slurm standard output
+|── requirements.txt     # python dependencies
 └── README.md
 ```
 
 ## To start the program
 
 ```bash
-mpiexec -n [NUM_PROCESSORS] python main.py -t [TWITTER_FILE] -s [SAL_FILE] --email [EMAIL_TARGET]
+mpiexec -n [NUM_PROCESSORS] python main.py -t [TWITTER_FILE] -s [SAL_FILE] -e [EMAIL_TARGET]
 ```
 
 ## Assignment Dependencies
 
-Main Python dependencies: python=3.7.4, mpi4py=3.0.4, numpy, pandas.
+Main Python dependencies: `python=3.7.4`, `mpi4py=3.0.4`, `*polars*`, `numpy`, `pandas`.
 
-<!-- TODO: provide request dependence information and installatino methods, it will be good if there is a auto install/deployment script -->
+```{bash}
+# install dependencies
+pip install -r requirements.txt
+```
 
 ## Assignment report
-
-<!-- Write a short project outcomes here -->
 
 **Task 1 Question**: The solution should count the number of tweets made by the same individual based on the bigTwitter.json file and returned the top 10 tweeters in terms of the number of tweets made irrespective of where they tweeted. The result will be of the form (where the author Ids and tweet numbers are representative).
 
@@ -99,9 +100,6 @@ For complete assignment 1 report, please check [overleaf](https://www.overleaf.c
 
 The code will be public after 27th May 2023. For @copyright information please refer to [MIT License](./LICENSE).
 
-<!-- TODO: create MIT license -->
-
 ---
 
-<!-- TODO: write team name -->
 <p align=right>2023@Wei & Sunchuangyu</p>
