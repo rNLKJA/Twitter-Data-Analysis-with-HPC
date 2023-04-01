@@ -17,7 +17,7 @@ FULL_PATH = LOGFILE_PATH / f"twitter-{time_string}.log"
 # logger configuration
 logging.basicConfig(
     filename=LOGFILE_PATH / f"twitter-{time_string}.log",
-    filemode='w',
+    filemode="w",
     format="[%(levelname)-7s] [%(filename)-10s:%(lineno)d] %(asctime)s \n%(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
     level=logging.INFO,
