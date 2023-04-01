@@ -25,3 +25,5 @@ pip3 install numpy pandas polars
 ##run main program here
 mpiexec -n 8 python main.py -t "bigTwitter.json" -s "sal.json"
 
+##stdout current job status
+my-job-stats -a -n -s
