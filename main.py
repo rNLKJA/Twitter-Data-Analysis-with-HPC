@@ -36,7 +36,7 @@ logger.info("PROGRAM START")
 # define constants
 PATH = Path()
 
-# load kwargs & required sal.csv file
+# load kwargs & required sal.csnv file
 twitter_file_name = obtain_twitter_file_name(parser)
 twitter_file = PATH / "data" / twitter_file_name
 
@@ -59,10 +59,11 @@ if __name__ == "__main__":
     # return a list which specify the file bytes each process need to processed
     chunk_start, chunk_end = split_file_into_chunks(twitter_file, size)
 
-    tdf = twitter_processor(twitter_file, chunk_start[rank], chunk_end[rank], sal_df)
-
+    tdf = twitter_processorV1(twitter_file, chunk_start[rank], chunk_end[rank], sal_df)
+    
     t1_tdf = count_number_of_tweets_by_author(tdf)
     t2_tdf = count_number_of_tweets_by_gcc(tdf)
+
     # =================================== TASK 1 ===================================
 
     if rank == task1_rank:
@@ -89,13 +90,8 @@ if __name__ == "__main__":
         t2_tdfs = combine_tdf(t2_tdfs).groupby("gcc").sum()
         return_gcc_with_tweets_count(t2_tdfs, save=True, path=PATH)
 
-        logger.info("TASK 2 COMPLETE")
-
     # =================================== TASK 3 ===================================
-    if rank == 0:
-        logger.info("TASK 3 START")
 
-        logger.info("TASK 3 COMPLETE")
 
     # ================================== END TASKS ==================================
     if rank == 0:

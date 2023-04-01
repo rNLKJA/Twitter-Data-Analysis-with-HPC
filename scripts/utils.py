@@ -103,9 +103,7 @@ def normalise_location(location: str) -> str:
     Normalise location where the location string should not
     contains any puntuations also additional white spaces.
     """
-    text = location.lower()
-
-    text = re.sub(r"[^\w\s]", "", text)
+    text = re.sub(r"[^\w\s]", "", location)
     text = re.sub(r" - ", "", text)
 
     if location.split(",")[0] in gccs:

@@ -6,7 +6,7 @@ import re
 from .utils import normalise_location, is_state_location
 import polars as pl
 from scripts.logger import twitter_logger as logger
-
+from itertools import combinations
 
 @dataclass
 class Twitter:
@@ -33,6 +33,90 @@ def file_break_check(cb: int, ce: int) -> bool:
     """
     ...
 
+def twitter_processorV1(
+    filename: Path, cs: int, ce: int, sal_df: pl.DataFrame
+) -> pl.DataFrame:
+    """
+    Processing twitter data from line by line and return a pandas dataframe
+
+    Args:
+        filename(Path): a path object specific which twitter file should be processed
+        cs (int): chunk start -> start bytes of a chunk
+        ce (int): chunk end -> end bytes of a chunk
+    Return:
+        pd.DataFrame: a pandas dataframe contains required information including, twitter_id, author_id, location
+    """
+    # define search string
+    TWEETS_ID = r'"_id":\s*"([^"]+)"'
+    AUTHOR_ID = r'"author_id":\s*"([^"]+)"'
+    LOCATION_ID = r'"full_name":\s*"([^"]+)"'
+
+    SKIP_LINES_1 = 17  # MAGICS NUMBERS
+    SKIP_LINES_2 = 20
+
+    # define results list
+    tweets_id, author_id, gcc, locations = [], [], [], []
+    sal_dict = dict(zip(sal_df["location"].to_list(), sal_df["gcc"].to_list()))
+
+    with open(filename, mode="rb") as f:
+        f.seek(cs) # seek the start of the file
+
+        EOF = False
+        while not EOF:
+            line = f.readline().decode()  # decode the current line from bytes
+
+            # find target twitter id
+            match_id = re.search(TWEETS_ID, line)
+            if match_id:
+                tweets_id.append(match_id.group(1))
+
+                next(f, None)
+                next(f, None)
+
+            # find target author id
+            match_author = re.search(AUTHOR_ID, line)
+            if match_author and len(tweets_id) != len(author_id):
+                author_id.append(np.int64(match_author.group(1)))
+
+                for _ in range(SKIP_LINES_1):  # skip irrelevant lines
+                    next(f, None)
+
+            # find target location name
+            match_location = re.search(LOCATION_ID, line)
+            if match_location and len(tweets_id) != len(gcc):
+                location = normalise_location(match_location.group(1).lower())
+                locations.append(location)
+                ngram_words = return_words_ngrams(location.split(' '))
+                
+                for possible_location in ngram_words:
+                    if sal_dict.get(possible_location):
+                        gcc.append(sal_dict.get(possible_location))
+                        break
+                
+                if len(tweets_id) != len(gcc):
+                    gcc.append(None)
+
+
+                for _ in range(SKIP_LINES_2):  # skip irrelevant lines
+                    next(f, None)                
+
+            # break condition check
+            if f.tell() >= ce:
+                if len(tweets_id) != len(gcc):
+                    continue
+                else:
+                    EOF = True
+        
+        tdf = pl.DataFrame({"tweet_id": tweets_id, "author_id": author_id, 'location': locations,"gcc": gcc}) 
+        
+    
+    return tdf
+
+def return_words_ngrams(words: list) -> list:
+    """
+    Return a list contains ngram words
+    """
+    return [' '.join(c) for i in range(1, len(words) + 1) for c in combinations(words, i)]
 
 def twitter_processor(
     filename: Path, cs: int, ce: int, sal_df: pl.DataFrame
@@ -195,7 +279,7 @@ def count_number_of_tweets_by_author(tdf: pl.DataFrame) -> pl.DataFrame:
     """
     # count the number of tweets by each author
     author_tweet_count = (
-        tdf.groupby("author_id")
+        tdf.select('author_id', 'tweet_id').groupby("author_id")
         .agg(pl.count("tweet_id").alias("tweet_count"))
         .sort("tweet_count", reverse=True)
     )

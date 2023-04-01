@@ -18,12 +18,15 @@ More information, please visit [project wiki](https://github.com/rNLKJA/2023-S1-
 A1
 |   |── data
 |       |── processed
+|       |── result
 |── notebooks
 |── scripts
 |── slurm
 |── doc
 |   |── log
 |   |── slurm
+|       |── stderr
+|       |── stdout
 |── requirements.txt
 └── README.md
 ```
@@ -65,14 +68,14 @@ For this task, ignore tweets made by users in rural location, e.g. _lrnsw_ (Rura
 
 | Greater Capital City | Number of Tweets Made |
 | :------------------: | :-------------------: |
-|        1gsyd         |       2,114,445       |
-|        2gmel         |       2,280,650       |
-|        3gbri         |        855,383        |
-|        4gade         |        473,982        |
-|        5gper         |        589,204        |
-|        6ghob         |        90,917         |
-|        7gdar         |        46,376         |
-|        8acte         |        195,459        |
+|        1gsyd         |       2,218,689       |
+|        2gmel         |       2,284,909       |
+|        3gbri         |        878,614        |
+|        4gade         |        465,081        |
+|        5gper         |        590,045        |
+|        6ghob         |        91,112         |
+|        7gdar         |        46,772         |
+|        8acte         |        214,347        |
 |        9oter         |          203          |
 
 **Task 3 Question**: The solution should identify those tweeters that have a tweeted in the most Greater Capital cities and the number of times they have tweeted from those locations. The top 10 tweeters making tweets from the most different locations should be returned and if there are equal number of locations, then these should be ranked by the number of tweets. Only those tweets made in Greater Capital cities should be counted.
