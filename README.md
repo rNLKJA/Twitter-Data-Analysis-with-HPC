@@ -12,6 +12,13 @@ The project objectives to:
 
 More information, please visit [project wiki](https://github.com/rNLKJA/2023-S1-COMP90024-A1/wiki).
 
+## Team
+
+| Name              | Student ID | Email                               |
+| ----------------- | :--------: | ----------------------------------- |
+| Sunchuangyu Huang |  1118472   | sunchuangyuh@student.unimelb.edu.au |
+| Wei Zhao          |  1118649   | weizhao1@student.unimelb.edu.au     |
+
 ## Directories
 
 ```
