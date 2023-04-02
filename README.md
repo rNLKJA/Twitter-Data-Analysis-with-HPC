@@ -51,7 +51,7 @@ mpiexec -n [NUM_PROCESSORS] python main.py -t [TWITTER_FILE] -s [SAL_FILE] -e [E
 
 ## Assignment Dependencies
 
-Main Python dependencies: `python=3.7.4`, `mpi4py=3.0.4`, `*polars*`, `numpy`, `pandas`.
+Main Python dependencies: `python=3.7.4`, `mpi4py=3.0.4`, `polars`, `numpy`, `pandas`.
 
 ```{bash}
 # install dependencies
