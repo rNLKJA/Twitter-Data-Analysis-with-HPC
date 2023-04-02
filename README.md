@@ -104,14 +104,14 @@ For this task, ignore tweets made by users in rural location, e.g. _lrnsw_ (Rura
 | Rank | Author Id           | Number of Unique City Locations and #Tweets                                             |
 | :--: | :------------------ | :-------------------------------------------------------------------------------------- |
 |  #1  | 1429984556451389440 | 8 (#1920 - #1879gmel, #13acte, #11gsyd, #7gper, #6gbri, #2gade, #1gdar, #1ghob)         |
-|  #3  | 17285408            | 8 (#1209 - #1061gsyd, #60gmel, #40gbri, #23acte, #11ghob, #7gper, #4gdar, #3gade)       |
 |  #2  | 702290904460169216  | 8 (#1231 - #336gsyd, #255gmel, #235gbri, #156gper, #127gade, #56acte, #45ghob, #21gdar) |
+|  #3  | 17285408            | 8 (#1209 - #1061gsyd, #60gmel, #40gbri, #23acte, #11ghob, #7gper, #4gdar, #3gade)       |
+|  #4  | 87188071            | 8 (#407 - #116gsyd, #86gmel, #68gbri, #52gper, #37acte, #28gade, #15ghob, #5gdar)       |
+|  #5  | 774694926135222272  | 8 (#272 - #38gmel, #37gbri, #37gsyd, #36ghob, #34acte, #34gper, #28gdar, #28gade)       |
 |  #7  | 502381727           | 8 (#250 - #214gmel, #10acte, #8gbri, #8ghob, #4gade, #3gper, #2gsyd, #1gdar)            |
 |  #6  | 1361519083          | 8 (#266 - #193gdar, #36gmel, #18gsyd, #9gade, #6acte, #2ghob, #1gbri, #1gper)           |
-|  #4  | 87188071            | 8 (#407 - #116gsyd, #86gmel, #68gbri, #52gper, #37acte, #28gade, #15ghob, #5gdar)       |
 |  #8  | 921197448885886977  | 8 (#207 - #56gmel, #49gsyd, #37gbri, #28gper, #24gade, #8acte, #4ghob, #1gdar)          |
 |  #9  | 601712763           | 8 (#146 - #44gsyd, #39gmel, #19gade, #14gper, #11gbri, #10acte, #8ghob, #1gdar)         |
-|  #5  | 774694926135222272  | 8 (#272 - #38gmel, #37gbri, #37gsyd, #36ghob, #34acte, #34gper, #28gdar, #28gade)       |
 | #10  | 2647302752          | 8 (#80 - #32gbri, #16gmel, #13gsyd, #5ghob, #4gper, #4acte, #3gade, #3gdar)             |
 
 For complete assignment 1 report, please check [overleaf](https://www.overleaf.com/read/sdsczmmdxzvq).
