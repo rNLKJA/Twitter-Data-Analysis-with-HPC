@@ -22,26 +22,31 @@ More information, please visit [project wiki](https://github.com/rNLKJA/2023-S1-
 ## Directories
 
 ```
-A1
-|   |── data             # store raw data
-|       |── processed    # store processed data
-|       |── result       # store output files
-|── notebooks            # processing and visualisation notebooks
-|── scripts              # main program scripts
-|── slurm                # slurm job scripts
+COMP90024 Cluster & Cloud Computing - Assignment 1 TwitterAnalyser
+|   |── data                     # store raw data
+|       |── processed            # store processed data
+|       |── result               # store output files
+|── notebooks                    # processing and visualisation notebooks
+|── scripts                      # main program scripts
+|── slurm                        # slurm job scripts
 |── doc
-|   |── log              # program log file
+|   |── log                      # program log file
 |   |── slurm
-|       |── stderr       # slurm standard error
-|       |── stdout       # slurm standard output
-|── requirements.txt     # python dependencies
+|       |── stderr               # slurm standard error
+|       |── stdout               # slurm standard output
+|── requirements.txt             # python dependencies
 └── README.md
 ```
 
 ## To start the program
 
 ```bash
-mpiexec -n [NUM_PROCESSORS] python main.py -t [TWITTER_FILE] -s [SAL_FILE] -e [EMAIL_TARGET]
+# for local testing, run the following command
+# main.py must in execute mode
+mpiexec -n [NUM_PROCESSORS] python main.py -t [TWITTER_FILE] -s [SAL_FILE] -e [EMAIL_TARGET|OPTIONAL]
+
+# to submit a job in spartan hpc, run submission script
+./submit.sh
 ```
 
 ## Assignment Dependencies
