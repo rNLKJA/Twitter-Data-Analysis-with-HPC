@@ -10,9 +10,9 @@ if [ ! -d "$virtual_env" ]; then
 fi
 
 echo "Submitting job... submit by ${username}"
-# sbatch slurm/1node1core.bigTwitter.slurm
-# sbatch slurm/1node8core.bigTwitter.slurm
-# sbatch slurm/2node8core.bigTwitter.slurm
+sbatch slurm/1node1core.bigTwitter.slurm
+sbatch slurm/1node8core.bigTwitter.slurm
+sbatch slurm/2node8core.bigTwitter.slurm
 
 echo "Job submitted, print job status ::"
 
