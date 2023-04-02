@@ -33,8 +33,23 @@ def file_break_check(cb: int, ce: int) -> bool:
     """
     ...
 
-def twitter_processorV1(
-    filename: Path, cs: int, ce: int, sal_df: pl.DataFrame
+# define search string
+TWEETS_ID = r'"_id":\s*"([^"]+)"'
+AUTHOR_ID = r'"author_id":\s*"([^"]+)"'
+LOCATION_ID = r'"full_name":\s*"([^"]+)"'
+
+SKIP_LINES_1 = 17  # MAGICS NUMBERS
+SKIP_LINES_2 = 20
+ 
+def read_twitter_chunk(filename: Path, cs: int, ce: int):
+    with open(filename, 'rb') as f:
+        f.seek(cs)
+        while f.tell() < ce:
+            line = f.readline().decode().strip()
+            yield line
+
+def twitter_processorV2(
+    filename: Path, cs: int, ce: int, sal_dict: dict
 ) -> pl.DataFrame:
     """
     Processing twitter data from line by line and return a pandas dataframe
@@ -43,20 +58,66 @@ def twitter_processorV1(
         filename(Path): a path object specific which twitter file should be processed
         cs (int): chunk start -> start bytes of a chunk
         ce (int): chunk end -> end bytes of a chunk
+        sal
     Return:
         pd.DataFrame: a pandas dataframe contains required information including, twitter_id, author_id, location
     """
-    # define search string
-    TWEETS_ID = r'"_id":\s*"([^"]+)"'
-    AUTHOR_ID = r'"author_id":\s*"([^"]+)"'
-    LOCATION_ID = r'"full_name":\s*"([^"]+)"'
+    # define results list
+    tweets_id, author_id, gcc, locations = [], [], [], []
+    
+    for line in read_twitter_chunk(filename, cs, ce):
+        match_id = re.search(TWEETS_ID, line)
+        if match_id:
+            tweets_id.append(match_id.group(1))
 
+        # find target author id
+        match_author = re.search(AUTHOR_ID, line)
+        if match_author and len(tweets_id) != len(author_id):
+            author_id.append(np.int64(match_author.group(1)))
+
+        # find target location name
+        match_location = re.search(LOCATION_ID, line)
+        if match_location and len(tweets_id) != len(gcc):
+            location = normalise_location(match_location.group(1).lower())
+            locations.append(location)
+            ngram_words = return_words_ngrams(location.split(' '))
+            
+            for possible_location in ngram_words:
+                if sal_dict.get(possible_location):
+                    gcc.append(sal_dict.get(possible_location))
+                    break
+            
+            if len(tweets_id) != len(gcc):
+                gcc.append(None)
+        
+    list_len = min(len(tweets_id), len(author_id), len(locations))
+    tdf = pl.DataFrame({"tweet_id": tweets_id[:list_len], 
+                        "author_id": author_id[:list_len], 
+                        'location': locations[:list_len],
+                        "gcc": gcc}) 
+        
+    
+    return tdf
+
+def twitter_processorV1(
+    filename: Path, cs: int, ce: int, sal_dict: dict
+) -> pl.DataFrame:
+    """
+    Processing twitter data from line by line and return a pandas dataframe
+
+    Args:
+        filename(Path): a path object specific which twitter file should be processed
+        cs (int): chunk start -> start bytes of a chunk
+        ce (int): chunk end -> end bytes of a chunk
+        sal_dict (dict): a dictionary contains location and gcc information
+    Return:
+        pd.DataFrame: a pandas dataframe contains required information including, twitter_id, author_id, location
+    """
     SKIP_LINES_1 = 17  # MAGICS NUMBERS
     SKIP_LINES_2 = 20
 
     # define results list
     tweets_id, author_id, gcc, locations = [], [], [], []
-    sal_dict = dict(zip(sal_df["location"].to_list(), sal_df["gcc"].to_list()))
 
     with open(filename, mode="rb") as f:
         f.seek(cs) # seek the start of the file
