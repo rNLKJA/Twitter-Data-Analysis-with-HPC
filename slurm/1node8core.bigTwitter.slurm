@@ -1,11 +1,10 @@
 #!/bin/bash
-#SBATCH --job-name=bigTwitter_2_core_8_node
+#SBATCH --job-name=bigTwitter_1_core_8_node
 
 ##set task request resources
 #SBATCH --time=00:10:00
-#SBATCH --nodes=2
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=8
+#SBATCH --nodes=1
+#SBATCH --ntasks=8
 #SBATCH --mem-per-cpu=8G
 
 ##set standard output
