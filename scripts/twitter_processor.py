@@ -38,10 +38,17 @@ TWEETS_ID = r'"_id":\s*"([^"]+)"'
 AUTHOR_ID = r'"author_id":\s*"([^"]+)"'
 LOCATION_ID = r'"full_name":\s*"([^"]+)"'
 
-SKIP_LINES_1 = 17  # MAGICS NUMBERS
+SKIP_LINES_1 = 18  # MAGICS NUMBERS
 SKIP_LINES_2 = 20
  
 def read_twitter_chunk(filename: Path, cs: int, ce: int):
+    """
+    Read twitter file chunk by chunk
+    Args:
+        filename(Path): a path object specific which twitter file should be processed
+        cs (int): chunk start -> start bytes of a chunk
+        ce (int): chunk end -> end bytes of a chunk
+    """
     with open(filename, 'rb') as f:
         f.seek(cs)
         while f.tell() < ce:
@@ -113,8 +120,6 @@ def twitter_processorV1(
     Return:
         pd.DataFrame: a pandas dataframe contains required information including, twitter_id, author_id, location
     """
-    SKIP_LINES_1 = 17  # MAGICS NUMBERS
-    SKIP_LINES_2 = 20
 
     # define results list
     tweets_id, author_id, gcc, locations = [], [], [], []
