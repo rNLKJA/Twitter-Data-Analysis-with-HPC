@@ -41,6 +41,7 @@ twitter_file_name = obtain_twitter_file_name(parser)
 twitter_file = PATH / "data" / twitter_file_name
 
 sal_df = process_salV1(path=PATH, logger=logger)
+sal_dict = dict(zip(sal_df["location"].to_list(), sal_df["gcc"].to_list()))
 
 # define MPI tools
 comm = MPI.COMM_WORLD
@@ -59,7 +60,7 @@ if __name__ == "__main__":
     # return a list which specify the file bytes each process need to processed
     chunk_start, chunk_end = split_file_into_chunks(twitter_file, size)
 
-    tdf = twitter_processorV1(twitter_file, chunk_start[rank], chunk_end[rank], sal_df)
+    tdf = twitter_processorV2(twitter_file, chunk_start[rank], chunk_end[rank], sal_dict)
     
     t1_tdf = count_number_of_tweets_by_author(tdf)
     t2_tdf = count_number_of_tweets_by_gcc(tdf)
