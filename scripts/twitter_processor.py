@@ -467,7 +467,7 @@ def generate_task_3_result(tdf: pl.DataFrame, save: bool, path: Path) -> pl.Data
     tdf4.columns = ['Rank', 'Author Id', 'Number of Unique City Locations and #Tweets']
 
     if save:
-        tdf4.sort('Rank').write_csv(path / "data/result/task3.csv")
+        tdf4.sort('Rank', descending=False).write_csv(path / "data/result/task3.csv")
         return
     return tdf4
     
