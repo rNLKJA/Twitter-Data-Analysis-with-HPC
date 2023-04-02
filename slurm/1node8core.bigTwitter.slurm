@@ -9,11 +9,11 @@
 #SBATCH --mem-per-cpu=4G
 
 ##set standard output
-#SBATCH --output=/home/sunchuangyuh/A1/doc/slurm/stdout/slurm.%j.out
-#SBATCH --error=/home/sunchuangyuh/A1/doc/slurm/stderr/slurm.%j.err 
+#SBATCH --output=/home/weizhao1/A1/doc/slurm/stdout/slurm.%j.out
+#SBATCH --error=/home/weizhao1/A1/doc/slurm/stderr/slurm.%j.err 
 
 ##send job information to target user
-#SBATCH --mail-user=sunchuangyuh@student.unimelb.edu.au
+#SBATCH --mail-user=weizhao1@student.unimelb.edu.au
 #SBATCH --mail-type=ALL
 
 ##load required modules
