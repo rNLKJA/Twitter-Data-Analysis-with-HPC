@@ -1,5 +1,0 @@
-Traceback (most recent call last):
-  File "main.py", line 105, in <module>
-    t2rdf = pd.concat(task2_dfs, axis=0, ignore_index=True)
-NameError: name 'task2_dfs' is not defined
-slurmstepd: error: *** JOB 45826128 ON spartan-bm007 CANCELLED AT 2023-03-26T15:34:02 DUE TO TIME LIMIT ***

@@ -1,2 +1,0 @@
-slurmstepd: error: *** JOB 45793109 ON spartan-bm090 CANCELLED AT 2023-03-24T22:08:40 DUE TO TIME LIMIT ***
-slurmstepd: error: *** STEP 45793109.0 ON spartan-bm090 CANCELLED AT 2023-03-24T22:08:40 DUE TO TIME LIMIT ***
