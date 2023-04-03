@@ -53,20 +53,31 @@ mpiexec -n [NUM_PROCESSORS] python main.py -t [TWITTER_FILE] -s [SAL_FILE] -e [E
 
 Main Python dependencies: `python=3.7.4`, `mpi4py=3.0.4`, `polars`, `numpy`, `pandas`.
 
+If running on spartan, make sure use virtualenv with a python version `3.7.4` due to spartan load mpi4py version `3.0.4`.
+
 ```{bash}
+# load module on spartan
+module --force purge
+module load mpi4py/3.0.2-timed-pingpong
+
+source ~/virtualenv/python3.7.4/bin/activate
+
 # install dependencies
+pip install numpy pandas 'polars[all]'  #  or
 pip install -r requirements.txt
 ```
 
 ## Assignment report
 
+The `bigTwitter.json` contains $9,092,274$ tweets written by $119,439$ authors. Start from date `2021-07-05` to `2022-12-31`.
+
 **Processing time** on BigTwitter.json. 
 
 | Job      | Node | Core | CPU Utilized Time | CPU Efficiency |
 | :------: | :--: | :--: | :---------------: | :------------: |
-| 45988557 | 1    | 1    | 00:21:12          | 92.88%         |
+| 45988557 | 1    | 1    | 00:21:12          | 99.53%         |
 | 45988558 | 1    | 8    | 00:03:04          | 93.89%         |
-| 45988559 | 2    | 4    | 00:03:15          | 99.53%         |
+| 45988559 | 2    | 4    | 00:03:15          | 92.88%         |
 
 **Task 1 Question**: The solution should count the number of tweets made by the same individual based on the bigTwitter.json file and returned the top 10 tweeters in terms of the number of tweets made irrespective of where they tweeted. The result will be of the form (where the author Ids and tweet numbers are representative).
 
@@ -103,16 +114,16 @@ For this task, ignore tweets made by users in rural location, e.g. _lrnsw_ (Rura
 
 | Rank | Author Id           | Number of Unique City Locations and #Tweets                                             |
 | :--: | :------------------ | :-------------------------------------------------------------------------------------- |
-|  #1  | 1429984556451389440 | 8 (#1920 - #1879gmel, #13acte, #11gsyd, #7gper, #6gbri, #2gade, #1gdar, #1ghob)         |
-|  #2  | 702290904460169216  | 8 (#1231 - #336gsyd, #255gmel, #235gbri, #156gper, #127gade, #56acte, #45ghob, #21gdar) |
-|  #3  | 17285408            | 8 (#1209 - #1061gsyd, #60gmel, #40gbri, #23acte, #11ghob, #7gper, #4gdar, #3gade)       |
-|  #4  | 87188071            | 8 (#407 - #116gsyd, #86gmel, #68gbri, #52gper, #37acte, #28gade, #15ghob, #5gdar)       |
-|  #5  | 774694926135222272  | 8 (#272 - #38gmel, #37gbri, #37gsyd, #36ghob, #34acte, #34gper, #28gdar, #28gade)       |
-|  #7  | 502381727           | 8 (#250 - #214gmel, #10acte, #8gbri, #8ghob, #4gade, #3gper, #2gsyd, #1gdar)            |
-|  #6  | 1361519083          | 8 (#266 - #193gdar, #36gmel, #18gsyd, #9gade, #6acte, #2ghob, #1gbri, #1gper)           |
-|  #8  | 921197448885886977  | 8 (#207 - #56gmel, #49gsyd, #37gbri, #28gper, #24gade, #8acte, #4ghob, #1gdar)          |
-|  #9  | 601712763           | 8 (#146 - #44gsyd, #39gmel, #19gade, #14gper, #11gbri, #10acte, #8ghob, #1gdar)         |
-| #10  | 2647302752          | 8 (#80 - #32gbri, #16gmel, #13gsyd, #5ghob, #4gper, #4acte, #3gade, #3gdar)             |
+|  #1  | 1429984556451389440 | 8 (#1920 tweets - #1879gmel, #13acte, #11gsyd, #7gper, #6gbri, #2gade, #1gdar, #1ghob)         |
+|  #2  | 702290904460169216  | 8 (#1231 tweets - #336gsyd, #255gmel, #235gbri, #156gper, #127gade, #56acte, #45ghob, #21gdar) |
+|  #3  | 17285408            | 8 (#1209 tweets - #1061gsyd, #60gmel, #40gbri, #23acte, #11ghob, #7gper, #4gdar, #3gade)       |
+|  #4  | 87188071            | 8 (#407 tweets - #116gsyd, #86gmel, #68gbri, #52gper, #37acte, #28gade, #15ghob, #5gdar)       |
+|  #5  | 774694926135222272  | 8 (#272 tweets - #38gmel, #37gbri, #37gsyd, #36ghob, #34acte, #34gper, #28gdar, #28gade)       |
+|  #7  | 502381727           | 8 (#250 tweets - #214gmel, #10acte, #8gbri, #8ghob, #4gade, #3gper, #2gsyd, #1gdar)            |
+|  #6  | 1361519083          | 8 (#266 tweets - #193gdar, #36gmel, #18gsyd, #9gade, #6acte, #2ghob, #1gbri, #1gper)           |
+|  #8  | 921197448885886977  | 8 (#207 tweets - #56gmel, #49gsyd, #37gbri, #28gper, #24gade, #8acte, #4ghob, #1gdar)          |
+|  #9  | 601712763           | 8 (#146 tweets - #44gsyd, #39gmel, #19gade, #14gper, #11gbri, #10acte, #8ghob, #1gdar)         |
+| #10  | 2647302752          | 8 (#80 tweets - #32gbri, #16gmel, #13gsyd, #5ghob, #4gper, #4acte, #3gade, #3gdar)             |
 
 For complete assignment 1 report, please check [overleaf](https://www.overleaf.com/read/sdsczmmdxzvq).
 
