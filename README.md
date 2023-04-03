@@ -53,8 +53,17 @@ mpiexec -n [NUM_PROCESSORS] python main.py -t [TWITTER_FILE] -s [SAL_FILE] -e [E
 
 Main Python dependencies: `python=3.7.4`, `mpi4py=3.0.4`, `polars`, `numpy`, `pandas`.
 
+If running on spartan, make sure use virtualenv with a python version `3.7.4` due to spartan load mpi4py version `3.0.4`.
+
 ```{bash}
+# load module on spartan
+module --force purge
+module load mpi4py/3.0.2-timed-pingpong
+
+source ~/virtualenv/python3.7.4/bin/activate
+
 # install dependencies
+pip install numpy pandas 'polars[all]'  #  or
 pip install -r requirements.txt
 ```
 
