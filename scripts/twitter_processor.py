@@ -463,7 +463,7 @@ def generate_task_3_result(tdf: pl.DataFrame, save: bool, path: Path) -> pl.Data
     
     
     
-    tdf4 = tdf4.with_columns([pl.concat_str([pl.col('gcc_count'), pl.lit(' (#'), pl.col('tweet_count'), pl.lit(' - '), pl.col('nugt'), pl.lit(')')]).alias('gtc')]).select('rank', 'author_id', 'gtc')
+    tdf4 = tdf4.with_columns([pl.concat_str([pl.col('gcc_count'), pl.lit(' (#'), pl.col('tweet_count'), pl.lit(' tweets - '), pl.col('nugt'), pl.lit(')')]).alias('gtc')]).select('rank', 'author_id', 'gtc')
     tdf4.columns = ['Rank', 'Author Id', 'Number of Unique City Locations and #Tweets']
 
     if save:
