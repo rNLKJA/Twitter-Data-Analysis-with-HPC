@@ -23,3 +23,26 @@ Requirement already satisfied: packaging>=20.0 in /home/sunchuangyuh/virtualenv/
 Requirement already satisfied: importlib-metadata in /home/sunchuangyuh/virtualenv/python3.7.4/lib/python3.7/site-packages (from sqlalchemy->polars[all]) (6.1.0)
 Requirement already satisfied: greenlet!=0.4.17 in /home/sunchuangyuh/virtualenv/python3.7.4/lib/python3.7/site-packages (from sqlalchemy->polars[all]) (2.0.2)
 Requirement already satisfied: zipp>=0.5 in /home/sunchuangyuh/virtualenv/python3.7.4/lib/python3.7/site-packages (from importlib-metadata->sqlalchemy->polars[all]) (3.15.0)
+Job ID           : 46019199
+Cluster          : spartan
+User/Project     : sunchuangyuh/comp90024
+Nodes            : 1
+Wall-clock time  : 00:00:30 / 01:00:00
+
+Displaying overall resources usage from 2023-04-03 13:55:11 to 2023-04-03 13:55:41:
+
+NODE            CPU#        TOT%   ( USR   / SYS   / WIO   / IDLE  ) 
+
+spartan-bm028 : 
+                CPU# 1    : 0.6    (   0.0 /   0.6 /   0.0 /  99.4 ) 
+
+
+Allocated CPUs            : 1    
+  CPUs with usage <25%    : 1    
+  CPUs with usage <50%    : 0    
+  CPUs with usage >50%    : 0    
+
+Memory used (RAM)         : 0.0%  [2MB of 5120MB]
+
+--------------------------------------------
+
