@@ -42,15 +42,15 @@ def process_salV1(path: Path, logger: logging) -> pl.DataFrame:
     df.drop(["ste", "sal"], axis=1, inplace=True)
 
     # case1: replace all brackets with an empty string
-    logger.info("Substitute brackets in location")
+    # logger.info("Substitute brackets in location")
     df.location = df.agg(lambda x: re.sub(r"[()]", "", x.location), axis=1)
 
     # case2: replace " - " with " "
-    logger.info("Substitude string ' - ' with ' '")
+    # logger.info("Substitude string ' - ' with ' '")
     df.location = df.agg(lambda x: re.sub(" - ", " ", x.location), axis=1)
 
     # case3: replace "\." with ""
-    logger.info("Substitude \. with an empty string")
+    # logger.info("Substitude \. with an empty string")
     df.location = df.agg(lambda x: re.sub("\.", "", x.location), axis=1)
     
     # case 4: consider ngram like locations
