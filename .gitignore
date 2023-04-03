@@ -144,3 +144,4 @@ data/twitter-data-small.json.tar.gz
 
 data/result/*.csv
 data/processed/*.csv
+doc/*
