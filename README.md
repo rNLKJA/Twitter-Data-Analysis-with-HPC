@@ -60,6 +60,8 @@ pip install -r requirements.txt
 
 ## Assignment report
 
+The `bigTwitter.json` contains $9,092,274$ tweets written by $119,439$ authors.
+
 **Processing time** on BigTwitter.json. 
 
 | Job      | Node | Core | CPU Utilized Time | CPU Efficiency |
