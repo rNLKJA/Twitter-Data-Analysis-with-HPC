@@ -62,6 +62,9 @@ if __name__ == "__main__":
 
     tdf = twitter_processorV1(twitter_file, chunk_start[rank], chunk_end[rank], sal_dict)
     
+    logger.info(f'Rank {rank}: File Read Completed, cost: {time.time()
+- start_time}')
+
     t1_tdf = count_number_of_tweets_by_author(tdf)
     t2_tdf = count_number_of_tweets_by_gcc(tdf)
     t3_tdf = return_author_tweets_from_most_different_gcc(tdf)

@@ -1,0 +1,52 @@
+Collecting numpy
+  Using cached numpy-1.21.6-cp37-cp37m-manylinux_2_12_x86_64.manylinux2010_x86_64.whl (15.7 MB)
+Collecting pandas
+  Using cached pandas-1.3.5-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (11.3 MB)
+Collecting polars[all]
+  Using cached polars-0.16.17-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (16.6 MB)
+Collecting pytz>=2017.3
+  Using cached pytz-2023.3-py2.py3-none-any.whl (502 kB)
+Collecting python-dateutil>=2.7.3
+  Using cached python_dateutil-2.8.2-py2.py3-none-any.whl (247 kB)
+Collecting typing_extensions>=4.0.1
+  Using cached typing_extensions-4.5.0-py3-none-any.whl (27 kB)
+Collecting six>=1.5
+  Using cached six-1.16.0-py2.py3-none-any.whl (11 kB)
+Collecting xlsx2csv>=0.8.0
+  Using cached xlsx2csv-0.8.1-py3-none-any.whl (13 kB)
+Collecting xlsxwriter
+  Using cached XlsxWriter-3.0.9-py3-none-any.whl (152 kB)
+Collecting sqlalchemy
+  Using cached SQLAlchemy-2.0.8-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.7 MB)
+Collecting fsspec
+  Using cached fsspec-2023.1.0-py3-none-any.whl (143 kB)
+Collecting connectorx
+  Using cached connectorx-0.3.1-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (46.6 MB)
+Collecting backports.zoneinfo
+  Using cached backports.zoneinfo-0.2.1-cp37-cp37m-manylinux1_x86_64.whl (70 kB)
+Collecting matplotlib
+  Using cached matplotlib-3.5.3-cp37-cp37m-manylinux_2_5_x86_64.manylinux1_x86_64.whl (11.2 MB)
+Collecting pyarrow>=4.0.0
+  Using cached pyarrow-11.0.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (35.1 MB)
+Collecting deltalake>=0.8.0
+  Using cached deltalake-0.8.1-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (19.3 MB)
+Collecting packaging>=20.0
+  Using cached packaging-23.0-py3-none-any.whl (42 kB)
+Collecting pillow>=6.2.0
+  Using cached Pillow-9.5.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.3 MB)
+Collecting cycler>=0.10
+  Using cached cycler-0.11.0-py3-none-any.whl (6.4 kB)
+Collecting kiwisolver>=1.0.1
+  Using cached kiwisolver-1.4.4-cp37-cp37m-manylinux_2_5_x86_64.manylinux1_x86_64.whl (1.1 MB)
+Collecting fonttools>=4.22.0
+  Using cached fonttools-4.38.0-py3-none-any.whl (965 kB)
+Collecting pyparsing>=2.2.1
+  Using cached pyparsing-3.0.9-py3-none-any.whl (98 kB)
+Collecting importlib-metadata
+  Using cached importlib_metadata-6.1.0-py3-none-any.whl (21 kB)
+Collecting greenlet!=0.4.17
+  Using cached greenlet-2.0.2-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (566 kB)
+Collecting zipp>=0.5
+  Using cached zipp-3.15.0-py3-none-any.whl (6.8 kB)
+Installing collected packages: xlsx2csv, pytz, connectorx, zipp, xlsxwriter, typing_extensions, six, pyparsing, pillow, packaging, numpy, greenlet, fsspec, fonttools, cycler, backports.zoneinfo, python-dateutil, pyarrow, polars, kiwisolver, importlib-metadata, sqlalchemy, pandas, matplotlib, deltalake
+Successfully installed backports.zoneinfo-0.2.1 connectorx-0.3.1 cycler-0.11.0 deltalake-0.8.1 fonttools-4.38.0 fsspec-2023.1.0 greenlet-2.0.2 importlib-metadata-6.1.0 kiwisolver-1.4.4 matplotlib-3.5.3 numpy-1.21.6 packaging-23.0 pandas-1.3.5 pillow-9.5.0 polars-0.16.17 pyarrow-11.0.0 pyparsing-3.0.9 python-dateutil-2.8.2 pytz-2023.3 six-1.16.0 sqlalchemy-2.0.8 typing_extensions-4.5.0 xlsx2csv-0.8.1 xlsxwriter-3.0.9 zipp-3.15.0

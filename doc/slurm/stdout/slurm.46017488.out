@@ -1,0 +1,23 @@
+Job ID           : 46017488
+Cluster          : spartan
+User/Project     : sunchuangyuh/comp90024
+Nodes            : 1
+Wall-clock time  : 00:00:31 / 01:00:00
+
+Displaying overall resources usage from 2023-04-03 12:25:45 to 2023-04-03 12:26:16:
+
+NODE            CPU#        TOT%   ( USR   / SYS   / WIO   / IDLE  ) 
+
+spartan-bm092 : 
+                CPU# 1    : 8.5    (   6.5 /   2.0 /   0.0 /  91.5 ) 
+
+
+Allocated CPUs            : 1    
+  CPUs with usage <25%    : 1    
+  CPUs with usage <50%    : 0    
+  CPUs with usage >50%    : 0    
+
+Memory used (RAM)         : 0.1%  [6MB of 5120MB]
+
+--------------------------------------------
+
