@@ -34,9 +34,9 @@ def file_break_check(cb: int, ce: int) -> bool:
     ...
 
 # define search string
-TWEETS_ID = r'"_id":\s*"([^"]+)"'
-AUTHOR_ID = r'"author_id":\s*"([^"]+)"'
-LOCATION_ID = r'"full_name":\s*"([^"]+)"'
+TWEETS_ID = re.compile(r'"_id":\s*"([^"]+)"')
+AUTHOR_ID = re.compile(r'"author_id":\s*"([^"]+)"')
+LOCATION_ID = re.compile(r'"full_name":\s*"([^"]+)"')
 
 SKIP_LINES_1 = 18  # MAGICS NUMBERS
 SKIP_LINES_2 = 20
@@ -132,7 +132,7 @@ def twitter_processorV1(
             line = f.readline().decode()  # decode the current line from bytes
 
             # find target twitter id
-            match_id = re.search(TWEETS_ID, line)
+            match_id = TWEETS_ID.search(line)
             if match_id:
                 tweets_id.append(match_id.group(1))
 
@@ -140,7 +140,7 @@ def twitter_processorV1(
                 next(f, None)
 
             # find target author id
-            match_author = re.search(AUTHOR_ID, line)
+            match_author = AUTHOR_ID.search(line)
             if match_author and len(tweets_id) != len(author_id):
                 author_id.append(np.int64(match_author.group(1)))
 
@@ -148,7 +148,7 @@ def twitter_processorV1(
                     next(f, None)
 
             # find target location name
-            match_location = re.search(LOCATION_ID, line)
+            match_location = LOCATION_ID.search(line)
             if match_location and len(tweets_id) != len(gcc):
                 location = normalise_location(match_location.group(1).lower())
                 locations.append(location)
