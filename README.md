@@ -75,9 +75,9 @@ The `bigTwitter.json` contains $9,092,274$ tweets written by $119,439$ authors. 
 
 | Job      | Node | Core | Job Wall-Clock Time | CPU Efficiency |
 | :------: | :--: | :--: | :---------------: | :------------: |
-| 46094405 | 1    | 1    | 00:11:01          | 99.53%         |
-| 46094406 | 1    | 8    | 00:01:41          | 93.89%         |
-| 46094407 | 2    | 4    | 00:01:41          | 92.88%         |
+| 46094405 | 1    | 1    | 00:11:01          | 98.34%         |
+| 46094406 | 1    | 8    | 00:01:41          | 87.13%         |
+| 46094407 | 2    | 4    | 00:01:41          | 87.75%         |
 
 **Task 1 Question**: The solution should count the number of tweets made by the same individual based on the bigTwitter.json file and returned the top 10 tweeters in terms of the number of tweets made irrespective of where they tweeted. The result will be of the form (where the author Ids and tweet numbers are representative).
 
