@@ -79,13 +79,9 @@ if __name__ == "__main__":
 
     if rank == task1_rank:
         t1_tdfs = combine_tdf(t1_tdfs).groupby("author_id").sum()
-        logger.info(f"Number of authors: {t1_tdfs.shape[0]}")
-        logger.info(f"Number of tweets: {t1_tdfs['tweet_count'].sum()}")
-        
         t1_tdfs = calculate_rank(tdf=t1_tdfs, method="min", column="tweet_count")
         return_author_with_most_tweets(t1_tdfs, top=10, save=True, path=PATH)
-                
-        logger.info(f"task1 complete, cost: {time.time() - start_time}")
+        
 
     # =================================== TASK 2 ===================================
     if rank == task2_rank:
