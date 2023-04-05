@@ -55,6 +55,67 @@ def read_twitter_chunk(filename: Path, cs: int, ce: int):
             line = f.readline().decode().strip()
             yield line
 
+def twitter_processorV3(
+    filename: Path, cs: int, ce: int, sal_dict: dict
+) -> pl.DataFrame:
+    """
+    Processing twitter data from line by line and return a pandas dataframe
+
+    Args:
+        filename(Path): a path object specific which twitter file should be processed
+        cs (int): chunk start -> start bytes of a chunk
+        ce (int): chunk end -> end bytes of a chunk
+        sal_dict (dict): a dictionary contains location and gcc information
+    Return:
+        pd.DataFrame: a pandas dataframe contains required information including, twitter_id, author_id, location
+    """
+
+    # define results list
+    tweets_id, author_id, locations = [], [], []
+
+    with open(filename, mode="rb") as f:
+        f.seek(cs) # seek the start of the file
+
+        EOF = False
+        while not EOF:
+            line = f.readline().decode()  # decode the current line from bytes
+
+            # find target twitter id
+            match_id = re.search(TWEETS_ID, line)
+            if match_id:
+                tweets_id.append(match_id.group(1))
+
+                next(f, None)
+                next(f, None)
+
+            # find target author id
+            match_author = re.search(AUTHOR_ID, line)
+            if match_author and len(tweets_id) != len(author_id):
+                author_id.append(np.int64(match_author.group(1)))
+
+                for _ in range(SKIP_LINES_1):  # skip irrelevant lines
+                    next(f, None)
+
+            # find target location name
+            match_location = re.search(LOCATION_ID, line)
+            if match_location:
+                locations.append(match_location.group(1))
+                
+                for _ in range(SKIP_LINES_2):  # skip irrelevant lines
+                    next(f, None)                
+
+            # break condition check
+            if f.tell() >= ce:
+                if len(tweets_id) != len(locations):
+                    continue
+                else:
+                    EOF = True
+        
+        tdf = pl.DataFrame({"tweet_id": tweets_id, "author_id": author_id, 'location': locations}) 
+        
+    
+    return tdf
+
 def twitter_processorV2(
     filename: Path, cs: int, ce: int, sal_dict: dict
 ) -> pl.DataFrame:
