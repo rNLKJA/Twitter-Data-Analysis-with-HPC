@@ -18,39 +18,20 @@ def read_into_memory(file, chunk_start, chunk_end):
         length = chunk_end - chunk_start
         tweet_ids, author_ids, locations = [], [], []
        
-        first_term = ''
-        with mmap.mmap(f.fileno(), length=length, offset=chunk_start // 2,access=mmap.ACCESS_READ) as m: 
-            line = m.readline()
-            while True:
-                if re.search(rb'"_id"', line):
-                    first_term = 'id'
-                    break
-                elif re.search(rb'author_id', line):
-                    first_term = 'author'
-                    break
-                elif re.search(rb'full_name', line):
-                    first_term = 'location'
-                    break
-                
-                line = m.readline()
         
         with mmap.mmap(f.fileno(), length=length, offset=chunk_start,access=mmap.ACCESS_READ) as m:
-            print(first_term)
+
             
-            # tweet_ids = [_id.decode() for _id in TWEETS_ID.findall(m)]
+            tweet_ids = [_id.decode() for _id in TWEETS_ID.findall(m)]
             author_ids = [_id.decode() for _id in AUTHOR_ID.findall(m)]
             locations = [_id.decode() for _id in LOCATION_ID.findall(m)]
             
-            if first_term != 'id':
-                author_ids.pop(0)
-                locations.pop(0)
             
-            
-            # tweet_ids = tweet_ids[:min(len(tweet_ids), len(author_ids), len(locations))]
+            tweet_ids = tweet_ids[:min(len(tweet_ids), len(author_ids), len(locations))]
             author_ids = author_ids[:min(len(tweet_ids), len(author_ids), len(locations))]
             locations = locations[:min(len(tweet_ids), len(author_ids), len(locations))]
        
-            return author_ids, locations
+            return tweet_ids, author_ids, locations
 
 def read_file_with_bins(filename, bin_size=1024):
     file_size = os.path.getsize(filename)
@@ -70,12 +51,14 @@ def read_file_with_bins(filename, bin_size=1024):
 tids, aids, locs = [], [], []
 bins = read_file_with_bins('../data/bigTwitter.json')
 
-for chunk_start, chunk_end in bins[:1]:
+for chunk_start, chunk_end in bins:
     print("Reading chunk from {} to {}".format(chunk_start, chunk_end))
-    author_ids, locations = read_into_memory('../data/bigTwitter.json', chunk_start, chunk_end)
-    # tids.append(tweet_ids)
-    aids.append(author_ids)
-    locs.append(locations)
+    tweet_ids, author_ids, locations = read_into_memory('../data/bigTwitter.json', chunk_start, chunk_end)
+    tids += tweet_ids
+    aids += author_ids
+    locs += locations
 
-# df = pl.DataFrame({'tweet_id': tids, 'author_id': author_ids, 'location': locs})
-print(tids, aids, locs)
+df = pl.DataFrame({'tweet_id': tids, 'author_id': author_ids, 'location': locs})
+print("complete")
+print(df)
+print(len(tids), len(aids), len(locs))
