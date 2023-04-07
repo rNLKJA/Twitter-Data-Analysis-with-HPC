@@ -163,3 +163,23 @@ def log_system_information():
     """
     logger.info(f"System information: {MPI.Get_processor_name()}\n")
     return
+
+
+def split_into_bins(start_byte, end_byte, n_bins):
+    if n_bins <= 0:
+        raise ValueError("n_bins must be a positive integer")
+
+    bin_size = (end_byte - start_byte) // n_bins
+    byte_ranges = []
+
+    for i in range(n_bins):
+        bin_start = start_byte + i * bin_size
+        bin_end = start_byte + (i + 1) * bin_size - 1
+
+        # Include the remaining bytes in the last bin
+        if i == n_bins - 1:
+            bin_end = end_byte
+
+        byte_ranges.append((bin_start, bin_end))
+
+    return byte_ranges
