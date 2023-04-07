@@ -60,7 +60,7 @@ if __name__ == "__main__":
     # return a list which specify the file bytes each process need to processed
     chunk_start, chunk_end = split_file_into_chunks(twitter_file, size)
 
-    tdf = twitter_processorV1(twitter_file, chunk_start[rank], chunk_end[rank], sal_dict)
+    tdf = twitter_processorV3(twitter_file, chunk_start[rank], chunk_end[rank], sal_dict)
     
     logger.info(f'Rank {rank}: File Read Completed, cost: {time.time()- start_time}')
 

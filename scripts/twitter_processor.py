@@ -3,10 +3,19 @@ import pandas as pd
 from pathlib import Path
 from dataclasses import dataclass
 import re
-from .utils import normalise_location, is_state_location
+from .utils import normalise_location, split_into_bins
 import polars as pl
 from scripts.logger import twitter_logger as logger
 from itertools import combinations
+import mmap
+
+# define search string
+TWEETS_ID = re.compile(r'"id":\s*"([^"]+)"')
+AUTHOR_ID = re.compile(r'"author_id":\s*"([^"]+)"')
+LOCATION_ID = re.compile(r'"full_name":\s*"([^"]+)"')
+
+SKIP_LINES_1 = 18  # MAGICS NUMBERS
+SKIP_LINES_2 = 20
 
 @dataclass
 class Twitter:
@@ -33,14 +42,6 @@ def file_break_check(cb: int, ce: int) -> bool:
     """
     ...
 
-# define search string
-TWEETS_ID = r'"_id":\s*"([^"]+)"'
-AUTHOR_ID = r'"author_id":\s*"([^"]+)"'
-LOCATION_ID = r'"full_name":\s*"([^"]+)"'
-
-SKIP_LINES_1 = 18  # MAGICS NUMBERS
-SKIP_LINES_2 = 20
- 
 def read_twitter_chunk(filename: Path, cs: int, ce: int):
     """
     Read twitter file chunk by chunk
@@ -70,48 +71,59 @@ def twitter_processorV3(
         pd.DataFrame: a pandas dataframe contains required information including, twitter_id, author_id, location
     """
 
+    n_bins = 8
+    bins = split_into_bins(start_byte=cs, end_byte=ce, n_bins=n_bins)
+
     # define results list
-    tweets_id, author_id, locations = [], [], []
+    tweet_id, author_id, locations, gcc = [], [], [], []
+    
+    for i in range(n_bins):
+        with open(filename, 'rb') as f:
+            start_byte, end_byte = bins[i][0], bins[i][1]
+            aligned_start_byte = start_byte - (start_byte % mmap.PAGESIZE)
+            mmap_length = end_byte - aligned_start_byte
+            
+            mmapped_file = mmap.mmap(fileno=f.fileno(), length=mmap_length, 
+                                    offset=aligned_start_byte, access=mmap.ACCESS_READ)
 
-    with open(filename, mode="rb") as f:
-        f.seek(cs) # seek the start of the file
-
-        EOF = False
-        while not EOF:
-            line = f.readline().decode()  # decode the current line from bytes
-
-            # find target twitter id
-            match_id = re.search(TWEETS_ID, line)
-            if match_id:
-                tweets_id.append(match_id.group(1))
-
-                next(f, None)
-                next(f, None)
-
-            # find target author id
-            match_author = re.search(AUTHOR_ID, line)
-            if match_author and len(tweets_id) != len(author_id):
-                author_id.append(np.int64(match_author.group(1)))
-
-                for _ in range(SKIP_LINES_1):  # skip irrelevant lines
-                    next(f, None)
-
-            # find target location name
-            match_location = re.search(LOCATION_ID, line)
-            if match_location:
-                locations.append(match_location.group(1))
+            for line in iter(mmapped_file.readline, b''):
+                try:
+                    line = line.decode('utf-8', errors='replace')
+                except UnicodeDecodeError:
+                    break
                 
-                for _ in range(SKIP_LINES_2):  # skip irrelevant lines
-                    next(f, None)                
+                match_id = TWEETS_ID.search(line)
+                if match_id and len(tweet_id) == len(author_id) == len(locations) == len(gcc):
+                    tweet_id.append(match_id.group(1))
+                
+                match_author = AUTHOR_ID.search(line)
+                if match_author and len(tweet_id) != len(author_id):
+                    author_id.append(match_author.group(1))
 
-            # break condition check
-            if f.tell() >= ce:
-                if len(tweets_id) != len(locations):
-                    continue
-                else:
-                    EOF = True
+                match_location = LOCATION_ID.search(line)
+                if match_location and len(tweet_id) != len(gcc):
+                    location = normalise_location(match_location.group(1).lower())
+                    locations.append(location)
+                    ngram_words = return_words_ngrams(location.split(' '))
+                    
+                    for possible_location in ngram_words:
+                        if sal_dict.get(possible_location):
+                            gcc.append(sal_dict.get(possible_location))
+                            break
+                    
+                    if len(tweet_id) != len(gcc):
+                        gcc.append(None)
+                        
+                # Break the loop once we have read past the end_byte
+                if mmapped_file.tell() > (end_byte - aligned_start_byte):
+                    break
+                        
+            mmapped_file.close()
+                
+    min_len = min(len(tweet_id), len(author_id), len(locations))    
         
-        tdf = pl.DataFrame({"tweet_id": tweets_id, "author_id": author_id, 'location': locations}) 
+    tdf = pl.DataFrame({"tweet_id": tweet_id[:min_len], "author_id": author_id[:min_len],
+                        'location': locations[:min_len], 'gcc': gcc[:min_len]}) 
         
     
     return tdf
@@ -172,7 +184,6 @@ def twitter_processorV1(
 ) -> pl.DataFrame:
     """
     Processing twitter data from line by line and return a pandas dataframe
-
     Args:
         filename(Path): a path object specific which twitter file should be processed
         cs (int): chunk start -> start bytes of a chunk
@@ -193,23 +204,17 @@ def twitter_processorV1(
             line = f.readline().decode()  # decode the current line from bytes
 
             # find target twitter id
-            match_id = re.search(TWEETS_ID, line)
+            match_id = TWEETS_ID.search(line)
             if match_id:
                 tweets_id.append(match_id.group(1))
 
-                next(f, None)
-                next(f, None)
-
             # find target author id
-            match_author = re.search(AUTHOR_ID, line)
+            match_author = AUTHOR_ID.search(line)
             if match_author and len(tweets_id) != len(author_id):
                 author_id.append(np.int64(match_author.group(1)))
 
-                for _ in range(SKIP_LINES_1):  # skip irrelevant lines
-                    next(f, None)
-
             # find target location name
-            match_location = re.search(LOCATION_ID, line)
+            match_location = LOCATION_ID.search(line)
             if match_location and len(tweets_id) != len(gcc):
                 location = normalise_location(match_location.group(1).lower())
                 locations.append(location)
@@ -222,10 +227,7 @@ def twitter_processorV1(
                 
                 if len(tweets_id) != len(gcc):
                     gcc.append(None)
-
-
-                for _ in range(SKIP_LINES_2):  # skip irrelevant lines
-                    next(f, None)                
+   
 
             # break condition check
             if f.tell() >= ce:
