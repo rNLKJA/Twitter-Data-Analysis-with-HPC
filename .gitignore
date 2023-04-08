@@ -147,3 +147,5 @@ data/processed/*.csv
 doc/*
 *.out
 *.err
+
+bin/*
