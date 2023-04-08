@@ -476,9 +476,26 @@ def generate_task_3_result(tdf: pl.DataFrame, save: bool, path: Path) -> pl.Data
         .agg(pl.col("tweet_count").sum())
         .sort("tweet_count", "author_id", descending=[True, True])
         .pivot('tweet_count', 'author_id', 'gcc')
+        .fill_null(0)
     )
-
-    tdf2.write_csv('./data/processed/t3_crosstab.csv')
+    
+    tdf2.write_csv('./data/result/task3_crosstab.csv')
+    
+    tdf2 = tdf2.with_columns(
+            pl.sum([pl.col(col) for col in tdf2.columns[1:]]).alias("sum"),
+        )
+    
+    tdf2 = tdf2.with_columns(
+        pl.concat_str([
+                pl.col('sum'),
+                pl.lit(' ('),
+                       
+                pl.lit(')')
+        ]).alias('summary')
+    )
+    
+    
+    print(tdf2)
     
     return 
 
