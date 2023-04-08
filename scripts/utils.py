@@ -1,17 +1,17 @@
 """
 Utility functions
 """
-import logging
 import argparse
-from typing import Tuple, List, Optional
+from typing import List
 from pathlib import Path
-import numpy as np
 import pandas as pd
 import math
-import copy
 from mpi4py import MPI
 import re
 from scripts.logger import twitter_logger as logger
+import time
+from scripts.arg_parser import parser
+from scripts.email_sender import send_log
 
 
 def obtain_twitter_file_name(parser: argparse.ArgumentParser) -> str:
@@ -162,4 +162,19 @@ def log_system_information():
     Log system information
     """
     logger.info(f"System information: {MPI.Get_processor_name()}\n")
+    logger.info("PROGRAM START")
+    return
+
+
+def end_process(start_time):
+    """
+    End of process
+    """
+    logger.info(f"ALL TASKS COMLETE")
+    end_time = time.time()
+    logger.info(f"Programming running seconds: {end_time - start_time}")
+
+    email_target = obtain_email_target(parser)
+    send_log(target=email_target)
+
     return
