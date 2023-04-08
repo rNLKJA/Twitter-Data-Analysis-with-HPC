@@ -9,6 +9,12 @@ Author: Wei Zhao 1118649 & Sunchuangyu Huang 1118472
 Github: https://github.com/rNLKJA/2023-S1-COMP90024-A1/
 
 """
+from scripts.mpi import gather_task_tdf, get_task_ranks
+from scripts.utils import *
+from scripts.twitter_processor import *
+from scripts.sal_processor import process_salV1
+from scripts.logger import twitter_logger as logger
+from scripts.arg_parser import parser
 import sys
 import time
 import os
@@ -18,12 +24,6 @@ from mpi4py import MPI
 
 sys.path.append("./scripts")
 
-from scripts.arg_parser import parser
-from scripts.logger import twitter_logger as logger
-from scripts.sal_processor import process_salV1
-from scripts.twitter_processor import *
-from scripts.utils import *
-from scripts.mpi import gather_task_tdf, get_task_ranks
 
 os.environ["NUMEXPR_MAX_THREADS"] = "32"
 PATH = Path()
@@ -54,17 +54,17 @@ if __name__ == "__main__":
         twitter_file, chunk_start[rank], chunk_end[rank], sal_dict
     )
 
-    logger.info(f"Rank {rank}: File Read Completed, cost: {time.time()- start_time}")
+    logger.info(
+        f"Rank {rank}: File Read Completed, cost: {time.time()- start_time}")
 
     # process twitter data based on three task requirements
     t1_tdf = count_number_of_tweets_by_author(tdf)
     t2_tdf = count_number_of_tweets_by_gcc(tdf)
     t3_tdf = count_author_tweets_from_most_different_gcc(tdf)
-
     # =================================== TASK 1 ===================================
     t1_tdfs = gather_task_tdf(rank, task1_rank, size, t1_tdf, comm)
-    
-    if rank == task1_rank: 
+
+    if rank == task1_rank:
         return_twitter_counts_by_author_id(t1_tdfs, path=PATH)
     # =================================== TASK 2 ===================================
     t2_tdfs = gather_task_tdf(rank, task2_rank, size, t2_tdf, comm)
