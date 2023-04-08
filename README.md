@@ -50,13 +50,6 @@ mpiexec -n [NUM_PROCESSORS] python main.py -t [TWITTER_FILE] -s [SAL_FILE] -e [E
 ./submit.sh
 ```
 
-Run python binary:
-
-```bash
-# binary code compile in standalone mode, no need for python installation
-mpiexec -n [NUM_PROCESSORS] ./main.py -t [TWITTER_FILE] -s [SAL_FILE] -e [EMAIL_TARGET|OPTIONAL]
-```
-
 Note, email target has only two valid options: 'rin' / 'eric'.
 
 ## Assignment Dependencies
