@@ -40,8 +40,9 @@ COMP90024 Cluster & Cloud Computing - Assignment 1 TwitterAnalyser
 
 ## To start the program
 
+For local testing, run the following commands:
+
 ```bash
-# for local testing, run the following command
 # main.py must in execute mode
 mpiexec -n [NUM_PROCESSORS] python main.py -t [TWITTER_FILE] -s [SAL_FILE] -e [EMAIL_TARGET|OPTIONAL]
 
@@ -49,18 +50,30 @@ mpiexec -n [NUM_PROCESSORS] python main.py -t [TWITTER_FILE] -s [SAL_FILE] -e [E
 ./submit.sh
 ```
 
+Run python binary:
+
+```bash
+# binary code compile in standalone mode, no need for python installation
+mpiexec -n [NUM_PROCESSORS] ./main.py -t [TWITTER_FILE] -s [SAL_FILE] -e [EMAIL_TARGET|OPTIONAL]
+```
+
+Note, email target has only two valid options: 'rin' / 'eric'.
+
 ## Assignment Dependencies
 
 Main Python dependencies: `python=3.7.4`, `mpi4py=3.0.4`, `polars`, `numpy`, `pandas`.
 
 If running on spartan, make sure use virtualenv with a python version `3.7.4` due to spartan load mpi4py version `3.0.4`.
 
-```{bash}
-# load module on spartan
+```bash
+# hpc: load module on spartan
 module --force purge
 module load mpi4py/3.0.2-timed-pingpong
 
 source ~/virtualenv/python3.7.4/bin/activate
+
+# local: create a conda environment
+conda env create --name comp90024 --file environment.yml
 
 # install dependencies
 pip install numpy pandas 'polars[all]'  #  or
@@ -71,13 +84,13 @@ pip install -r requirements.txt
 
 The `bigTwitter.json` contains $9,092,274$ tweets written by $119,439$ authors. Start from date `2021-07-05` to `2022-12-31`.
 
-**Processing time** on BigTwitter.json. 
+**Processing time** on BigTwitter.json.
 
-| Job      | Node | Core | Job Wall-Clock Time | CPU Efficiency |
-| :------: | :--: | :--: | :---------------: | :------------: |
-| 46094405 | 1    | 1    | 00:11:01          | 98.34%         |
-| 46094406 | 1    | 8    | 00:01:41          | 87.13%         |
-| 46094407 | 2    | 4    | 00:01:41          | 87.75%         |
+|   Job    | Node | Core | Job Wall-Clock Time | CPU Efficiency |
+| :------: | :--: | :--: | :-----------------: | :------------: |
+| 46094405 |  1   |  1   |      00:11:01       |     98.34%     |
+| 46094406 |  1   |  8   |      00:01:41       |     87.13%     |
+| 46094407 |  2   |  4   |      00:01:41       |     87.75%     |
 
 **Task 1 Question**: The solution should count the number of tweets made by the same individual based on the bigTwitter.json file and returned the top 10 tweeters in terms of the number of tweets made irrespective of where they tweeted. The result will be of the form (where the author Ids and tweet numbers are representative).
 
@@ -112,8 +125,8 @@ For this task, ignore tweets made by users in rural location, e.g. _lrnsw_ (Rura
 
 **Task 3 Question**: The solution should identify those tweeters that have a tweeted in the most Greater Capital cities and the number of times they have tweeted from those locations. The top 10 tweeters making tweets from the most different locations should be returned and if there are equal number of locations, then these should be ranked by the number of tweets. Only those tweets made in Greater Capital cities should be counted.
 
-| Rank | Author Id           | Number of Unique City Locations and #Tweets                                             |
-| :--: | :------------------ | :-------------------------------------------------------------------------------------- |
+| Rank | Author Id           | Number of Unique City Locations and #Tweets                                                    |
+| :--: | :------------------ | :--------------------------------------------------------------------------------------------- |
 |  #1  | 1429984556451389440 | 8 (#1920 tweets - #1879gmel, #13acte, #11gsyd, #7gper, #6gbri, #2gade, #1gdar, #1ghob)         |
 |  #2  | 702290904460169216  | 8 (#1231 tweets - #336gsyd, #255gmel, #235gbri, #156gper, #127gade, #56acte, #45ghob, #21gdar) |
 |  #3  | 17285408            | 8 (#1209 tweets - #1061gsyd, #60gmel, #40gbri, #23acte, #11ghob, #7gper, #4gdar, #3gade)       |
@@ -127,7 +140,7 @@ For this task, ignore tweets made by users in rural location, e.g. _lrnsw_ (Rura
 
 For complete assignment 1 report, please check [overleaf](https://www.overleaf.com/read/sdsczmmdxzvq).
 
-## License
+## LICENSE
 
 The code will be public after 27th May 2023. For @copyright information please refer to [MIT License](./LICENSE).
 
