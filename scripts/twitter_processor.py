@@ -475,35 +475,12 @@ def generate_task_3_result(tdf: pl.DataFrame, save: bool, path: Path) -> pl.Data
         .groupby("author_id", "gcc")
         .agg(pl.col("tweet_count").sum())
         .sort("tweet_count", "author_id", descending=[True, True])
+        .pivot('tweet_count', 'author_id', 'gcc')
     )
 
-    # store current dataframe for visualisation purpose
-    tdf2.write_csv(path / "data/result/task3_1.csv")
-
-    tdf3 = concate_count_dict_with_rank_df(generate_count_dict(tdf2))
-
-    tdf4 = tdf1.join(tdf3, on="author_id")
-
-    tdf4 = tdf4.with_columns(
-        [
-            pl.concat_str(
-                [
-                    pl.col("gcc_count"),
-                    pl.lit(" (#"),
-                    pl.col("tweet_count"),
-                    pl.lit(" tweets - "),
-                    pl.col("nugt"),
-                    pl.lit(")"),
-                ]
-            ).alias("gtc")
-        ]
-    ).select("rank", "author_id", "gtc")
-    tdf4.columns = ["Rank", "Author Id", "Number of Unique City Locations and #Tweets"]
-
-    if save:
-        tdf4.sort("Rank", descending=False).write_csv(path / "data/result/task3.csv")
-        return
-    return tdf4
+    tdf2.write_csv('./data/processed/t3_crosstab.csv')
+    
+    return 
 
 
 def generate_count_dict(tdf: pl.DataFrame) -> dict:
