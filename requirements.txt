@@ -69,8 +69,10 @@ nest-asyncio @ file:///croot/nest-asyncio_1672387112409/work
 nltk==3.8.1
 notebook @ file:///croot/notebook_1668179881751/work
 notebook_shim @ file:///croot/notebook-shim_1668160579331/work
+Nuitka==1.5.5
 numexpr @ file:///croot/numexpr_1668713893690/work
 numpy @ file:///croot/numpy_and_numpy_base_1672336185480/work
+ordered-set==4.1.0
 packaging @ file:///croot/packaging_1678965309396/work
 pandas==1.5.3
 pandocfilters @ file:///opt/conda/conda-bld/pandocfilters_1643405455980/work
@@ -88,6 +90,7 @@ prompt-toolkit @ file:///croot/prompt-toolkit_1672387306916/work
 psutil @ file:///opt/conda/conda-bld/psutil_1656431268089/work
 ptyprocess @ file:///tmp/build/80754af9/ptyprocess_1609355006118/work/dist/ptyprocess-0.7.0-py2.py3-none-any.whl
 pure-eval @ file:///opt/conda/conda-bld/pure_eval_1646925070566/work
+py-spy==0.3.14
 pyarrow==11.0.0
 pycparser @ file:///tmp/build/80754af9/pycparser_1636541352034/work
 Pygments @ file:///opt/conda/conda-bld/pygments_1644249106324/work
@@ -125,3 +128,4 @@ wcwidth @ file:///Users/ktietz/demo/mc3/conda-bld/wcwidth_1629357192024/work
 webencodings==0.5.1
 websocket-client @ file:///home/builder/ci_310/websocket-client_1640795866898/work
 widgetsnbextension @ file:///tmp/build/80754af9/widgetsnbextension_1645009354667/work
+zstandard==0.20.0
