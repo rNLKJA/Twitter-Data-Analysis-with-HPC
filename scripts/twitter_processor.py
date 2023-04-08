@@ -291,7 +291,8 @@ def generate_polars_dataframe(
     )
 
     tweet_df1 = tweet_df.with_columns(
-        pl.col("location").apply(lambda x: normalise_location(x), skip_nulls=True)
+        pl.col("location").apply(
+            lambda x: normalise_location(x), skip_nulls=True)
     )
     tweet_df1 = tweet_df1.join(sal_df, on="location", how="left")
 
@@ -362,7 +363,7 @@ def count_number_of_tweets_by_author(tdf: pl.DataFrame) -> pl.DataFrame:
         tdf.select("author_id", "tweet_id")
         .groupby("author_id")
         .agg(pl.count("tweet_id").alias("tweet_count"))
-        .sort("tweet_count", reverse=True)
+        .sort("tweet_count", descending=True)
     )
 
     return author_tweet_count
@@ -466,7 +467,8 @@ def generate_task_3_result(tdf: pl.DataFrame, save: bool, path: Path) -> pl.Data
     )
 
     tdf1 = tdf1.with_columns(
-        pl.col("gcc_count").rank(method="ordinal", descending=True).alias("rank")
+        pl.col("gcc_count").rank(method="ordinal",
+                                 descending=True).alias("rank")
     )
     tdf1 = tdf1.filter(pl.col("rank") < 11)
 
@@ -498,10 +500,12 @@ def generate_task_3_result(tdf: pl.DataFrame, save: bool, path: Path) -> pl.Data
             ).alias("gtc")
         ]
     ).select("rank", "author_id", "gtc")
-    tdf4.columns = ["Rank", "Author Id", "Number of Unique City Locations and #Tweets"]
+    tdf4.columns = ["Rank", "Author Id",
+                    "Number of Unique City Locations and #Tweets"]
 
     if save:
-        tdf4.sort("Rank", descending=False).write_csv(path / "data/result/task3.csv")
+        tdf4.sort("Rank", descending=False).write_csv(
+            path / "data/result/task3.csv")
         return
     return tdf4
 
@@ -537,7 +541,8 @@ def concate_count_dict_with_rank_df(count_dict: dict) -> pl.DataFrame:
     """
     strings = []
     for key in count_dict.keys():
-        strings.append(", ".join([f"#{v}{k[1:]}" for k, v in count_dict[key].items()]))
+        strings.append(
+            ", ".join([f"#{v}{k[1:]}" for k, v in count_dict[key].items()]))
 
     return pl.DataFrame({"author_id": count_dict.keys(), "nugt": strings})
 
