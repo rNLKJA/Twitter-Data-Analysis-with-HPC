@@ -12,6 +12,8 @@ The project objectives to:
 
 More information, please visit [project wiki](https://github.com/rNLKJA/2023-S1-COMP90024-A1/wiki).
 
+Project Report: [Overleaf](https://www.overleaf.com/read/sdsczmmdxzvq)
+
 ## Team
 
 | Name              | Student ID | Email                               |
