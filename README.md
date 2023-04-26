@@ -137,7 +137,7 @@ For complete assignment 1 report, please check [overleaf](https://www.overleaf.c
 
 ## LICENSE
 
-The code will be public after 27th May 2023. For @copyright information please refer to [MIT License](./LICENSE).
+The code will be public after Apr, 25th 2023. For @copyright information please refer to [MIT License](./LICENSE).
 
 ---
 
