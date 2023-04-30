@@ -2,7 +2,10 @@
 
 <!-- We do achieve 10/10 for this assignment -->
 
-> Be careful about plagiarism, we are not response for that lol - 2023-04 Wei & Sunchuangyu
+> Be careful about plagiarism, we are not response for that lol <br>
+> If this repository is helpful, please star it <br>
+> 2023-04 Wei & Sunchuangyu
+
 
 ## Project overview
 
