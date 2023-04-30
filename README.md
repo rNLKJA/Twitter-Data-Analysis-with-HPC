@@ -1,5 +1,9 @@
 <div align=center><h1>Cluster & Cloud Computing <br> Social Media Analysis</h1></div>
 
+<!-- We do achieve 10/10 for this assignment -->
+
+> Be careful about plagiarism, we are not response for that lol - 2023-04 Wei & Sunchuangyu
+
 ## Project overview
 
 The assignment is to implement a paralleized application leveraging the University of Melbourne HPC facility SPARTAN. The application will use a large Twitter dataset and a file containing suburbs, locations and Greater Capital cities of Australia.
