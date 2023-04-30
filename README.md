@@ -140,6 +140,16 @@ For this task, ignore tweets made by users in rural location, e.g. _lrnsw_ (Rura
 |  #9  | 601712763           | 8 (#146 tweets - #44gsyd, #39gmel, #19gade, #14gper, #11gbri, #10acte, #8ghob, #1gdar)         |
 | #10  | 2647302752          | 8 (#80 tweets - #32gbri, #16gmel, #13gsyd, #5ghob, #4gper, #4acte, #3gade, #3gdar)             |
 
+## Conclusion
+
+In this project, we explore Amdahl’s Law by using MPI to process a large JSON file. While parallelism can
+significantly enhance performance, it is essential to consider potential trade-offs in terms of CPU efficiency. As
+Table 4 indicates, distributing work across multiple cores can reduce job wall-clock time. However, the benefit
+might diminish when scaling with multiple nodes, due to the increased time required for MPI communication
+between nodes. Moreover, parallelism may not be suitable for small datasets if a single core can efficiently solve
+the problem in a short time. Therefore, when designing a parallel program to maximize performance using MPI,
+programmers need to balance the trade-off between processing CPU efficiency and overall performance.
+
 For complete assignment 1 report, please check [overleaf](https://www.overleaf.com/read/sdsczmmdxzvq).
 
 ## LICENSE
