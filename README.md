@@ -2,11 +2,6 @@
 
 <!-- We do achieve 10/10 for this assignment -->
 
-> Be careful about plagiarism, we are not response for that lol <br>
-> If this repository is helpful, please star it <br>
-> 2023-04 Wei & Sunchuangyu
-
-
 ## Project overview
 
 The assignment is to implement a paralleized application leveraging the University of Melbourne HPC facility SPARTAN. The application will use a large Twitter dataset and a file containing suburbs, locations and Greater Capital cities of Australia.
