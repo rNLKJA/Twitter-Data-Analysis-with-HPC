@@ -9,18 +9,20 @@ Author: Wei Zhao 1118649 & Sunchuangyu Huang 1118472
 Github: https://github.com/rNLKJA/2023-S1-COMP90024-A1/
 
 """
-from scripts.mpi import gather_task_tdf, get_task_ranks
-from scripts.utils import *
-from scripts.twitter_processor import *
-from scripts.sal_processor import process_salV1
-from scripts.logger import twitter_logger as logger
-from scripts.arg_parser import parser
+
+import os
 import sys
 import time
-import os
 from pathlib import Path
 
 from mpi4py import MPI
+
+from scripts.arg_parser import parser
+from scripts.logger import twitter_logger as logger
+from scripts.mpi import gather_task_tdf, get_task_ranks
+from scripts.sal_processor import process_salV1
+from scripts.twitter_processor import *
+from scripts.utils import *
 
 sys.path.append("./scripts")
 
@@ -54,8 +56,7 @@ if __name__ == "__main__":
         twitter_file, chunk_start[rank], chunk_end[rank], sal_dict
     )
 
-    logger.info(
-        f"Rank {rank}: File Read Completed, cost: {time.time()- start_time}")
+    logger.info(f"Rank {rank}: File Read Completed, cost: {time.time()- start_time}")
 
     # process twitter data based on three task requirements
     t1_tdf = count_number_of_tweets_by_author(tdf)

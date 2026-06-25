@@ -1,9 +1,10 @@
 """
 Twitter Analyzer logger
 """
+
 import logging
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 time_string = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 

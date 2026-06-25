@@ -1,12 +1,15 @@
+import re
+from dataclasses import dataclass
+from itertools import combinations
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
-from dataclasses import dataclass
-import re
-from .utils import normalise_location, is_state_location
 import polars as pl
+
 from scripts.logger import twitter_logger as logger
-from itertools import combinations
+
+from .utils import is_state_location, normalise_location
 
 
 @dataclass
@@ -291,8 +294,7 @@ def generate_polars_dataframe(
     )
 
     tweet_df1 = tweet_df.with_columns(
-        pl.col("location").apply(
-            lambda x: normalise_location(x), skip_nulls=True)
+        pl.col("location").apply(lambda x: normalise_location(x), skip_nulls=True)
     )
     tweet_df1 = tweet_df1.join(sal_df, on="location", how="left")
 
@@ -467,8 +469,7 @@ def generate_task_3_result(tdf: pl.DataFrame, save: bool, path: Path) -> pl.Data
     )
 
     tdf1 = tdf1.with_columns(
-        pl.col("gcc_count").rank(method="ordinal",
-                                 descending=True).alias("rank")
+        pl.col("gcc_count").rank(method="ordinal", descending=True).alias("rank")
     )
     tdf1 = tdf1.filter(pl.col("rank") < 11)
 
@@ -500,12 +501,10 @@ def generate_task_3_result(tdf: pl.DataFrame, save: bool, path: Path) -> pl.Data
             ).alias("gtc")
         ]
     ).select("rank", "author_id", "gtc")
-    tdf4.columns = ["Rank", "Author Id",
-                    "Number of Unique City Locations and #Tweets"]
+    tdf4.columns = ["Rank", "Author Id", "Number of Unique City Locations and #Tweets"]
 
     if save:
-        tdf4.sort("Rank", descending=False).write_csv(
-            path / "data/result/task3.csv")
+        tdf4.sort("Rank", descending=False).write_csv(path / "data/result/task3.csv")
         return
     return tdf4
 
@@ -541,8 +540,7 @@ def concate_count_dict_with_rank_df(count_dict: dict) -> pl.DataFrame:
     """
     strings = []
     for key in count_dict.keys():
-        strings.append(
-            ", ".join([f"#{v}{k[1:]}" for k, v in count_dict[key].items()]))
+        strings.append(", ".join([f"#{v}{k[1:]}" for k, v in count_dict[key].items()]))
 
     return pl.DataFrame({"author_id": count_dict.keys(), "nugt": strings})
 

@@ -2,8 +2,9 @@
 MPI utility functions
 """
 
-from mpi4py import MPI
 import polars as pl
+from mpi4py import MPI
+
 from scripts.twitter_processor import *
 
 

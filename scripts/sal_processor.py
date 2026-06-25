@@ -3,13 +3,16 @@
 Sal.json Processing Script, involving a processed sal.json file
 and load the csv into a pandas dataframe
 """
-import pandas as pd
+
+import logging
 import re
 from pathlib import Path
-import logging
-from .utils import obtain_sal_file_name
-from .arg_parser import parser
+
+import pandas as pd
 import polars as pl
+
+from .arg_parser import parser
+from .utils import obtain_sal_file_name
 
 sal_file_name = obtain_sal_file_name(parser=parser)
 

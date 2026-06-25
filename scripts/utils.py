@@ -1,17 +1,20 @@
 """
 Utility functions
 """
+
 import argparse
-from typing import List
-from pathlib import Path
-import pandas as pd
 import math
-from mpi4py import MPI
 import re
-from scripts.logger import twitter_logger as logger
 import time
+from pathlib import Path
+from typing import List
+
+import pandas as pd
+from mpi4py import MPI
+
 from scripts.arg_parser import parser
 from scripts.email_sender import send_log
+from scripts.logger import twitter_logger as logger
 
 
 def obtain_twitter_file_name(parser: argparse.ArgumentParser) -> str:
@@ -57,8 +60,7 @@ def split_file_into_chunks(path: Path, size: int) -> List[List]:
     return chunk_start, chunk_end
 
 
-def twitter_wrangler(filename: Path, size: int) -> pd.DataFrame:
-    ...
+def twitter_wrangler(filename: Path, size: int) -> pd.DataFrame: ...
 
 
 state_location = dict(
