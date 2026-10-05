@@ -106,6 +106,7 @@ export function MpiLab() {
           </div>
           <BenchmarkPanel
             bench={lab.bench}
+            lastComplete={lab.lastCompleteBench}
             runKey={lab.key}
             file={file}
             dict={lab.dict}

@@ -19,7 +19,8 @@
     "format:check": "prettier --check .",
     "gen:synthetic": "tsx scripts/write-synthetic.ts",
     "run:pipeline": "tsx scripts/run-pipeline.ts",
-    "sync-docs": "node scripts/sync-docs.mjs"
+    "sync-docs": "node scripts/sync-docs.mjs",
+    "coverage-sim": "COVERAGE_SIM=1 vitest run src/lib/lab/coverage.sim.test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",

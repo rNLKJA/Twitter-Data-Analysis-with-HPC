@@ -53,15 +53,18 @@ export function countTicks(max: number, count = 5): number[] {
   return ticks;
 }
 
-const TIME_STEPS = [1, 2, 5, 10, 15, 30, 60, 120, 180, 300, 600, 900, 1200, 1800, 3600, 7200];
+/** Clock-friendly steps in seconds: sub-second steps for the browser lab, minutes and hours for Spartan. */
+const TIME_STEPS = [
+  0.001, 0.002, 0.005, 0.01, 0.02, 0.025, 0.05, 0.1, 0.2, 0.25, 0.5, 1, 2, 5, 10, 15, 30, 60, 120,
+  180, 300, 600, 900, 1200, 1800, 3600, 7200,
+];
 
-/** Ticks for a duration axis in seconds, on clock-friendly steps (…, 1, 2, 3, 5, 10 min, …). */
+/** Ticks for a duration axis in seconds, on clock-friendly steps (…, 0.1 s, …, 1, 2, 3, 5, 10 min, …). */
 export function niceTimeTicks(maxSeconds: number, count = 5): number[] {
   if (!(maxSeconds > 0)) return [0, 1];
   const raw = maxSeconds / Math.max(1, count);
   const step = TIME_STEPS.find((s) => s >= raw) ?? Math.ceil(raw / 3600) * 3600;
-  const top = Math.ceil(maxSeconds / step - 1e-9) * step;
-  const ticks: number[] = [];
-  for (let v = 0; v <= top; v += step) ticks.push(v);
-  return ticks;
+  const steps = Math.ceil(maxSeconds / step - 1e-9);
+  // Multiply rather than accumulate, so 0.05-second steps stay exact enough to print.
+  return Array.from({ length: steps + 1 }, (_, i) => Number((i * step).toPrecision(12)));
 }

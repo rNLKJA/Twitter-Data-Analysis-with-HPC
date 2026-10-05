@@ -8,6 +8,7 @@ import {
 } from "../stats/bootstrap";
 import { median } from "../stats/descriptive";
 import type { Interval } from "../stats/interval";
+import { medianInterval, type MedianInterval } from "../stats/order";
 
 /**
  * The browser benchmark protocol (see docs/decisions/DR-004).
@@ -20,9 +21,13 @@ import type { Interval } from "../stats/interval";
  *    the ones that happen to run last.
  *  - Summary: the median wall time per worker count, speedup = median(T1) /
  *    median(Tn), efficiency = speedup / n, and Amdahl's serial fraction fitted
- *    by least squares to the median speedups. 95% intervals come from a
- *    percentile bootstrap that resamples whole rounds, so the pairing of runs
- *    made under the same conditions is kept.
+ *    by least squares to the median speedups.
+ *  - Intervals: the median wall time gets the exact order-statistic interval
+ *    (distribution-free; its true coverage is reported). Speedup, efficiency,
+ *    Karp–Flatt and f get a percentile bootstrap that resamples whole rounds,
+ *    so runs made under the same conditions stay paired. That bootstrap is
+ *    nominally 95% but under-covers with few rounds (see lib/lab/coverage.ts
+ *    and DR-004), so no interval is shown below MIN_INTERVAL_ROUNDS.
  */
 
 export interface BenchmarkPlan {
@@ -36,7 +41,16 @@ export interface BenchmarkPlan {
   orderSeed: number;
 }
 
-export const BENCHMARK_DEFAULTS = { repeats: 7, warmupRounds: 1, orderSeed: 2023 } as const;
+export const BENCHMARK_DEFAULTS = { repeats: 10, warmupRounds: 1, orderSeed: 2023 } as const;
+
+/** Timed-round counts offered in the lab. */
+export const REPEAT_OPTIONS = [5, 7, 10, 15] as const;
+
+/**
+ * Fewest complete rounds before any interval is shown. Below this the panel
+ * shows medians and the min–max range only.
+ */
+export const MIN_INTERVAL_ROUNDS = 5;
 
 export interface PlannedRun {
   /** 0-based index in the whole plan. */
@@ -104,7 +118,8 @@ export interface ConfigSummary {
   n: number;
   /** Runs summarised (one per complete round). */
   runs: number;
-  wallMs: Interval;
+  /** Median wall time with its exact order-statistic interval. */
+  wallMs: MedianInterval;
   speedup: Interval;
   efficiency: Interval;
   /** Karp–Flatt serial fraction at this n (n > 1 only). */
@@ -146,18 +161,19 @@ function pointEstimates(times: Map<number, number[]>, sizes: readonly number[]):
 
 /**
  * Summarise the complete rounds of a benchmark. Returns null until there are
- * at least two complete rounds (one round has no spread to resample).
+ * MIN_INTERVAL_ROUNDS complete rounds (use roughSummary below that).
  */
 export function summariseBenchmark(
   samples: readonly BenchmarkSample[],
   sizes: readonly number[],
-  opts: BootstrapOptions = {},
+  opts: BootstrapOptions & { minRounds?: number } = {},
 ): BenchmarkSummary | null {
   const { resamples, seed, level } = resolveBootstrap(opts);
   const ns = [...new Set(sizes)].sort((a, b) => a - b);
   if (!ns.includes(1)) return null;
   const rounds = completeRounds(samples, ns);
-  if (rounds.length < 2) return null;
+  // minRounds below the default is for the coverage simulation only.
+  if (rounds.length < Math.max(2, opts.minRounds ?? MIN_INTERVAL_ROUNDS)) return null;
 
   // round → size → wall time
   const table = new Map<number, Map<number, BenchmarkSample>>();
@@ -180,7 +196,6 @@ export function summariseBenchmark(
   // Block bootstrap over rounds.
   const rng = createRng(seed);
   const reps = {
-    medians: new Map(ns.map((n) => [n, [] as number[]])),
     speedup: new Map(ns.map((n) => [n, [] as number[]])),
     kf: new Map(ns.map((n) => [n, [] as number[]])),
     f: [] as number[],
@@ -189,7 +204,6 @@ export function summariseBenchmark(
     const picked = resampleIndices(rounds.length, rounds.length, rng).map((i) => rounds[i]);
     const p = pointEstimates(collect(picked), ns);
     for (const n of ns) {
-      reps.medians.get(n)!.push(p.medians.get(n)!);
       const s = p.speedup.get(n)!;
       reps.speedup.get(n)!.push(s);
       if (n > 1) reps.kf.get(n)!.push(karpFlatt(s, n));
@@ -208,7 +222,7 @@ export function summariseBenchmark(
     return {
       n,
       runs: times.length,
-      wallMs: interval(point.medians.get(n)!, reps.medians.get(n)!),
+      wallMs: medianInterval(times, level),
       speedup,
       efficiency: { estimate: speedup.estimate / n, lo: speedup.lo / n, hi: speedup.hi / n, level },
       karpFlatt: n > 1 ? interval(karpFlatt(speedup.estimate, n), reps.kf.get(n)!) : null,
@@ -237,6 +251,38 @@ export function summariseBenchmark(
     seed,
     level,
   };
+}
+
+export interface RoughConfig {
+  n: number;
+  runs: number;
+  medianMs: number;
+  minMs: number;
+  maxMs: number;
+}
+
+/**
+ * Medians and ranges of the complete rounds so far, with no interval: what the
+ * panel shows while there are fewer than MIN_INTERVAL_ROUNDS rounds.
+ */
+export function roughSummary(
+  samples: readonly BenchmarkSample[],
+  sizes: readonly number[],
+): { rounds: number; configs: RoughConfig[] } | null {
+  const ns = [...new Set(sizes)].sort((a, b) => a - b);
+  const rounds = new Set(completeRounds(samples, ns));
+  if (rounds.size === 0) return null;
+  const configs = ns.map((n) => {
+    const times = samples.filter((s) => s.size === n && rounds.has(s.round)).map((s) => s.wallMs);
+    return {
+      n,
+      runs: times.length,
+      medianMs: median(times),
+      minMs: Math.min(...times),
+      maxMs: Math.max(...times),
+    };
+  });
+  return { rounds: rounds.size, configs };
 }
 
 /** Worker counts for a quicker benchmark: 1, 3, 4, then roughly doubling, plus the maximum. */

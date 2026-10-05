@@ -1,13 +1,18 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  BENCHMARK_DEFAULTS,
   completeRounds,
+  MIN_INTERVAL_ROUNDS,
   planBenchmark,
+  REPEAT_OPTIONS,
+  roughSummary,
   samplesCsv,
   spacedSizes,
   summariseBenchmark,
   type BenchmarkSample,
 } from "./benchmark";
+import { simulateCoverage } from "./coverage";
 
 // The same table as scripts/stats_reference.py: 5 rounds × {1, 3, 4, 8} workers (ms).
 const TABLE: Array<Record<number, number>> = [
@@ -64,13 +69,14 @@ describe("planBenchmark", () => {
 });
 
 describe("summariseBenchmark", () => {
-  it("matches the numpy reference (block bootstrap over rounds, seed 90024)", () => {
+  it("matches the numpy and R references (order-statistic medians, round bootstrap, seed 90024)", () => {
     const s = summariseBenchmark(samples(), SIZES, { resamples: 2000, seed: 90024 })!;
     expect(s.rounds).toBe(5);
     const by = (n: number) => s.configs.find((c) => c.n === n)!;
 
-    expect(by(1).wallMs).toMatchObject({ estimate: 1010, lo: 985, hi: 1120 });
-    expect(by(8).wallMs).toMatchObject({ estimate: 190, lo: 182, hi: 220 });
+    // Five rounds: the order-statistic interval is [min, max], exact coverage 93.75%.
+    expect(by(1).wallMs).toMatchObject({ estimate: 1010, lo: 985, hi: 1120, coverage: 0.9375 });
+    expect(by(8).wallMs).toMatchObject({ estimate: 190, lo: 182, hi: 220, coverage: 0.9375 });
     expect(by(3).speedup.estimate).toBeCloseTo(2.6578947368421053, 12);
     expect(by(3).speedup.lo).toBeCloseTo(2.6315789473684212, 12);
     expect(by(3).speedup.hi).toBeCloseTo(2.731707317073171, 12);
@@ -89,7 +95,7 @@ describe("summariseBenchmark", () => {
     expect(by(4)).toMatchObject({ runs: 5, minMs: 296, maxMs: 330 });
   });
 
-  it("only uses complete timed rounds, and needs two of them", () => {
+  it("only uses complete timed rounds, and needs MIN_INTERVAL_ROUNDS of them", () => {
     const all = samples();
     const partial = [
       ...all,
@@ -99,13 +105,33 @@ describe("summariseBenchmark", () => {
     expect(completeRounds(partial, SIZES)).toEqual([0, 1, 2, 3, 4]);
     const s = summariseBenchmark(partial, SIZES, { resamples: 2000, seed: 90024 })!;
     expect(s.configs.find((c) => c.n === 1)!.wallMs.estimate).toBe(1010);
+    expect(MIN_INTERVAL_ROUNDS).toBe(5);
     expect(
       summariseBenchmark(
-        all.filter((x) => x.round === 0),
+        all.filter((x) => x.round < 4),
         SIZES,
       ),
     ).toBeNull();
     expect(summariseBenchmark(all, [3, 4])).toBeNull();
+  });
+
+  it("summarises fewer rounds as medians and ranges only", () => {
+    const two = samples().filter((x) => x.round < 2);
+    const r = roughSummary(two, SIZES)!;
+    expect(r.rounds).toBe(2);
+    expect(r.configs.find((c) => c.n === 1)).toEqual({
+      n: 1,
+      runs: 2,
+      medianMs: 1020,
+      minMs: 1000,
+      maxMs: 1040,
+    });
+    expect(roughSummary([], SIZES)).toBeNull();
+  });
+
+  it("defaults to enough rounds for intervals that hold their coverage", () => {
+    expect(BENCHMARK_DEFAULTS.repeats).toBe(10);
+    expect(Math.min(...REPEAT_OPTIONS)).toBeGreaterThanOrEqual(MIN_INTERVAL_ROUNDS);
   });
 
   it("has no serial fraction with a single worker count", () => {
@@ -116,6 +142,20 @@ describe("summariseBenchmark", () => {
     )!;
     expect(s.serialFraction).toBeNull();
     expect(s.ceiling).toBeNull();
+  });
+});
+
+describe("coverage simulation", () => {
+  it("is seeded, and the order-statistic median interval holds its coverage", () => {
+    const opts = { repeats: 10, sims: 60, sizes: [1, 4], f: 0.2, sigma: 0.1, resamples: 300 };
+    const a = simulateCoverage(opts);
+    expect(simulateCoverage(opts)).toEqual(a);
+    expect(a.claimedMedianCoverage).toBeCloseTo(0.978515625, 12);
+    // 60 benchmarks: allow for simulation noise around the exact 97.9%.
+    expect(a.median[1]).toBeGreaterThanOrEqual(0.9);
+    expect(a.median[4]).toBeGreaterThanOrEqual(0.9);
+    expect(Object.keys(a.speedup)).toEqual(["4"]);
+    expect(() => simulateCoverage({ ...opts, repeats: 3 })).toThrow(RangeError);
   });
 });
 

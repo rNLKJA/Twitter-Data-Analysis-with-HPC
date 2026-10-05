@@ -354,14 +354,20 @@ export function ScalingLegend({
   showBand = false,
   showGustafson = false,
   showBars = false,
+  barsLabel = "95% CI",
+  bandLabel = "95% CI of the fit",
   measured,
 }: {
   showModel?: boolean;
   /** The shaded interval around the Amdahl curve. */
   showBand?: boolean;
   showGustafson?: boolean;
-  /** Measured points carry 95% interval bars. */
+  /** Measured points carry interval bars. */
   showBars?: boolean;
+  /** What the bars are, e.g. "nominal 95% CI". */
+  barsLabel?: string;
+  /** What the band is. */
+  bandLabel?: string;
   measured: ReadonlyArray<{ label: string; shape?: MarkerShape }>;
 }) {
   return (
@@ -373,7 +379,7 @@ export function ScalingLegend({
         <li key={m.label} className="flex items-center gap-1.5">
           <MarkerIcon shape={m.shape} />
           {m.label}
-          {showBars && <span className="text-muted-foreground">(bars: 95% CI)</span>}
+          {showBars && <span className="text-muted-foreground">(bars: {barsLabel})</span>}
         </li>
       ))}
       {showModel && (
@@ -384,8 +390,8 @@ export function ScalingLegend({
       )}
       {showBand && (
         <li className="flex items-center gap-2">
-          <span className="inline-block h-3 w-5 rounded-sm bg-series-1/15" aria-hidden /> 95% CI of
-          the fit
+          <span className="inline-block h-3 w-5 rounded-sm bg-series-1/15" aria-hidden />{" "}
+          {bandLabel}
         </li>
       )}
       {showGustafson && (

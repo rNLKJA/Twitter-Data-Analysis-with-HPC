@@ -46,6 +46,14 @@ describe("niceTimeTicks", () => {
   it("uses second steps for short ranges", () => {
     expect(niceTimeTicks(7, 4)).toEqual([0, 2, 4, 6, 8]);
   });
+
+  it("uses sub-second steps for browser-lab timings", () => {
+    expect(niceTimeTicks(0.2, 5)).toEqual([0, 0.05, 0.1, 0.15, 0.2]);
+    expect(niceTimeTicks(0.16, 5)).toEqual([0, 0.05, 0.1, 0.15, 0.2]);
+    expect(niceTimeTicks(0.63, 5)).toEqual([0, 0.2, 0.4, 0.6, 0.8]);
+    expect(niceTimeTicks(0.95, 5)).toEqual([0, 0.2, 0.4, 0.6, 0.8, 1]);
+    expect(niceTimeTicks(0.0042, 4)).toEqual([0, 0.002, 0.004, 0.006]);
+  });
 });
 
 describe("countTicks", () => {

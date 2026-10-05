@@ -8,10 +8,10 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { BenchState } from "@/hooks/use-mpi-lab";
 import { getTaskRanks } from "@/lib/cruncher/chunks";
+import { REPEAT_OPTIONS } from "@/lib/lab/benchmark";
 
 export type CountsMode = "spaced" | "every";
 
-const REPEAT_OPTIONS = [3, 5, 7, 10];
 const WARMUP_OPTIONS = [0, 1, 2];
 
 const toggleOn =
@@ -159,7 +159,8 @@ export function RunControls({
         <p className="text-xs text-muted-foreground">
           Measures every worker count {repeats} times after {warmup === 0 ? "no" : warmup} warm-up
           round{warmup === 1 ? "" : "s"}, each round in a shuffled order, and reports medians with
-          95% bootstrap intervals.
+          exact order-statistic intervals and bootstrap intervals for speedup and f. At least 5
+          rounds; 10 keeps the bootstrap at its nominal 95% in simulation.
         </p>
         <div className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2.5 text-sm">
           <span id={`${id}-reps`} className="text-xs font-medium">

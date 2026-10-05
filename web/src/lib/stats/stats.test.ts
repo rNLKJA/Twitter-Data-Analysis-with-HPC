@@ -5,13 +5,15 @@ import { bootstrapInterval, percentileInterval } from "./bootstrap";
 import { mean, median, quantile } from "./descriptive";
 import { formatInterval } from "./interval";
 import { normalQuantile, zFor } from "./normal";
+import { binomHalfCdf, medianInterval, orderStatCoverage } from "./order";
 import { comparePaired, mcnemarExact } from "./paired";
 import { wilson } from "./proportion";
 
 /*
  * Reference values come from scripts/stats_reference.py (numpy 2.3, scipy
- * 1.16, statsmodels 0.14) and were cross-checked in R 4 (quantile type 7,
- * prop.test(correct = FALSE), binom.test, lm(y ~ 0 + x)).
+ * 1.16, statsmodels 0.14) and are reproduced in base R 4 by
+ * scripts/stats_reference.R (quantile type 7, prop.test(correct = FALSE),
+ * binom.test, pbinom for order-statistic coverage, lm(y ~ 0 + x)).
  */
 
 const X = [3.1, 0.4, 2.2, 9.7, 5.5, 1.0, 4.8];
@@ -132,5 +134,41 @@ describe("percentile bootstrap", () => {
     expect(
       formatInterval({ estimate: 0.032, lo: 0.021, hi: 0.04, level: 0.95 }, (v) => v.toFixed(3)),
     ).toBe("0.032 (95% CI 0.021 to 0.040)");
+  });
+});
+
+describe("order-statistic interval for a median", () => {
+  it("matches R's 1 - 2 * pbinom(k - 1, n, 1/2)", () => {
+    expect(binomHalfCdf(1, 10)).toBeCloseTo(11 / 1024, 15);
+    expect(binomHalfCdf(-1, 10)).toBe(0);
+    expect(binomHalfCdf(10, 10)).toBe(1);
+    const ref: Array<[number, number]> = [
+      [5, 0.9375],
+      [6, 0.96875],
+      [7, 0.984375],
+      [10, 0.978515625],
+      [15, 0.96484375],
+      [20, 0.95861053466796875],
+    ];
+    for (const [n, coverage] of ref) {
+      expect(medianInterval([...Array(n).keys()]).coverage, `n = ${n}`).toBeCloseTo(coverage, 12);
+    }
+    expect(orderStatCoverage(3, 10)).toBeCloseTo(1 - (2 * 56) / 1024, 15);
+  });
+
+  it("picks the narrowest interval that reaches the level, and says when none does", () => {
+    expect(medianInterval(X)).toEqual({
+      estimate: 3.1,
+      lo: 0.4,
+      hi: 9.7,
+      level: 0.95,
+      coverage: 0.984375,
+      ranks: [1, 7],
+    });
+    const ten = [12, 3, 7, 1, 9, 4, 10, 2, 8, 5];
+    expect(medianInterval(ten)).toMatchObject({ lo: 2, hi: 10, ranks: [2, 9] });
+    // Five values cannot reach 95%: [min, max] with its true 93.75%.
+    expect(medianInterval([5, 1, 4, 2, 3])).toMatchObject({ lo: 1, hi: 5, coverage: 0.9375 });
+    expect(medianInterval([]).estimate).toBeNaN();
   });
 });

@@ -17,7 +17,13 @@ import { fitSerialFraction, serialFractionRoundingRange } from "@/lib/amdahl";
 import { BENCHMARKS } from "@/lib/data/original";
 import { downloadText } from "@/lib/download";
 import { formatMs, formatPct } from "@/lib/format";
-import { completeRounds, samplesCsv, summariseBenchmark } from "@/lib/lab/benchmark";
+import {
+  completeRounds,
+  MIN_INTERVAL_ROUNDS,
+  roughSummary,
+  samplesCsv,
+  summariseBenchmark,
+} from "@/lib/lab/benchmark";
 import type { Interval } from "@/lib/stats/interval";
 
 const SPARTAN_T1 = BENCHMARKS.find((b) => b.cores === 1)!.seconds;
@@ -67,12 +73,15 @@ function Stat({
   fmt,
   tone,
   hint,
+  ci = "nominal 95% CI",
 }: {
   label: string;
   i: Interval;
   fmt: (v: number) => string;
   tone?: "primary" | "signal";
   hint?: string;
+  /** What kind of interval this is. */
+  ci?: string;
 }) {
   return (
     <div className="min-w-0">
@@ -85,21 +94,74 @@ function Stat({
         {fmt(i.estimate)}
       </dd>
       <dd className="text-[0.7rem] text-muted-foreground">
-        95% CI <Ci i={i} fmt={fmt} />
+        {ci} <Ci i={i} fmt={fmt} />
         {hint ? <span className="block">{hint}</span> : null}
       </dd>
     </div>
   );
 }
 
+function RoughTable({ bench }: { bench: BenchState }) {
+  const rough = roughSummary(bench.samples, bench.plan.sizes);
+  if (!rough) return null;
+  return (
+    <div
+      className="overflow-x-auto rounded-lg border"
+      tabIndex={0}
+      role="region"
+      aria-label="Medians so far, scrollable"
+    >
+      <table className="w-full min-w-[20rem] text-xs">
+        <caption className="sr-only">
+          Median wall time and range per number of ranks from the complete rounds so far, without
+          intervals
+        </caption>
+        <thead className="bg-muted/30">
+          <tr className="text-left font-mono text-[0.62rem] tracking-[0.1em] text-muted-foreground uppercase">
+            <th scope="col" className="px-2.5 py-2 font-medium">
+              n
+            </th>
+            <th scope="col" className="px-2.5 py-2 text-right font-medium">
+              Runs
+            </th>
+            <th scope="col" className="px-2.5 py-2 text-right font-medium">
+              Median wall
+            </th>
+            <th scope="col" className="px-2.5 py-2 text-right font-medium">
+              Range
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {rough.configs.map((c) => (
+            <tr key={c.n} className="border-t border-border/60">
+              <th scope="row" className="num px-2.5 py-1.5 text-left font-mono font-medium">
+                {c.n}
+              </th>
+              <td className="num px-2.5 py-1.5 text-right font-mono">{c.runs}</td>
+              <td className="num px-2.5 py-1.5 text-right font-mono">{formatMs(c.medianMs)}</td>
+              <td className="num px-2.5 py-1.5 text-right font-mono text-muted-foreground">
+                {formatMs(c.minMs)} to {formatMs(c.maxMs)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export function BenchmarkPanel({
   bench,
+  lastComplete,
   runKey,
   file,
   dict,
   maxWorkers,
 }: {
   bench: BenchState | null;
+  /** The last benchmark that ran to the end; shown when a later one stopped too early. */
+  lastComplete: BenchState | null;
   /** Current file + dictionary; a benchmark of another file is not shown. */
   runKey: string | null;
   file: LabFile | null;
@@ -108,12 +170,28 @@ export function BenchmarkPanel({
 }) {
   const [kind, setKind] = useState<ChartKind>("speedup");
   const [hoverN, setHoverN] = useState<number | null>(null);
-  const current = bench && bench.key === runKey ? bench : null;
-  const sizes = current?.plan.sizes;
-  const summary = useMemo(
-    () => (current && sizes ? summariseBenchmark(current.samples, sizes) : null),
-    [current, sizes],
+  const latest = bench && bench.key === runKey ? bench : null;
+  const latestSummary = useMemo(
+    () => (latest ? summariseBenchmark(latest.samples, latest.plan.sizes) : null),
+    [latest],
   );
+  // A benchmark stopped before it had enough rounds must not hide the last complete one.
+  const fallback =
+    latest &&
+    !latestSummary &&
+    latest.status !== "running" &&
+    lastComplete &&
+    lastComplete.key === runKey &&
+    lastComplete.id !== latest.id
+      ? lastComplete
+      : null;
+  const current = fallback ?? latest;
+  const fallbackSummary = useMemo(
+    () => (fallback ? summariseBenchmark(fallback.samples, fallback.plan.sizes) : null),
+    [fallback],
+  );
+  const summary = fallback ? fallbackSummary : latestSummary;
+  const sizes = current?.plan.sizes;
 
   const spartanNote = (
     <div className="flex gap-2.5 rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
@@ -141,10 +219,10 @@ export function BenchmarkPanel({
           <Gauge className="mx-auto size-7 text-muted-foreground/60" aria-hidden />
           <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">
             Run the <span className="font-medium text-foreground">benchmark</span> to measure
-            speedup on this machine with uncertainty: every worker count is run several times (7 by
+            speedup on this machine with uncertainty: every worker count is run several times (10 by
             default) after a warm-up round, in a shuffled order each round, and the results are
-            summarised as medians with 95% bootstrap intervals, an Amdahl fit with its own interval,
-            and Gustafson&apos;s law for contrast.
+            summarised as medians with exact order-statistic intervals, speedups and an Amdahl fit
+            with bootstrap intervals, and Gustafson&apos;s law for contrast.
           </p>
         </div>
         {spartanNote}
@@ -160,9 +238,10 @@ export function BenchmarkPanel({
       <div className="space-y-4">
         <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
           {current.status === "running"
-            ? `Benchmark B${current.id} running: ${rounds} of ${plan.repeats} rounds complete. Intervals appear after two complete rounds.`
-            : `Benchmark B${current.id} stopped after ${rounds} complete round${rounds === 1 ? "" : "s"}; at least two are needed for an interval.`}
+            ? `Benchmark B${current.id} running: ${rounds} of ${plan.repeats} rounds complete. Intervals appear after ${MIN_INTERVAL_ROUNDS} complete rounds.`
+            : `Benchmark B${current.id} stopped after ${rounds} complete round${rounds === 1 ? "" : "s"}: too few rounds for an interval (at least ${MIN_INTERVAL_ROUNDS} are needed). Medians and ranges so far:`}
         </p>
+        {current.status !== "running" && <RoughTable bench={current} />}
         {spartanNote}
       </div>
     );
@@ -193,17 +272,19 @@ export function BenchmarkPanel({
       `${JSON.stringify(
         {
           exportedAt: new Date().toISOString(),
-          note: "Browser re-enactment of the COMP90024 MPI tweet cruncher. Wall times in ms. Intervals: percentile bootstrap over complete rounds.",
+          note: "Browser re-enactment of the COMP90024 MPI tweet cruncher. Wall times in ms. Median wall times: exact order-statistic intervals (configs[].wallMs.coverage is the exact coverage). Speedup, efficiency, Karp-Flatt and f: percentile bootstrap over complete rounds, nominal 95%.",
           protocol: {
             workerCounts: plan.sizes,
             timedRounds: plan.repeats,
             warmupRounds: plan.warmupRounds,
             orderSeed: plan.orderSeed,
+            medianInterval: "order statistics (distribution-free)",
             bootstrap: {
               resamples: summary.resamples,
               seed: summary.seed,
               level: summary.level,
               unit: "round",
+              coverage: "nominal; see DR-004 for simulated coverage",
             },
           },
           environment: {
@@ -234,6 +315,17 @@ export function BenchmarkPanel({
 
   return (
     <div className="space-y-5">
+      {fallback && latest && (
+        <p
+          className="rounded-lg border border-caution/40 bg-caution/10 px-3 py-2 text-xs"
+          role="status"
+        >
+          Benchmark B{latest.id} stopped after{" "}
+          {completeRounds(latest.samples, latest.plan.sizes).length} complete round
+          {completeRounds(latest.samples, latest.plan.sizes).length === 1 ? "" : "s"}, too few for
+          an interval. Showing B{fallback.id}, the last benchmark that finished.
+        </p>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <p className="text-xs text-muted-foreground">
           B{current.id}: {summary.rounds} complete round{summary.rounds === 1 ? "" : "s"} ×{" "}
@@ -262,7 +354,13 @@ export function BenchmarkPanel({
       </div>
 
       <dl className="grid grid-cols-2 gap-4 rounded-lg border bg-muted/20 p-4 lg:grid-cols-4">
-        <Stat label="1-rank median" i={one.wallMs} fmt={formatMs} />
+        <Stat
+          label="1-rank median"
+          i={one.wallMs}
+          fmt={formatMs}
+          ci={`${formatPct(one.wallMs.coverage, 1)} CI`}
+          hint="exact, order statistics"
+        />
         <Stat
           label={`Best speedup (n = ${best.n})`}
           i={best.speedup}
@@ -320,13 +418,15 @@ export function BenchmarkPanel({
           focusN={hoverN}
           onHoverN={setHoverN}
           formatTime={(s) => formatMs(s * 1000)}
-          title={`${kind === "speedup" ? "Speedup" : kind === "efficiency" ? "Efficiency" : "Median wall time"} of the browser benchmark against number of ranks, with 95% intervals, fitted Amdahl curve and band${kind === "time" ? "" : ", and Gustafson's law"}`}
+          title={`${kind === "speedup" ? "Speedup" : kind === "efficiency" ? "Efficiency" : "Median wall time"} of the browser benchmark against number of ranks, with ${kind === "time" ? "exact order-statistic" : "nominal 95% bootstrap"} intervals, fitted Amdahl curve and band${kind === "time" ? "" : ", and Gustafson's law"}`}
         />
         <ScalingLegend
           showModel={!!f}
           showBand={!!f}
           showGustafson={!!f && kind !== "time"}
           showBars
+          barsLabel={kind === "time" ? "exact order-statistic CI" : "nominal 95% CI"}
+          bandLabel="nominal 95% CI of the fit"
           measured={[{ label: "This machine", shape: "circle" }]}
         />
       </div>
@@ -343,9 +443,9 @@ export function BenchmarkPanel({
         >
           <table className="w-full min-w-[34rem] text-xs">
             <caption className="sr-only">
-              Benchmark results per number of ranks: median wall time, speedup and efficiency, each
-              with its 95% bootstrap interval underneath, the Karp–Flatt serial fraction, and the
-              fastest and slowest run
+              Benchmark results per number of ranks: median wall time with its exact order-statistic
+              interval, then speedup, efficiency and the Karp–Flatt serial fraction, each with its
+              nominal 95% bootstrap interval underneath, and the fastest and slowest run
             </caption>
             <thead className="bg-muted/30">
               <tr className="text-left font-mono text-[0.62rem] tracking-[0.1em] text-muted-foreground uppercase">
@@ -393,7 +493,7 @@ export function BenchmarkPanel({
                     <Cell i={c.efficiency} fmt={(v) => formatPct(v, 0)} showCi={c.n > 1} />
                   </td>
                   <td className="num px-2.5 py-1.5 text-right font-mono">
-                    {c.karpFlatt ? pct(c.karpFlatt.estimate) : "–"}
+                    {c.karpFlatt ? <Cell i={c.karpFlatt} fmt={pct} /> : "–"}
                   </td>
                   <td className="num px-2.5 py-1.5 text-right font-mono text-muted-foreground">
                     <span className="block">{formatMs(c.minMs)}</span>
@@ -411,15 +511,23 @@ export function BenchmarkPanel({
       <div className="space-y-2 text-xs text-muted-foreground">
         <p>
           <strong className="font-medium text-foreground">How to read this.</strong> Each point is
-          the median of {summary.rounds} timed runs; bars and the shaded band are 95% percentile
-          bootstrap intervals ({summary.resamples.toLocaleString("en-AU")} resamples of whole
-          rounds, seed {summary.seed}), so runs made under the same conditions stay together.
-          Amdahl&apos;s f is a least-squares fit to the median speedups. Gustafson&apos;s line uses
-          the same f but assumes the file grows with the workers (weak scaling); the lab keeps the
-          file fixed (strong scaling), so Amdahl is the model being tested and Gustafson is drawn
-          for contrast. With few runs the interval of a median can only land on observed values, so
-          treat it as a description of run-to-run spread on this machine, not a guarantee. Bars
-          narrower than their marker are hidden behind it; the table lists every interval.
+          the median of {summary.rounds} timed runs. A median wall time carries the exact
+          order-statistic interval (runs {one.wallMs.ranks[0]} and {one.wallMs.ranks[1]} in sorted
+          order), which covers the true median {formatPct(one.wallMs.coverage, 1)} of the time
+          whatever the shape of the run-to-run noise, as long as runs are independent. Speedup,
+          efficiency, Karp–Flatt and f carry percentile bootstrap intervals (
+          {summary.resamples.toLocaleString("en-AU")} resamples of whole rounds, seed {summary.seed}
+          , so runs made under the same conditions stay together), labelled nominal 95%: in a seeded
+          simulation they covered the true value 94% to 95% of the time at 5 or 7 rounds and about
+          96% at 10 (
+          <Link href="/methods/decisions/DR-004-benchmark-protocol" className="link">
+            DR-004
+          </Link>
+          ). Amdahl&apos;s f is a least-squares fit to the median speedups. Gustafson&apos;s line
+          uses the same f but assumes the file grows with the workers (weak scaling); the lab keeps
+          the file fixed (strong scaling), so Amdahl is the model being tested and Gustafson is
+          drawn for contrast. Bars narrower than their marker are hidden behind it; the table lists
+          every interval.
         </p>
         <p>
           Browsers report logical cores, which can include hyper-threads or slower efficiency cores,

@@ -189,6 +189,8 @@ export function useMpiLab() {
   const [history, setHistory] = useState<RunRecord[]>([]);
   const [sweeping, setSweeping] = useState(false);
   const [bench, setBench] = useState<BenchState | null>(null);
+  /** The most recent benchmark that ran to the end, kept when a later one is stopped early. */
+  const [lastCompleteBench, setLastCompleteBench] = useState<BenchState | null>(null);
   const cores = useSyncExternalStore(noopSubscribe, readCores, serverCores);
   const maxWorkers = maxWorkersFor(cores);
 
@@ -710,7 +712,8 @@ export function useMpiLab() {
                 ],
           });
         }
-        publish({ status: "done", current: null });
+        publish({ status: "done", current: null, finishedAt: new Date().toISOString() });
+        setLastCompleteBench(state);
       } catch (err) {
         publish({
           status: "error",
@@ -718,7 +721,8 @@ export function useMpiLab() {
           current: null,
         });
       } finally {
-        if (state.status !== "running") publish({ finishedAt: new Date().toISOString() });
+        if (state.status !== "running" && !state.finishedAt)
+          publish({ finishedAt: new Date().toISOString() });
         setSweeping(false);
       }
     },
@@ -749,6 +753,7 @@ export function useMpiLab() {
     loadSalFile,
     startRun,
     bench,
+    lastCompleteBench,
     runBenchmark,
     cancel,
     clearHistory,
