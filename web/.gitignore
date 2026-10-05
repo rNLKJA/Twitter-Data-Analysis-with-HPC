@@ -42,3 +42,9 @@ next-env.d.ts
 
 # test reporter output
 .vitest/
+
+# showcase tour (pnpm showcase): raw recordings, Playwright output, local ffmpeg link
+/.showcase
+/.playwright
+/test-results
+/playwright-report

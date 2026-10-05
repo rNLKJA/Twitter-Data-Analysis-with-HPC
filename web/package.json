@@ -20,7 +20,10 @@
     "gen:synthetic": "tsx scripts/write-synthetic.ts",
     "run:pipeline": "tsx scripts/run-pipeline.ts",
     "sync-docs": "node scripts/sync-docs.mjs",
-    "coverage-sim": "COVERAGE_SIM=1 vitest run src/lib/lab/coverage.sim.test.ts"
+    "coverage-sim": "COVERAGE_SIM=1 vitest run src/lib/lab/coverage.sim.test.ts",
+    "showcase": "node scripts/showcase.mjs",
+    "showcase:test": "SHOWCASE_FAST=1 node scripts/showcase.mjs --test-only",
+    "showcase:media": "node scripts/showcase-media.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",
@@ -42,6 +45,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/d3-geo": "^3.1.1",
     "@types/geojson": "^7946.0.16",
@@ -53,6 +57,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
     "prettier": "^3.9.9",
+    "sharp": "^0.35.5",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5",
