@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { isStateLocation, normaliseLocation, resolveLocation, returnWordsNgrams } from "./normalise";
+import {
+  isStateLocation,
+  normaliseLocation,
+  resolveLocation,
+  returnWordsNgrams,
+} from "./normalise";
 
 describe("normaliseLocation (port of utils.normalise_location)", () => {
   // Expected values are the `location` column the original produced on real

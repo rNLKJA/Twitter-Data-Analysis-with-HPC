@@ -14,7 +14,12 @@ import {
 describe("compareIntStrings", () => {
   it("orders like int64, not like strings", () => {
     const ids = ["1000", "999", "1412193387575316482", "51378153"];
-    expect([...ids].sort(compareIntStrings)).toEqual(["999", "1000", "51378153", "1412193387575316482"]);
+    expect([...ids].sort(compareIntStrings)).toEqual([
+      "999",
+      "1000",
+      "51378153",
+      "1412193387575316482",
+    ]);
   });
 });
 

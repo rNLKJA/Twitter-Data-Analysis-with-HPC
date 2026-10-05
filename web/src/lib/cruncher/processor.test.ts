@@ -54,7 +54,9 @@ describe("twitterProcessorV1 byte-range semantics", () => {
   });
 
   it("throws instead of looping forever when a tweet never gets a location", () => {
-    const broken = encoder.encode('[\n  {\n    "_id": "1",\n    "_rev": "x",\n    "data": {\n      "author_id": "2"\n    }\n  }\n]\n');
+    const broken = encoder.encode(
+      '[\n  {\n    "_id": "1",\n    "_rev": "x",\n    "data": {\n      "author_id": "2"\n    }\n  }\n]\n',
+    );
     expect(() => twitterProcessorV1(new MemoryByteFile(broken), 0, broken.length, dict)).toThrow(
       UnbalancedChunkError,
     );

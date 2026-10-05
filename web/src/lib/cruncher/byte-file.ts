@@ -99,7 +99,10 @@ export class PagedByteFile implements ByteFile {
       if (nl !== -1) return this.winStart + nl + 1;
       if (winEnd >= this.size) return this.size;
       // Line straddles the window: grow the window from the line start.
-      const grown = Math.min(this.size, this.pos + Math.max(this.pageSize, (winEnd - this.pos) * 2));
+      const grown = Math.min(
+        this.size,
+        this.pos + Math.max(this.pageSize, (winEnd - this.pos) * 2),
+      );
       this.win = this.readRange(this.pos, grown);
       this.bytesFetched += grown - this.pos;
       this.winStart = this.pos;

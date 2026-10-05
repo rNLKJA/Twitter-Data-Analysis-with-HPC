@@ -6,7 +6,8 @@ import { GCCS, INVALID_LOCATION, STATE_LOCATION } from "./constants";
  * whitespace (JavaScript's `\s` does not, but adds ﻿), so both classes
  * are spelled out to keep `re.sub(r"[^\w\s]", "", ...)` byte-for-byte equal.
  */
-const PY_WS = "\\t\\n\\v\\f\\r\\x1c-\\x1f \\x85\\xa0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000";
+const PY_WS =
+  "\\t\\n\\v\\f\\r\\x1c-\\x1f \\x85\\xa0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000";
 const NOT_WORD_OR_SPACE = new RegExp(`[^\\p{L}\\p{N}_${PY_WS}]`, "gu");
 const MULTI_SPACE = / +/g;
 

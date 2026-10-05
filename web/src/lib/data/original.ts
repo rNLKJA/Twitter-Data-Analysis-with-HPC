@@ -70,16 +70,56 @@ export interface PublishedTask3Row {
 }
 
 export const TASK3: readonly PublishedTask3Row[] = [
-  { rank: 1, authorId: "1429984556451389440", text: "8 (#1920 tweets - #1879gmel, #13acte, #11gsyd, #7gper, #6gbri, #2gade, #1gdar, #1ghob)" },
-  { rank: 2, authorId: "702290904460169216", text: "8 (#1231 tweets - #336gsyd, #255gmel, #235gbri, #156gper, #127gade, #56acte, #45ghob, #21gdar)" },
-  { rank: 3, authorId: "17285408", text: "8 (#1209 tweets - #1061gsyd, #60gmel, #40gbri, #23acte, #11ghob, #7gper, #4gdar, #3gade)" },
-  { rank: 4, authorId: "87188071", text: "8 (#407 tweets - #116gsyd, #86gmel, #68gbri, #52gper, #37acte, #28gade, #15ghob, #5gdar)" },
-  { rank: 5, authorId: "774694926135222272", text: "8 (#272 tweets - #38gmel, #37gbri, #37gsyd, #36ghob, #34acte, #34gper, #28gdar, #28gade)" },
-  { rank: 6, authorId: "1361519083", text: "8 (#266 tweets - #193gdar, #36gmel, #18gsyd, #9gade, #6acte, #2ghob, #1gbri, #1gper)" },
-  { rank: 7, authorId: "502381727", text: "8 (#250 tweets - #214gmel, #10acte, #8gbri, #8ghob, #4gade, #3gper, #2gsyd, #1gdar)" },
-  { rank: 8, authorId: "921197448885886977", text: "8 (#207 tweets - #56gmel, #49gsyd, #37gbri, #28gper, #24gade, #8acte, #4ghob, #1gdar)" },
-  { rank: 9, authorId: "601712763", text: "8 (#146 tweets - #44gsyd, #39gmel, #19gade, #14gper, #11gbri, #10acte, #8ghob, #1gdar)" },
-  { rank: 10, authorId: "2647302752", text: "8 (#80 tweets - #32gbri, #16gmel, #13gsyd, #5ghob, #4gper, #4acte, #3gade, #3gdar)" },
+  {
+    rank: 1,
+    authorId: "1429984556451389440",
+    text: "8 (#1920 tweets - #1879gmel, #13acte, #11gsyd, #7gper, #6gbri, #2gade, #1gdar, #1ghob)",
+  },
+  {
+    rank: 2,
+    authorId: "702290904460169216",
+    text: "8 (#1231 tweets - #336gsyd, #255gmel, #235gbri, #156gper, #127gade, #56acte, #45ghob, #21gdar)",
+  },
+  {
+    rank: 3,
+    authorId: "17285408",
+    text: "8 (#1209 tweets - #1061gsyd, #60gmel, #40gbri, #23acte, #11ghob, #7gper, #4gdar, #3gade)",
+  },
+  {
+    rank: 4,
+    authorId: "87188071",
+    text: "8 (#407 tweets - #116gsyd, #86gmel, #68gbri, #52gper, #37acte, #28gade, #15ghob, #5gdar)",
+  },
+  {
+    rank: 5,
+    authorId: "774694926135222272",
+    text: "8 (#272 tweets - #38gmel, #37gbri, #37gsyd, #36ghob, #34acte, #34gper, #28gdar, #28gade)",
+  },
+  {
+    rank: 6,
+    authorId: "1361519083",
+    text: "8 (#266 tweets - #193gdar, #36gmel, #18gsyd, #9gade, #6acte, #2ghob, #1gbri, #1gper)",
+  },
+  {
+    rank: 7,
+    authorId: "502381727",
+    text: "8 (#250 tweets - #214gmel, #10acte, #8gbri, #8ghob, #4gade, #3gper, #2gsyd, #1gdar)",
+  },
+  {
+    rank: 8,
+    authorId: "921197448885886977",
+    text: "8 (#207 tweets - #56gmel, #49gsyd, #37gbri, #28gper, #24gade, #8acte, #4ghob, #1gdar)",
+  },
+  {
+    rank: 9,
+    authorId: "601712763",
+    text: "8 (#146 tweets - #44gsyd, #39gmel, #19gade, #14gper, #11gbri, #10acte, #8ghob, #1gdar)",
+  },
+  {
+    rank: 10,
+    authorId: "2647302752",
+    text: "8 (#80 tweets - #32gbri, #16gmel, #13gsyd, #5ghob, #4gper, #4acte, #3gade, #3gdar)",
+  },
 ];
 
 export interface ParsedTask3 {
@@ -120,9 +160,36 @@ function run(r: Omit<BenchmarkRun, "seconds">): BenchmarkRun {
 
 /** Final benchmark jobs (bigTwitter.json), as reported in the submission. */
 export const BENCHMARKS: readonly BenchmarkRun[] = [
-  run({ jobId: "46094405", label: "1 node × 1 core", nodes: 1, cores: 1, coresPerNode: 1, wallClock: "00:11:01", cpuEfficiency: 98.34, slurmScript: "1node1core.bigTwitter.slurm" }),
-  run({ jobId: "46094406", label: "1 node × 8 cores", nodes: 1, cores: 8, coresPerNode: 8, wallClock: "00:01:41", cpuEfficiency: 87.13, slurmScript: "1node8core.bigTwitter.slurm" }),
-  run({ jobId: "46094407", label: "2 nodes × 4 cores", nodes: 2, cores: 8, coresPerNode: 4, wallClock: "00:01:41", cpuEfficiency: 87.75, slurmScript: "2node8core.bigTwitter.slurm" }),
+  run({
+    jobId: "46094405",
+    label: "1 node × 1 core",
+    nodes: 1,
+    cores: 1,
+    coresPerNode: 1,
+    wallClock: "00:11:01",
+    cpuEfficiency: 98.34,
+    slurmScript: "1node1core.bigTwitter.slurm",
+  }),
+  run({
+    jobId: "46094406",
+    label: "1 node × 8 cores",
+    nodes: 1,
+    cores: 8,
+    coresPerNode: 8,
+    wallClock: "00:01:41",
+    cpuEfficiency: 87.13,
+    slurmScript: "1node8core.bigTwitter.slurm",
+  }),
+  run({
+    jobId: "46094407",
+    label: "2 nodes × 4 cores",
+    nodes: 2,
+    cores: 8,
+    coresPerNode: 4,
+    wallClock: "00:01:41",
+    cpuEfficiency: 87.75,
+    slurmScript: "2node8core.bigTwitter.slurm",
+  }),
 ];
 
 /**
@@ -131,9 +198,36 @@ export const BENCHMARKS: readonly BenchmarkRun[] = [
  * utilisation printed by `my-job-stats`.
  */
 export const DEV_BENCHMARKS: readonly BenchmarkRun[] = [
-  run({ jobId: "45983020", label: "1 node × 1 core", nodes: 1, cores: 1, coresPerNode: 1, wallClock: "00:23:03", cpuEfficiency: 98.4, slurmScript: "1node1core.bigTwitter.slurm" }),
-  run({ jobId: "45983021", label: "1 node × 8 cores", nodes: 1, cores: 8, coresPerNode: 8, wallClock: "00:03:14", cpuEfficiency: 88.2, slurmScript: "1node8core.bigTwitter.slurm" }),
-  run({ jobId: "45983022", label: "2 nodes × 4 cores", nodes: 2, cores: 8, coresPerNode: 4, wallClock: "00:03:13", cpuEfficiency: 86.5, slurmScript: "2node8core.bigTwitter.slurm" }),
+  run({
+    jobId: "45983020",
+    label: "1 node × 1 core",
+    nodes: 1,
+    cores: 1,
+    coresPerNode: 1,
+    wallClock: "00:23:03",
+    cpuEfficiency: 98.4,
+    slurmScript: "1node1core.bigTwitter.slurm",
+  }),
+  run({
+    jobId: "45983021",
+    label: "1 node × 8 cores",
+    nodes: 1,
+    cores: 8,
+    coresPerNode: 8,
+    wallClock: "00:03:14",
+    cpuEfficiency: 88.2,
+    slurmScript: "1node8core.bigTwitter.slurm",
+  }),
+  run({
+    jobId: "45983022",
+    label: "2 nodes × 4 cores",
+    nodes: 2,
+    cores: 8,
+    coresPerNode: 4,
+    wallClock: "00:03:13",
+    cpuEfficiency: 86.5,
+    slurmScript: "2node8core.bigTwitter.slurm",
+  }),
 ];
 
 export const SUBJECT = {

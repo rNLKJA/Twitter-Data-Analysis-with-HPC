@@ -79,7 +79,10 @@ export interface Task1Row {
  * rank <= 10 (so ties can yield more than ten rows), sort by rank, count,
  * author_id ascending.
  */
-export function reduceTask1(partials: ReadonlyArray<ReadonlyArray<AuthorCount>>, top = 10): Task1Row[] {
+export function reduceTask1(
+  partials: ReadonlyArray<ReadonlyArray<AuthorCount>>,
+  top = 10,
+): Task1Row[] {
   const totals = new Map<string, number>();
   for (const part of partials) for (const [a, n] of part) totals.set(a, (totals.get(a) ?? 0) + n);
 
@@ -93,7 +96,9 @@ export function reduceTask1(partials: ReadonlyArray<ReadonlyArray<AuthorCount>>,
   return [...totals.entries()]
     .map(([authorId, tweets]) => ({ rank: minRank.get(tweets)!, authorId, tweets }))
     .filter((r) => r.rank <= top)
-    .sort((a, b) => a.rank - b.rank || a.tweets - b.tweets || compareIntStrings(a.authorId, b.authorId));
+    .sort(
+      (a, b) => a.rank - b.rank || a.tweets - b.tweets || compareIntStrings(a.authorId, b.authorId),
+    );
 }
 
 export interface Task2Row {

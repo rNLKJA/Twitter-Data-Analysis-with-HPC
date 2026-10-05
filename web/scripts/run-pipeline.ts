@@ -21,7 +21,8 @@ function args(name: string): string[] {
   const i = process.argv.indexOf(`--${name}`);
   if (i === -1) return [];
   const out: string[] = [];
-  for (let j = i + 1; j < process.argv.length && !process.argv[j].startsWith("--"); j++) out.push(process.argv[j]);
+  for (let j = i + 1; j < process.argv.length && !process.argv[j].startsWith("--"); j++)
+    out.push(process.argv[j]);
   return out;
 }
 
@@ -36,7 +37,9 @@ if (salPath) {
   const sal = JSON.parse(readFileSync(resolve(salPath), "utf8")) as Record<string, SalEntry>;
   salDict = processSalV1(sal);
 } else if (gazPath) {
-  const gaz = JSON.parse(readFileSync(resolve(gazPath), "utf8")) as { dict: Record<string, string> };
+  const gaz = JSON.parse(readFileSync(resolve(gazPath), "utf8")) as {
+    dict: Record<string, string>;
+  };
   salDict = new Map(Object.entries(gaz.dict));
 } else {
   throw new Error("pass --sal or --gazetteer");
@@ -70,7 +73,12 @@ for (const size of ranks) {
     task3_1: task31Csv(r.task3.detail),
   };
   if (r.frame) {
-    run.records = r.frame.tweetId.map((id, i) => [id, r.frame!.authorId[i], r.frame!.location[i], r.frame!.gcc[i]]);
+    run.records = r.frame.tweetId.map((id, i) => [
+      id,
+      r.frame!.authorId[i],
+      r.frame!.location[i],
+      r.frame!.gcc[i],
+    ]);
   }
   (result.runs as Record<string, unknown>)[String(size)] = run;
 }

@@ -10,7 +10,10 @@
  * For tiny files this can return fewer than `size` chunks (the original would
  * then fail with an IndexError on the extra ranks); callers should check.
  */
-export function splitFileIntoChunks(fileSize: number, size: number): { start: number[]; end: number[] } {
+export function splitFileIntoChunks(
+  fileSize: number,
+  size: number,
+): { start: number[]; end: number[] } {
   if (!Number.isInteger(size) || size < 1) throw new RangeError("size must be a positive integer");
   const chunkSize = Math.ceil(fileSize / size);
   const start: number[] = [];

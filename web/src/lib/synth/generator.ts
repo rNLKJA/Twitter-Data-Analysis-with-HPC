@@ -81,8 +81,27 @@ const ENDINGS = [
   "for the first time in ages.",
   "- highly recommend.",
 ];
-const HASHTAGS = ["data", "hpc", "mpi", "weekend", "coffee", "footy", "sunset", "travel", "work", "uni"];
-const HANDLES = ["spartan_hpc", "cloudlab", "melb_eats", "syd_trains", "data_nerd", "ccc_tutor", "maps_au"];
+const HASHTAGS = [
+  "data",
+  "hpc",
+  "mpi",
+  "weekend",
+  "coffee",
+  "footy",
+  "sunset",
+  "travel",
+  "work",
+  "uni",
+];
+const HANDLES = [
+  "spartan_hpc",
+  "cloudlab",
+  "melb_eats",
+  "syd_trains",
+  "data_nerd",
+  "ccc_tutor",
+  "maps_au",
+];
 const SHORT_LINK = "https://t.co/";
 
 function snowflake(ms: number, rng: Rng): string {
@@ -110,7 +129,9 @@ function round6(x: number): number {
 export function makeAuthors(rng: Rng, count: number): SynthAuthor[] {
   const placeOf = weightedSampler(PLACES.map((p) => p.w));
   // Capital-city entries (one per GCC) that travellers hop between.
-  const capitals = CAPITAL_NAMES.map((n) => PLACES.findIndex((p) => p.name === n)).filter((i) => i >= 0);
+  const capitals = CAPITAL_NAMES.map((n) => PLACES.findIndex((p) => p.name === n)).filter(
+    (i) => i >= 0,
+  );
   const seen = new Set<string>();
   const authors: SynthAuthor[] = [];
   for (let i = 0; i < count; i++) {
@@ -119,7 +140,8 @@ export function makeAuthors(rng: Rng, count: number): SynthAuthor[] {
       if (rng.chance(0.45)) {
         id = String(rng.int(10_000_000, 3_999_999_999));
       } else {
-        const created = Date.UTC(2012, 0, 1) + rng.next() * (Date.UTC(2022, 0, 1) - Date.UTC(2012, 0, 1));
+        const created =
+          Date.UTC(2012, 0, 1) + rng.next() * (Date.UTC(2022, 0, 1) - Date.UTC(2012, 0, 1));
         id = snowflake(created, rng);
       }
     } while (seen.has(id));
@@ -170,7 +192,9 @@ function buildTweet(rng: Rng, ms: number, author: SynthAuthor, placeIndex: numbe
     const handle = rng.pick(HANDLES);
     const start = text.length + 1;
     text += ` @${handle}`;
-    entities.mentions = [{ start, end: start + handle.length + 1, username: handle, id: rng.digits(rng.int(8, 10)) }];
+    entities.mentions = [
+      { start, end: start + handle.length + 1, username: handle, id: rng.digits(rng.int(8, 10)) },
+    ];
   }
   if (rng.chance(0.12)) {
     const short = `${SHORT_LINK}${rng.hex(10)}`;
@@ -220,7 +244,12 @@ function buildTweet(rng: Rng, ms: number, author: SynthAuthor, placeIndex: numbe
           full_name: place.name,
           geo: {
             type: "Feature",
-            bbox: [round6(place.lon - d), round6(place.lat - d), round6(place.lon + d), round6(place.lat + d)],
+            bbox: [
+              round6(place.lon - d),
+              round6(place.lat - d),
+              round6(place.lon + d),
+              round6(place.lat + d),
+            ],
             properties: {},
           },
           id: pid,

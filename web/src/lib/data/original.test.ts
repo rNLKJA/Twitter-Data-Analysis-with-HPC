@@ -2,7 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import { amdahlSpeedup, efficiency, fitSerialFraction, karpFlatt, speedup } from "../amdahl";
 import { formatClock } from "../format";
-import { BENCHMARKS, DATASET, DEV_BENCHMARKS, parseTask3Text, TASK2, TASK2_TOTAL, TASK3 } from "./original";
+import {
+  BENCHMARKS,
+  DATASET,
+  DEV_BENCHMARKS,
+  parseTask3Text,
+  TASK2,
+  TASK2_TOTAL,
+  TASK3,
+} from "./original";
 
 describe("transcribed original results", () => {
   it("Task 2 totals 6,789,772 tweets in capital cities (74.7% of bigTwitter.json)", () => {

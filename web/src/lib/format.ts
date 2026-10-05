@@ -8,7 +8,9 @@ export function formatInt(n: number): string {
 export function formatPct(fraction: number, digits = 1): string {
   return digits === 1
     ? pctFmt.format(fraction)
-    : new Intl.NumberFormat("en-AU", { style: "percent", maximumFractionDigits: digits }).format(fraction);
+    : new Intl.NumberFormat("en-AU", { style: "percent", maximumFractionDigits: digits }).format(
+        fraction,
+      );
 }
 
 /** Compact counts: 9,092,274 → "9.09M". */
