@@ -1,170 +1,194 @@
 <div align="center">
 
-# Cluster & Cloud Computing — Social Media Analysis
+# Spartan Tweet Cruncher
 
-A parallelised application that mines a large Twitter data set on the University of Melbourne SPARTAN HPC facility, using MPI to scale across cores and nodes.
+**COMP90024 Cluster and Cloud Computing, Assignment 1, revived.**
+An MPI program that crunched 9.09 million geotagged tweets on the University of Melbourne's Spartan HPC,
+brought back as an interactive site: the original results, the scaling story, and the same algorithm running
+on your own CPU cores in the browser.
 
-[![Python](https://img.shields.io/badge/Python-3.7.4-3776AB?logo=python&logoColor=white)](https://www.python.org/)
-[![mpi4py](https://img.shields.io/badge/mpi4py-3.0.4-orange)](https://mpi4py.readthedocs.io/)
-[![Polars](https://img.shields.io/badge/Polars-0.16-CD792C)](https://www.pola.rs/)
-[![SLURM](https://img.shields.io/badge/SLURM-HPC-2C3E50)](https://slurm.schedmd.com/)
+[![CI](https://github.com/rNLKJA/Twitter-Data-Analysis-with-HPC/actions/workflows/ci.yml/badge.svg)](https://github.com/rNLKJA/Twitter-Data-Analysis-with-HPC/actions/workflows/ci.yml)
+[![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Original: Python + mpi4py](https://img.shields.io/badge/original-Python%20%2B%20mpi4py-3776AB?logo=python&logoColor=white)](./coursework)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+
+**Live demo:** https://comp90024-spartan-twitter.vercel.app (deployment pending)
 
 </div>
 
-## Overview
+## What the assignment asked
 
-This is Assignment 1 for COMP90024 Cluster & Cloud Computing (2023 Semester 1) at the University of Melbourne. The task is to build a parallelised application that runs on SPARTAN, the University's HPC facility, and processes a large Twitter data set alongside a file of suburbs, locations, and Greater Capital cities of Australia.
+Each pair had to write a parallel program for Spartan that reads a very large Twitter dataset
+(`bigTwitter.json`, 18.74 GB) together with a gazetteer of Australian suburbs (`sal.json`), and answers three
+questions:
 
-The application answers three questions:
+1. Which authors tweeted the most?
+2. How many tweets were made in each Greater Capital City?
+3. Which authors tweeted from the most different Greater Capital Cities?
 
-- count the number of tweets made in each Greater Capital city of Australia,
-- identify the Twitter accounts (users) that have made the most tweets, and
-- identify the users that have tweeted from the most different Greater Capital cities.
+The program had to run on 1 node × 1 core, 1 node × 8 cores and 2 nodes × 4 cores, and the report had to
+explain the timings.
 
-More detail lives in the [project wiki](https://github.com/rNLKJA/2023-S1-COMP90024-A1/wiki), and the full write-up is on [Overleaf](https://www.overleaf.com/read/sdsczmmdxzvq).
+## What we built (2023)
 
-## Highlights
+A Python 3.7 + `mpi4py` program (in [`coursework/`](./coursework)) that never parses the file as JSON:
 
-- MPI parallelism (`mpi4py`) that splits the work across cores and nodes, with results gathered back to the root rank.
-- Streams a multi-gigabyte newline-delimited JSON file rather than loading it into memory.
-- Polars and pandas for fast aggregation of tweet counts by author and by Greater Capital city.
-- SLURM job scripts for the three benchmark configurations (1 node 1 core, 1 node 8 cores, 2 nodes 4 cores).
-- Demonstrates Amdahl's Law in practice: measured wall-clock time and CPU efficiency across configurations.
+- **Split** the file into equal byte ranges, one per MPI rank (`split_file_into_chunks`).
+- **Scan** each range line by line with three regular expressions (`_id`, `author_id`, `full_name`), skipping
+  2, 18 and 20 lines after each hit to jump over the fields it does not need (`twitter_processorV1`).
+- **Match** each place name to a Greater Capital City by normalising it and looking its word n-grams up in a
+  dictionary built from `sal.json`.
+- **Gather** three small partial tables onto ranks 0, 1 and 2, which reduce Task 1, 2 and 3 and write one CSV
+  each.
 
-## Team
+### Results on `bigTwitter.json` (9,092,274 tweets, 119,439 authors, 2021-07-05 to 2022-12-31)
 
-| Name              | Student ID | Email                               |
-| ----------------- | :--------: | ----------------------------------- |
-| Sunchuangyu Huang |  1118472   | sunchuangyuh@student.unimelb.edu.au |
-| Wei Zhao          |  1118649   | weizhao1@student.unimelb.edu.au     |
+| Slurm job | Layout | Wall-clock | Speedup | CPU utilisation |
+| --- | --- | ---: | ---: | ---: |
+| 46094405 | 1 node × 1 core | 11:01 | 1.00× | 98.34% |
+| 46094406 | 1 node × 8 cores | 1:41 | 6.54× | 87.13% |
+| 46094407 | 2 nodes × 4 cores | 1:41 | 6.54× | 87.75% |
 
-## Tech Stack
+Fitting Amdahl's law to these runs gives a serial fraction of about 3.2%, a ceiling near 31×.
 
-| Area            | Tools                                     |
-| --------------- | ----------------------------------------- |
-| Language        | Python 3.7.4                              |
-| Parallelism     | `mpi4py` 3.0.4 (MPI), SLURM job scheduler |
-| Data processing | Polars, pandas, NumPy                     |
-| Platform        | University of Melbourne SPARTAN HPC       |
+- **Task 1:** the most prolific account posted 68,477 tweets, 2.4 times the runner-up.
+- **Task 2:** Melbourne (2,284,909) edged out Sydney (2,218,689); 74.7% of all tweets resolved to a capital city.
+- **Task 3:** all ten top authors tweeted from all eight capital cities.
 
-## Repository Structure
+Every table is on the [Results](https://comp90024-spartan-twitter.vercel.app/results) page, transcribed exactly
+from the submission.
+
+## What the revival adds (2026)
+
+| Route | What it does |
+| --- | --- |
+| `/` | Plain-language overview, key numbers, about the project |
+| `/results` | Task 2 map of Australia + table, Task 1 top tweeters, Task 3 heatmap, and the raw CSVs as `main.py` wrote them |
+| `/scaling` | The final and an earlier set of Spartan benchmark jobs, speedup, efficiency, Karp–Flatt serial fraction, and an Amdahl's law explorer fitted to the measured runs |
+| `/lab` | **MPI in your browser.** Generates a seeded synthetic file with the exact line layout of `bigTwitter.json`, splits it with the original chunking, and processes it with one Web Worker per rank. Live per-rank progress, a scan/reduce timeline, the three answers, a check that every run's output matches the first, and a speedup curve fitted to your machine. You can also load your own course-format files locally |
+| `/how-it-works` | Interactive chunk explorer on the real file size, a line-by-line trace of the scanner, the place matcher step by step, and the gather/reduce design |
+
+### Faithful port, verified against the original
+
+The browser runs a TypeScript port of the original algorithm in [`web/src/lib/cruncher`](./web/src/lib/cruncher),
+magic numbers and quirks included. The original Python, unchanged, is run outside Spartan by
+[`scripts/run_original.py`](./scripts/run_original.py) (mpi4py stubbed, ranks re-enacted in `gather_task_tdf`
+order, 2023 dependency pins) to produce reference outputs. The Vitest suite then checks that the port gives:
+
+- identical per-tweet records (id, author, normalised place, city) and per-rank tweet counts for 1, 3, 4 and 7 ranks;
+- identical `task1.csv`, `task2.csv`, `task3.csv` and `task3_1.csv`;
+- the same `sal.json` dictionary (keys, codes and insertion order) on a sample;
+- the same resolution for every place in the demo vocabulary as against the full `sal.json`.
+
+Locally, with the course files (not committed), the full 16,616-key dictionary and the course's
+`tinyTwitter.json` (1, 3, 4 and 8 ranks) also match exactly, as does a 122 MB synthetic file at 1, 6, 8 and 9 ranks.
+
+### A bug found while porting
+
+If a chunk boundary lands inside the four spaces of indentation before `"_id"`, the next rank's partial first
+line still matches the `_id` regex while the previous rank reads that line in full, so **both ranks count the
+tweet**. It is about a 1 in 500 chance per boundary on `bigTwitter.json`. The original Python does it (verified:
+400 tweets read as 401 at 27 and 39 ranks), so the port keeps it, a parity test pins it, and the lab explains it
+when one of your runs hits it.
+
+## Tech stack
+
+| | 2023 original | 2026 revival |
+| --- | --- | --- |
+| Language | Python 3.7 | TypeScript (strict) |
+| Parallelism | mpi4py on Open MPI, Slurm on Spartan | Web Workers as ranks; the page relays partial tables like MPI send/recv |
+| Data | polars, pandas, NumPy | framework-free ports in `web/src/lib`, Vitest unit and parity tests |
+| UI | CSV files and a report | Next.js 16 (App Router, static), React 19, Tailwind CSS v4, shadcn/ui, lucide, next-themes, hand-rolled SVG charts, d3-geo + Natural Earth for the map |
+| Tooling | | pnpm, ESLint, Prettier, GitHub Actions, uv for the Python scripts |
+
+## Repository structure
 
 ```
 .
-├── data
-│   ├── processed            # processed data
-│   └── result               # output files
-├── scripts                  # main program modules
-├── slurm                    # SLURM job scripts (1n1c, 1n8c, 2n4c)
-├── doc
-│   ├── log                  # program log files
-│   └── slurm
-│       ├── stderr           # SLURM standard error
-│       └── stdout           # SLURM standard output
-├── main.py                  # entry point
-├── submit.sh                # SLURM submission helper
-├── requirements.txt         # Python dependencies
-└── README.md
+├── README.md
+├── LICENSE
+├── .github/workflows/ci.yml     lint, typecheck, test and build the web app
+├── coursework/                  the original 2023 submission (see coursework/README.md)
+│   ├── main.py
+│   ├── scripts/                 twitter_processor.py, sal_processor.py, mpi.py, utils.py, ...
+│   ├── slurm/                   the three benchmark jobs
+│   └── _archive/                the README as submitted
+├── scripts/                     Python (uv) scripts that run the ORIGINAL code to make web artefacts
+│   ├── _original.py             loads coursework/scripts/* unchanged outside Spartan
+│   ├── run_original.py          re-enacts main.py rank by rank, dumps results as JSON
+│   └── build_gazetteer.py       builds web/public/data/gazetteer.json
+└── web/                         the Next.js app (Vercel root)
+    ├── public/data/gazetteer.json
+    ├── scripts/                 write-synthetic.ts, run-pipeline.ts (TS counterparts for parity checks)
+    └── src/
+        ├── app/                 /, /results, /scaling, /lab, /how-it-works, not-found, icon, OG image
+        ├── components/          ui/ (shadcn), layout/, charts/, results/, scaling/, lab/, how/, home/
+        ├── hooks/               use-mpi-lab (worker orchestration), use-element-width
+        ├── lib/                 cruncher/ (the port), synth/ (seeded generator), lab/, data/, geo/, ...
+        └── workers/             rank.worker.ts (one MPI rank), synth.worker.ts (file generator)
 ```
 
-## Getting Started
+## Local development
 
-### Local run
+Requirements: Node 20.9+ and pnpm 10.
 
 ```bash
-# main.py must be executable
-mpiexec -n [NUM_PROCESSORS] python main.py -t [TWITTER_FILE] -s [SAL_FILE] -e [EMAIL_TARGET|OPTIONAL]
+cd web
+pnpm install
+pnpm dev            # http://localhost:3000
+pnpm lint && pnpm typecheck && pnpm test && pnpm build
 ```
 
-The optional email target accepts two values: `rin` or `wei`.
+## Data artefacts and how they are made
 
-### Running on SPARTAN
+No course data is committed or served. The site uses:
+
+| Artefact | Made by | Notes |
+| --- | --- | --- |
+| `web/src/lib/data/original.ts` | transcribed | Final results and benchmark numbers from the submission; earlier benchmarks from the Slurm logs on the `Spartan-running-test` branch |
+| `web/public/data/gazetteer.json` | `scripts/build_gazetteer.py` | The original `process_salV1` + `normalise_location` run on `sal.json`, restricted to the keys any demo place name can hit (117 keys, 18 kB) |
+| `web/src/lib/__fixtures__/*.json` | `scripts/run_original.py` | Outputs of the original Python on synthetic files, used by the parity tests |
+| Synthetic tweet files | `web/src/lib/synth` | Seeded, made-up tweets with `bigTwitter.json`'s line layout, generated in the browser |
+
+To regenerate them you need `sal.json` from the course (place it anywhere, for example `scripts/.cache/`, which is
+git-ignored) and [uv](https://docs.astral.sh/uv/):
 
 ```bash
-# load the matching MPI module
-module --force purge
-module load mpi4py/3.0.2-timed-pingpong
-source ~/virtualenv/python3.7.4/bin/activate
+# gazetteer for the web app
+uv run scripts/build_gazetteer.py --sal scripts/.cache/sal.json
 
-# submit all three benchmark jobs
-./submit.sh
+# parity fixture: the same synthetic file through the original Python and the port
+(cd web && pnpm gen:synthetic --seed 2023 --tweets 400 --out ../scripts/.cache/synthetic-2023-400.json)
+uv run scripts/run_original.py --twitter scripts/.cache/synthetic-2023-400.json \
+  --sal scripts/.cache/sal.json --ranks 1 3 4 7 --records \
+  --out web/src/lib/__fixtures__/parity-synthetic-2023-400.json
+uv run scripts/run_original.py --twitter scripts/.cache/synthetic-2023-400.json \
+  --sal scripts/.cache/sal.json --ranks 27 39 \
+  --out web/src/lib/__fixtures__/parity-boundary-2023-400.json
+
+# compare the port directly on any course-format file
+(cd web && pnpm run:pipeline --twitter ../scripts/.cache/tinyTwitter.json \
+  --sal ../scripts/.cache/sal.json --ranks 1 3 4 8 --out ../scripts/.cache/tiny.port.json)
 ```
 
-Use a virtualenv pinned to Python 3.7.4, since SPARTAN loads `mpi4py` 3.0.4 against that version.
+The Python scripts declare their dependencies inline (PEP 723: Python 3.11, polars 0.16.16, pandas 1.5.3), so
+`uv run` needs no other set-up.
 
-```bash
-# install dependencies
-pip install numpy pandas 'polars[all]'   # or
-pip install -r requirements.txt
-```
+## Credits
 
-## Results
+- **Sunchuangyu (Rin) Huang** ([@rNLKJA](https://github.com/rNLKJA)): 2023 co-author; 2026 revival
+- **Wei Zhao**: 2023 co-author
 
-The `bigTwitter.json` file contains 9,092,274 tweets written by 119,439 authors, dated from 2021-07-05 to 2022-12-31.
+Map outline from [Natural Earth](https://www.naturalearthdata.com/) via
+[world-atlas](https://github.com/topojson/world-atlas) (public domain).
 
-**Processing time on `bigTwitter.json`:**
+## Academic integrity
 
-|   Job    | Node | Core | Job Wall-Clock Time | CPU Efficiency |
-| :------: | :--: | :--: | :-----------------: | :------------: |
-| 46094405 |  1   |  1   |      00:11:01       |     98.34%     |
-| 46094406 |  1   |  8   |      00:01:41       |     87.13%     |
-| 46094407 |  2   |  4   |      00:01:41       |     87.75%     |
-
-**Task 1 — top tweeters by number of tweets:**
-
-| Rank | Author Id           | Number of Tweets Made |
-| :--- | ------------------- | :-------------------: |
-| #1   | 1498063511204760000 |        68,477         |
-| #2   | 1089023364973210000 |        28,128         |
-| #3   | 826332877457481000  |        27,718         |
-| #4   | 1250331934242120000 |        25,350         |
-| #5   | 1423662808311280000 |        21,034         |
-| #6   | 1183144981252280000 |        20,765         |
-| #7   | 1270672820792500000 |        20,503         |
-| #8   | 820431428835885000  |        20,063         |
-| #9   | 778785859030003000  |        19,403         |
-| #10  | 1104295492433760000 |        18,781         |
-
-**Task 2 — tweets made in each Greater Capital city** (rural locations such as `1rnsw` and `1rvic` are ignored):
-
-| Greater Capital City | Number of Tweets Made |
-| :------------------: | :-------------------: |
-|        1gsyd         |       2,218,689       |
-|        2gmel         |       2,284,909       |
-|        3gbri         |        878,614        |
-|        4gade         |        465,081        |
-|        5gper         |        590,045        |
-|        6ghob         |        91,112         |
-|        7gdar         |        46,772         |
-|        8acte         |        214,347        |
-|        9oter         |          203          |
-
-**Task 3 — tweeters active across the most Greater Capital cities** (ties broken by number of tweets):
-
-| Rank | Author Id           | Number of Unique City Locations and #Tweets                                                    |
-| :--: | :------------------ | :--------------------------------------------------------------------------------------------- |
-|  #1  | 1429984556451389440 | 8 (#1920 tweets - #1879gmel, #13acte, #11gsyd, #7gper, #6gbri, #2gade, #1gdar, #1ghob)         |
-|  #2  | 702290904460169216  | 8 (#1231 tweets - #336gsyd, #255gmel, #235gbri, #156gper, #127gade, #56acte, #45ghob, #21gdar) |
-|  #3  | 17285408            | 8 (#1209 tweets - #1061gsyd, #60gmel, #40gbri, #23acte, #11ghob, #7gper, #4gdar, #3gade)       |
-|  #4  | 87188071            | 8 (#407 tweets - #116gsyd, #86gmel, #68gbri, #52gper, #37acte, #28gade, #15ghob, #5gdar)       |
-|  #5  | 774694926135222272  | 8 (#272 tweets - #38gmel, #37gbri, #37gsyd, #36ghob, #34acte, #34gper, #28gdar, #28gade)       |
-|  #6  | 1361519083          | 8 (#266 tweets - #193gdar, #36gmel, #18gsyd, #9gade, #6acte, #2ghob, #1gbri, #1gper)           |
-|  #7  | 502381727           | 8 (#250 tweets - #214gmel, #10acte, #8gbri, #8ghob, #4gade, #3gper, #2gsyd, #1gdar)            |
-|  #8  | 921197448885886977  | 8 (#207 tweets - #56gmel, #49gsyd, #37gbri, #28gper, #24gade, #8acte, #4ghob, #1gdar)          |
-|  #9  | 601712763           | 8 (#146 tweets - #44gsyd, #39gmel, #19gade, #14gper, #11gbri, #10acte, #8ghob, #1gdar)         |
-| #10  | 2647302752          | 8 (#80 tweets - #32gbri, #16gmel, #13gsyd, #5ghob, #4gper, #4acte, #3gade, #3gdar)             |
-
-## Conclusion
-
-This project explores Amdahl's Law by using MPI to process a large JSON file. Parallelism can lift performance substantially, but it comes with trade-offs in CPU efficiency. Spreading work across multiple cores reduces wall-clock time, yet the benefit can shrink when scaling across multiple nodes, because of the extra time spent on MPI communication between nodes. Parallelism also suits small data sets poorly, where a single core can finish the job quickly on its own. When designing an MPI program for performance, the balance between CPU efficiency and overall speed is the thing to get right.
-
-The full report is on [Overleaf](https://www.overleaf.com/read/sdsczmmdxzvq).
+The original 2023 submission is preserved in [`coursework/`](./coursework) for reference. The assignment brief,
+the course datasets and the written report are not reproduced here or on the site; the task is paraphrased. If
+you are taking COMP90024, please do your own work.
 
 ## Licence
 
-Released under the [MIT License](./LICENSE).
-
----
-
-<p align="right">2023 © Wei Zhao & Sunchuangyu Huang</p>
+[MIT](./LICENSE)
