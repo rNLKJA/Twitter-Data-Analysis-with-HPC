@@ -25,7 +25,7 @@ Amdahl's law, S(n) = 1 / (f + (1 − f) / n), with one parameter, the serial fra
 ### Evaluation
 
 - **Spartan:** f = 3.18% for the final code and 1.70% for the earlier revision. Each comes from one run per layout, and both multi-core layouts used 8 cores, so the fit reduces to the Karp–Flatt value at n = 8 (averaged over the two 8-core layouts): a point estimate with no interval. Whole-second timing alone moves the final f between 3.08% and 3.28%; run-to-run variation, which one run per layout cannot show, is not included in that range.
-- **Browser:** every benchmark reports f with a 95% percentile bootstrap interval over repeated rounds, alongside per-n medians, speedups and efficiencies with intervals. These describe one machine in one session. On one development laptop (Apple M4, 4 performance and 6 efficiency cores), three sessions on the same 100,000-tweet file gave f = 22.8%, 20.9% and 25.1%, each with an interval a few points wide, and the session-to-session spread was larger than any one interval ([DR-004](decisions/DR-004-benchmark-protocol.md)).
+- **Browser:** every benchmark of at least 5 rounds reports per-n medians with exact order-statistic intervals (coverage stated, for example 97.9% at the default 10 rounds), and speedups, efficiencies and f with percentile bootstrap intervals over rounds, labelled nominal 95% because a seeded simulation put their coverage at 94% to 95% with 5 or 7 rounds and 96% to 98% with 10 or 15. These describe one machine in one session. On one development laptop (Apple M4, 4 performance and 6 efficiency cores), three sessions on the same 100,000-tweet file gave f = 22.8%, 20.9% and 25.1%, each with an interval a few points wide, and the session-to-session spread was larger than any one interval; a fourth, under the revised protocol, gave 22.8% (20.9% to 28.2%) ([DR-004](decisions/DR-004-benchmark-protocol.md)).
 
 ### Known failure modes
 
@@ -51,19 +51,20 @@ A third-party model chosen by the visitor and called with their own key: Anthrop
 
 ### Grounding data
 
-The transcribed tables only (dataset summary, Tasks 1 to 3, two sets of benchmark jobs), about 45 rows, with no derived values. Context hash: SHA-256 of the exact text sent, shown on the page and recorded per call.
+The transcribed tables only (dataset summary, Tasks 1 to 3, two sets of benchmark jobs), 42 rows, with no derived values. Context hash: SHA-256 of the exact text sent, shown on the page and recorded per call.
 
 ### Evaluation
 
-A fixed set of 24 questions (14 answerable, 10 not) with an answer key computed in code from the data. A pass on an answerable item needs the expected numbers or names in the answer and the right rows cited; a pass on an unanswerable item needs the model to decline. Reported per run with Wilson 95% intervals; two runs can be compared item by item (paired bootstrap interval, exact McNemar test). No scores are published here: see [DR-005](decisions/DR-005-grounded-answers.md) for why.
+A fixed set of 24 questions (14 answerable, 10 not) with an answer key computed in code from the data. A pass on an answerable item needs the expected numbers or names in the answer (numbers the question already contains do not count) and the right rows cited; a pass on an unanswerable item needs the model to decline. Every item a run reached is scored, so a failed call counts as a fail rather than dropping out. Reported per run with Wilson 95% intervals, including the call-error rate; two runs can be compared item by item (paired bootstrap interval, exact McNemar test), with a warning when their request settings differ. No scores are published here: see [DR-005](decisions/DR-005-grounded-answers.md) for why.
 
 ### Known failure modes
 
-- Arithmetic slips on derived answers (sums, ratios), which the grounding check only partly catches when the calculation is shown.
+- Arithmetic slips on derived answers (sums, ratios). The grounding check re-does arithmetic written in common notation and flags a statement that does not hold; arithmetic written in words is not checked, and the derived numbers then show as untraced.
 - Citing a nearby row (for example the 1×8 job instead of the 2×4 job).
 - Answering an unanswerable question by extrapolation (for example predicting a 64-core time) or by outside knowledge.
 - Over-refusal of answerable questions phrased unusually.
 - Literal number matching in the grader marks rounded but correct answers ("2.28 million") as failures.
+- The grader can still pass a wrong answer that contains the right number in the wrong role (for example the right count attributed to the wrong city); the cited-row requirement catches some of these, not all.
 
 ### Ethical considerations
 

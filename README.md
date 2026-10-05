@@ -70,7 +70,7 @@ kept only 15 significant digits, so their trailing digits are lost (the counts a
 | `/` | Plain-language overview, key numbers, about the project |
 | `/results` | Task 2 map of Australia + table, Task 1 top tweeters, Task 3 heatmap, and the three result CSVs in `main.py`'s format (Task 1 author IDs as published) |
 | `/scaling` | The final and an earlier set of Spartan benchmark jobs, speedup, efficiency, Karp–Flatt serial fraction, and an Amdahl's law explorer fitted to the measured runs |
-| `/lab` | **MPI in your browser.** Generates a seeded synthetic file with the exact line layout of `bigTwitter.json`, splits it with the original chunking, and processes it with one Web Worker per rank. Live per-rank progress, a scan/reduce timeline, the three answers, a check of every run's output against a clean baseline run (one that counted no tweet twice), and a **benchmark** that measures speedup on your machine with 95% intervals (below). You can also load your own course-format files locally |
+| `/lab` | **MPI in your browser.** Generates a seeded synthetic file with the exact line layout of `bigTwitter.json`, splits it with the original chunking, and processes it with one Web Worker per rank. Live per-rank progress, a scan/reduce timeline, the three answers, a check of every run's output against a clean baseline run (one that counted no tweet twice), and a **benchmark** that measures speedup on your machine with intervals (below). You can also load your own course-format files locally |
 | `/how-it-works` | Interactive chunk explorer on the real file size, a line-by-line trace of the scanner, the place matcher step by step, and the gather/reduce design |
 | `/methods` | Data provenance, method, evaluation design, assumptions, limitations and what I'd change; five decision records (`/methods/decisions/…`), the model card (`/methods/model-card`) and the AI use statement |
 | `/ask` | **Optional, bring your own key.** Ask questions of the original result tables; answers cite table rows, are checked automatically, labelled AI-generated and reviewed by you. Includes a 24-question grounding evaluation |
@@ -78,15 +78,19 @@ kept only 15 significant digits, so their trailing digits are lost (the counts a
 
 ### Measurement rigour (2026 upgrade)
 
-The lab's benchmark runs every worker count R times (7 by default) after a discarded warm-up round, each round in a
-seeded random order so drift is spread across worker counts. It reports, per worker count, the median wall time,
-speedup and efficiency with **95% percentile bootstrap intervals** (2,000 resamples of whole rounds, seed 90024), fits
-**Amdahl's serial fraction** by least squares with an interval from the same resamples, overlays **Gustafson's law**
-for contrast, and exports the raw samples, seeds and environment as CSV or JSON. The statistics live in
+The lab's benchmark runs every worker count R times (10 by default, at least 5) after a discarded warm-up round, each
+round in a seeded random order so drift is spread across worker counts. It reports, per worker count, the median wall
+time with its **exact order-statistic interval** (distribution-free; its true coverage is shown, for example 97.9% at
+10 rounds), speedup, efficiency and the Karp–Flatt fraction with **percentile bootstrap intervals** (2,000 resamples of
+whole rounds, seed 90024, labelled nominal 95%), fits **Amdahl's serial fraction** by least squares with an interval
+from the same resamples, overlays **Gustafson's law** for contrast, and exports the raw samples, seeds and environment
+as CSV or JSON. A seeded simulation checks how often each interval really covers the truth (`pnpm coverage-sim` in
+`web/`; results in [DR-004](./docs/decisions/DR-004-benchmark-protocol.md)). The statistics live in
 [`web/src/lib/stats`](./web/src/lib/stats) and [`web/src/lib/lab/benchmark.ts`](./web/src/lib/lab/benchmark.ts) and are
-unit-tested against numpy, scipy, statsmodels and R values from
-[`scripts/stats_reference.py`](./scripts/stats_reference.py) (`uv run scripts/stats_reference.py`), which replays the
-seeded bootstrap draw for draw. On one development laptop (Apple M4, 4 performance and 6 efficiency cores) the
+unit-tested against reference values from numpy, scipy and statsmodels
+([`scripts/stats_reference.py`](./scripts/stats_reference.py), `uv run scripts/stats_reference.py`, which replays the
+seeded bootstrap draw for draw) and from base R ([`scripts/stats_reference.R`](./scripts/stats_reference.R),
+`Rscript scripts/stats_reference.R`). On one development laptop (Apple M4, 4 performance and 6 efficiency cores) the
 browser's f came out between about 21% and 25% across sessions, with speedup flattening near 3× (details and caveats in
 [DR-004](./docs/decisions/DR-004-benchmark-protocol.md)).
 
@@ -100,7 +104,7 @@ the decision records, all rendered under `/methods`:
 | [DR-001](./docs/decisions/DR-001-byte-range-chunking.md) | Split the file by byte ranges, not by lines (and the two boundary bugs that come with it) |
 | [DR-002](./docs/decisions/DR-002-gather-strategy.md) | Pre-aggregate on every rank, then send to three task ranks (and why the reductions did not overlap) |
 | [DR-003](./docs/decisions/DR-003-synthetic-data-design.md) | A seeded synthetic file with `bigTwitter.json`'s exact line layout |
-| [DR-004](./docs/decisions/DR-004-benchmark-protocol.md) | Repeated, shuffled benchmark rounds with bootstrap intervals |
+| [DR-004](./docs/decisions/DR-004-benchmark-protocol.md) | Repeated, shuffled benchmark rounds with intervals whose coverage is checked |
 | [DR-005](./docs/decisions/DR-005-grounded-answers.md) | Grounded, cited, audit-logged answers with your own key |
 
 The site reads a copy of these files in `web/content/docs/` (the Vercel build only sees `web/`); after editing `docs/`,
@@ -110,7 +114,8 @@ run `pnpm sync-docs` in `web/`. A test fails if the copies drift.
 
 `/ask` lets a language model answer questions **only** from the transcribed result and benchmark tables (shown in
 full on the page with their SHA-256). The model must cite the row ids it used, write out any arithmetic and decline
-when the tables cannot answer; every answer is checked (cited rows exist, numbers trace to cited rows), labelled
+when the tables cannot answer; every answer is checked (cited rows exist, the shown arithmetic is re-done on numbers
+from the cited rows, and every number in the answer is in a cited row or a checked result), labelled
 **AI-generated**, and left for you to accept, edit or reject.
 
 - **Your key, your browser.** Open **AI settings** (the key icon in the header), choose Anthropic (default: Claude
@@ -118,12 +123,15 @@ when the tables cannot answer; every answer is checked (cited rows exist, number
   (local storage only if you tick "remember on this device"), sent only from your browser to that provider
   (Anthropic with the `anthropic-dangerous-direct-browser-access` header), and never sent to this site, which is
   static and has no server. "Forget key" removes it.
-- **Audit log.** Every call is appended to an IndexedDB log in your browser: time, feature, provider, model, prompts
-  (never the key), context hash, output or error, latency, token usage and your decision. View, export (JSON/CSV) or
+- **Audit log.** Every call is appended to an IndexedDB log in your browser: time, feature, provider, model requested
+  and model served, request settings (token limit, effort, fallback, system-prompt hash), prompts (never the key),
+  context hash, output or error, latency, token usage and every review decision in order. View, export (JSON/CSV) or
   clear it at [`/ai-log`](https://comp90024-spartan-twitter.vercel.app/ai-log).
 - **Evaluation harness.** 24 fixed questions (14 answerable, 10 not, including an identity probe and a prompt
-  injection) with an answer key computed in code from the same tables; rates with Wilson 95% intervals, paired
-  comparison of two runs (paired bootstrap interval and exact McNemar test), CSV/JSON export. No scores are published
+  injection) with an answer key computed in code from the same tables. Every item a run reached is scored (a failed
+  call counts as a fail), with Wilson 95% intervals for each rate and for the call-error rate; paired comparison of
+  two runs (paired bootstrap interval and exact McNemar test) warns when their request settings differ; CSV/JSON
+  export. No scores are published
   here, by design ([DR-005](./docs/decisions/DR-005-grounded-answers.md)).
 - The design is informed by the Australian Government's responsible-AI policy, the EU AI Act's transparency
   principles and the NIST AI RMF; it is not a compliance claim. The site works fully without a key.
@@ -191,7 +199,8 @@ capital city makes Task 3 stop with a polars `ComputeError` (the lab shows the e
 │   ├── _original.py             loads coursework/scripts/* as they are, outside Spartan
 │   ├── run_original.py          re-enacts main.py rank by rank, dumps results as JSON
 │   ├── build_gazetteer.py       builds web/public/data/gazetteer.json
-│   └── stats_reference.py       numpy/scipy/R reference values for the statistics tests
+│   ├── stats_reference.py       numpy/scipy/statsmodels reference values for the statistics tests
+│   └── stats_reference.R        the same checks in base R
 └── web/                         the Next.js app (Vercel root)
     ├── content/docs/            synced copy of docs/ for the build (pnpm sync-docs)
     ├── public/data/gazetteer.json

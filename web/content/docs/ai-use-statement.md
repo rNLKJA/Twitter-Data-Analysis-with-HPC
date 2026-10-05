@@ -23,11 +23,11 @@ This site has one optional AI feature, **Ask the results**, and an evaluation ha
 
 ## Human in the loop
 
-Every answer is labelled **AI-generated**, shown with the rows it cites (taken from the site's own data, not from the model's text) and with the result of automatic grounding checks. You decide whether to accept it, edit it or reject it, and that decision is recorded. Evaluation answers are graded automatically against the answer key and are marked as such.
+Every answer is labelled **AI-generated**, shown with the rows it cites (taken from the site's own data, not from the model's text) and with the result of automatic grounding checks, which include re-doing the arithmetic the model shows. You decide whether to accept it, edit it or reject it, and every decision is recorded in order, so an edit is kept even if you later accept or reject the answer. Evaluation answers are graded automatically against the answer key and are marked as such.
 
 ## Audit trail
 
-Every call, successful or not, is appended to an audit log in your browser (IndexedDB): time, feature, provider, model requested and model that answered, the prompts sent (never the key), the context hash, the output or the error and any raw reply, latency, token usage when the provider reports it, and your decision. You can read, export (JSON or CSV) and clear it at `/ai-log`.
+Every call, successful or not, is appended to an audit log in your browser (IndexedDB): time, feature, provider, model requested and model that answered (recorded separately), the request settings (output-token limit, effort, server-side fallback, a hash of the full system prompt), the prompts sent (never the key), the context hash, the output or the error and any raw reply, latency, token usage when the provider reports it, and your decisions. If the browser cannot write the log (for example, storage is full), the answer is still shown, marked as not logged. Text cells in the CSV export that a spreadsheet would treat as a formula are prefixed with an apostrophe. You can read, export (JSON or CSV) and clear it at `/ai-log`.
 
 ## Models
 

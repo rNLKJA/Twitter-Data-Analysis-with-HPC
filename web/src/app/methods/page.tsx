@@ -10,8 +10,14 @@ import { EVAL_ITEMS } from "@/lib/ai/ask/eval";
 import { listDecisions, readDoc, withoutTitle } from "@/lib/content/docs";
 import { BENCHMARKS, DATASET, DEV_BENCHMARKS } from "@/lib/data/original";
 import { formatBytes, formatInt, formatPct } from "@/lib/format";
-import { BENCHMARK_DEFAULTS } from "@/lib/lab/benchmark";
+import { BENCHMARK_DEFAULTS, MIN_INTERVAL_ROUNDS } from "@/lib/lab/benchmark";
 import { BOOTSTRAP_DEFAULTS } from "@/lib/stats/bootstrap";
+import { medianInterval } from "@/lib/stats/order";
+
+/** Exact coverage of the order-statistic median interval at the default round count. */
+const defaultMedianCoverage = medianInterval([
+  ...Array(BENCHMARK_DEFAULTS.repeats).keys(),
+]).coverage;
 
 export const metadata: Metadata = {
   title: "Methods",
@@ -240,17 +246,25 @@ export default function MethodsPage() {
           ). {BENCHMARK_DEFAULTS.warmupRounds} warm-up round discarded, then{" "}
           {BENCHMARK_DEFAULTS.repeats} timed rounds by default; every worker count once per round,
           in an order shuffled with seed {BENCHMARK_DEFAULTS.orderSeed}. Reported per worker count:
-          median wall time, speedup (ratio of medians), efficiency and the Karp–Flatt fraction, each
-          with a 95% percentile bootstrap interval ({formatInt(BOOTSTRAP_DEFAULTS.resamples)}{" "}
-          resamples of whole rounds, seed {BOOTSTRAP_DEFAULTS.seed}). Amdahl&apos;s f is a
-          least-squares fit to the median speedups, with its interval from the same resamples.
-          Gustafson&apos;s law (n − f(n − 1)) is drawn with the same f for contrast: it assumes the
-          input grows with n, whereas the lab keeps it fixed.
+          the median wall time with its exact order-statistic interval, which needs no assumption
+          about the shape of the noise and whose true coverage is shown (
+          {formatPct(defaultMedianCoverage, 1)} at the default {BENCHMARK_DEFAULTS.repeats} rounds);
+          then speedup (ratio of medians), efficiency and the Karp–Flatt fraction, each with a
+          percentile bootstrap interval ({formatInt(BOOTSTRAP_DEFAULTS.resamples)} resamples of
+          whole rounds, seed {BOOTSTRAP_DEFAULTS.seed}). Amdahl&apos;s f is a least-squares fit to
+          the median speedups, with its interval from the same resamples. Bootstrap intervals are
+          labelled nominal 95%: a seeded simulation put their coverage at 94% to 95% with 5 or 7
+          rounds and 96% to 98% with 10 or 15, and no interval is shown with fewer than{" "}
+          {MIN_INTERVAL_ROUNDS} complete rounds. Gustafson&apos;s law (n − f(n − 1)) is drawn with
+          the same f for contrast: it assumes the input grows with n, whereas the lab keeps it
+          fixed.
         </p>
         <p>
-          The statistics are unit-tested against values computed independently with numpy, scipy,
-          statsmodels and R (<Code>scripts/stats_reference.py</Code>); the seeded bootstrap is
-          replayed draw for draw.
+          The statistics are unit-tested against values computed independently with numpy, scipy and
+          statsmodels (<Code>scripts/stats_reference.py</Code>, which replays the seeded bootstrap
+          draw for draw) and with base R (<Code>scripts/stats_reference.R</Code>). The coverage
+          simulation is <Code>web/src/lib/lab/coverage.ts</Code>, run with{" "}
+          <Code>pnpm coverage-sim</Code>.
         </p>
         <h3 className="font-heading text-lg font-semibold">The optional AI feature</h3>
         <p>
@@ -259,8 +273,11 @@ export default function MethodsPage() {
           </Link>{" "}
           is evaluated on {EVAL_ITEMS.length} fixed questions ({answerable} answerable,{" "}
           {EVAL_ITEMS.length - answerable} not) with an answer key computed in code from the same
-          tables. Rates are reported with Wilson 95% intervals; two runs can be compared item by
-          item with a paired bootstrap interval and an exact McNemar test (
+          tables; numbers the question already contains do not count as evidence. Every item a run
+          reached is scored, so a call that fails on an item counts as a fail instead of dropping
+          out of the denominator. Rates, including the call-error rate, are reported with Wilson 95%
+          intervals; two runs can be compared item by item with a paired bootstrap interval and an
+          exact McNemar test, with a warning when their request settings differ (
           <Link href="/methods/decisions/DR-005-grounded-answers" className="link">
             DR-005
           </Link>
@@ -315,8 +332,12 @@ export default function MethodsPage() {
             ).
           </li>
           <li>
-            With 7 runs per worker count, a bootstrap interval for a median can only land on
-            observed values. It describes spread on one machine in one session, not a guarantee.
+            The intervals describe spread on one machine in one session, assuming runs are
+            independent. Between sessions the same machine varied more than any one interval (
+            <Link href="/methods/decisions/DR-004-benchmark-protocol" className="link">
+              DR-004
+            </Link>
+            ).
           </li>
           <li>
             Two 2023 bugs are kept on purpose for fidelity: a chunk boundary inside an{" "}
