@@ -5,6 +5,8 @@ import {
   Cpu,
   Gauge,
   Map as MapIcon,
+  MessageSquareQuote,
+  NotebookPen,
   Workflow,
 } from "lucide-react";
 import Link from "next/link";
@@ -66,13 +68,25 @@ const EXPLORE = [
     href: "/lab",
     icon: Cpu,
     title: "MPI in your browser",
-    body: "Generate a synthetic tweet file and crunch it with one Web Worker per rank, live, then fit your own curve.",
+    body: "Generate a synthetic tweet file and crunch it with one Web Worker per rank, live, then benchmark your own cores with 95% intervals.",
   },
   {
     href: "/how-it-works",
     icon: Workflow,
     title: "How it works",
     body: "Byte-range chunking, the line scanner's magic skip counts, place matching, and the gather onto task ranks.",
+  },
+  {
+    href: "/methods",
+    icon: NotebookPen,
+    title: "Methods and decisions",
+    body: "Data provenance, how the benchmark and the AI feature are evaluated, the limits, and five decision records.",
+  },
+  {
+    href: "/ask",
+    icon: MessageSquareQuote,
+    title: "Ask the results (optional AI)",
+    body: "Bring your own key: answers drawn only from the result tables, with row citations, an audit log and a grounding evaluation.",
   },
 ];
 
@@ -93,6 +107,16 @@ const STACK = [
     area: "Output",
     then: "CSV files and a written report",
     now: "interactive charts, map and timelines",
+  },
+  {
+    area: "Rigour",
+    then: "one run per layout",
+    now: "repeated benchmark with bootstrap intervals, decision records",
+  },
+  {
+    area: "AI",
+    then: "none",
+    now: "optional, bring-your-own-key, grounded and audit-logged",
   },
 ];
 
@@ -244,7 +268,7 @@ export default function HomePage() {
 
       {/* explore */}
       <section className="mt-20" aria-labelledby="explore">
-        <SectionHeading id="explore" eyebrow="Explore" title="Four ways in" />
+        <SectionHeading id="explore" eyebrow="Explore" title="Six ways in" />
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           {EXPLORE.map((e) => (
             <Link

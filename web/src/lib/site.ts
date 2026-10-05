@@ -24,4 +24,10 @@ export const NAV: readonly NavItem[] = [
     label: "How it works",
     blurb: "Chunks, the line scanner and the place matcher",
   },
+  {
+    href: "/methods",
+    label: "Methods",
+    blurb: "Provenance, evaluation design, limits and decision records",
+  },
+  { href: "/ask", label: "Ask AI", blurb: "Optional: question the results with your own key" },
 ];

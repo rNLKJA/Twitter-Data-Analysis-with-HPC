@@ -19,7 +19,8 @@ export function SiteFooter() {
           </p>
           <p className="max-w-sm text-xs text-muted-foreground">
             No course data is hosted here. Results are transcribed from the 2023 submission; demos
-            run on a synthetic file generated in your browser.
+            run on a synthetic file generated in your browser. The optional AI feature uses your own
+            key, called from your browser, and every answer is labelled AI-generated.
           </p>
         </div>
         <nav aria-label="Footer" className="space-y-2 text-sm">
@@ -37,6 +38,11 @@ export function SiteFooter() {
                 </Link>
               </li>
             ))}
+            <li>
+              <Link href="/ai-log" className="text-muted-foreground hover:text-foreground">
+                AI audit log
+              </Link>
+            </li>
           </ul>
         </nav>
         <div className="space-y-2 text-sm">
