@@ -5,7 +5,10 @@ import { describe, expect, it } from "vitest";
 import gazetteer from "../../../public/data/gazetteer.json";
 import boundaryFixture from "../__fixtures__/parity-boundary-2023-400.json";
 import fixture from "../__fixtures__/parity-synthetic-2023-400.json";
-import { generateSyntheticFile } from "../synth/generator";
+import utf8Fixture from "../__fixtures__/parity-utf8-2023-400.json";
+import { generateSyntheticFile, withNonAsciiText } from "../synth/generator";
+import { splitFileIntoChunks } from "./chunks";
+import { UnicodeDecodeError } from "./decode";
 import { resolveLocation } from "./normalise";
 import { runPipeline } from "./pipeline";
 import { task1Csv, task2Csv, task31Csv, task3Csv } from "./tasks";
@@ -106,6 +109,51 @@ describe("parity on the original's chunk-boundary double count", () => {
     const got = runPipeline(bytes, dict, Number(size));
     expect(got.ranks).toEqual(expected.ranks);
     expect(got.ranks.reduce((s, r) => s + r.tweets, 0)).toBe(401);
+    expect(task1Csv(got.task1)).toEqual(expected.task1);
+    expect(task2Csv(got.task2)).toEqual(expected.task2);
+    expect(task3Csv(got.task3.rows).map((r) => [r[0], r[1], canonicalTask3(r[2])])).toEqual(
+      expected.task3.map((r) => [r[0], r[1], canonicalTask3(r[2])]),
+    );
+  });
+});
+
+/**
+ * The original decodes every line it reads with a strict `line.decode()`. If
+ * a chunk starts inside a multi-byte UTF-8 character, that rank's first line
+ * raises UnicodeDecodeError and the MPI job dies. parity-utf8-2023-400.json is
+ * the original Python (run_original.py --record-errors) on the same 400
+ * tweets with " Café ☕" added to every text: 1 and 4 ranks succeed, 17 and 29
+ * ranks crash. The port must crash on the same ranks with the same message.
+ */
+describe("parity on non-ASCII text and chunks that start mid-character", () => {
+  const utf8 = withNonAsciiText(bytes);
+  type Outcome = Run | { error: string; stage: string };
+  const runs = utf8Fixture.runs as Record<string, Outcome>;
+
+  it("regenerates the fixture's input", () => {
+    expect(utf8.length).toBe(utf8Fixture.input.bytes);
+    expect(createHash("sha256").update(utf8).digest("hex")).toBe(utf8Fixture.input.sha256);
+  });
+
+  it.each(Object.keys(runs))("behaves like the original on %s ranks", (size) => {
+    const expected = runs[size];
+    if ("error" in expected) {
+      const rank = Number(expected.stage.replace("rank ", ""));
+      const { start } = splitFileIntoChunks(utf8.length, Number(size));
+      expect((utf8[start[rank]] & 0xc0) === 0x80).toBe(true); // a UTF-8 continuation byte
+      let thrown: unknown;
+      try {
+        runPipeline(utf8, dict, Number(size));
+      } catch (err) {
+        thrown = err;
+      }
+      expect(thrown).toBeInstanceOf(UnicodeDecodeError);
+      // same exception text as Python, plus where it happened
+      expect((thrown as Error).message.startsWith(expected.error)).toBe(true);
+      return;
+    }
+    const got = runPipeline(utf8, dict, Number(size));
+    expect(got.ranks).toEqual(expected.ranks);
     expect(task1Csv(got.task1)).toEqual(expected.task1);
     expect(task2Csv(got.task2)).toEqual(expected.task2);
     expect(task3Csv(got.task3.rows).map((r) => [r[0], r[1], canonicalTask3(r[2])])).toEqual(

@@ -324,3 +324,13 @@ export function generateSyntheticFile(options: SynthOptions): Uint8Array {
   }
   return out;
 }
+
+/**
+ * Append " Café ☕" (2- and 3-byte UTF-8) to every tweet text line. Used to
+ * test what happens when a chunk boundary falls inside a multi-byte
+ * character: the original's strict `line.decode()` raises UnicodeDecodeError.
+ */
+export function withNonAsciiText(bytes: Uint8Array): Uint8Array {
+  const text = new TextDecoder().decode(bytes);
+  return new TextEncoder().encode(text.replace(/("text": ".*?)(",\n)/g, "$1 Café ☕$2"));
+}

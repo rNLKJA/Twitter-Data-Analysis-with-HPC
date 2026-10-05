@@ -20,7 +20,13 @@ task1.csv / task2.csv / task3.csv / task3_1.csv, which are read back as JSON.
 
 Usage:
   uv run scripts/run_original.py --twitter FILE --sal sal.json \
-      --ranks 1 3 4 7 --out result.json [--records] [--dump-sal-dict path]
+      --ranks 1 3 4 7 --out result.json [--records] [--dump-sal-dict path] [--record-errors]
+
+With --record-errors, a rank count whose run raises (for example a
+UnicodeDecodeError when a chunk starts inside a multi-byte character, or the
+polars error Task 3 hits when no tweet is in a capital city) is stored as
+{"error": "<Type>: <message>", "stage": "rank <r>" | "task <t>"} instead of
+stopping the script.
 """
 
 from __future__ import annotations
@@ -59,6 +65,11 @@ def main() -> None:
         help="include per-tweet (tweet_id, author_id, location, gcc) rows for the 1-rank run",
     )
     ap.add_argument("--dump-sal-dict", type=Path, default=None)
+    ap.add_argument(
+        "--record-errors",
+        action="store_true",
+        help="record the exception a rank count raises instead of stopping",
+    )
     args = ap.parse_args()
 
     twitter = args.twitter.resolve()
@@ -91,18 +102,14 @@ def main() -> None:
         "runs": {},
     }
 
-    for size in args.ranks:
-        if size == 2:
-            # get_task_ranks(2) returns (0, 1, 2): Task 3 would be sent to a
-            # rank that does not exist, so the original cannot run on 2 ranks.
-            print("skipping 2 ranks: the original task-rank layout needs 1 or >= 3")
-            continue
+    def run_size(size: int, stage: list) -> dict:
         chunk_start, chunk_end = utils.split_file_into_chunks(twitter_file, size)
         task1_rank, task2_rank, task3_rank = mpi.get_task_ranks(size)
 
         t1, t2, t3, ranks = [], [], [], []
         records = None
         for rank in range(size):
+            stage[0] = f"rank {rank}"
             tdf = tp.twitter_processorV1(
                 twitter_file, chunk_start[rank], chunk_end[rank], sal_dict
             )
@@ -128,11 +135,14 @@ def main() -> None:
             f.unlink()
 
         # ---- TASK 1 (task1_rank) ----
+        stage[0] = "task 1"
         tp.return_twitter_counts_by_author_id(gather(task1_rank, size, t1), path=PATH)
         # ---- TASK 2 (task2_rank) ----
+        stage[0] = "task 2"
         t2_tdfs = tp.combine_tdf(gather(task2_rank, size, t2)).groupby("gcc").sum()
         tp.return_gcc_with_tweets_count(t2_tdfs, save=True, path=PATH)
         # ---- TASK 3 (task3_rank) ----
+        stage[0] = "task 3"
         t3_tdfs = tp.combine_tdf(gather(task3_rank, size, t3))
         tp.generate_task_3_result(t3_tdfs, save=True, path=PATH)
 
@@ -145,7 +155,24 @@ def main() -> None:
         }
         if records is not None:
             run["records"] = records
-        result["runs"][str(size)] = run
+        return run
+
+    for size in args.ranks:
+        if size == 2:
+            # get_task_ranks(2) returns (0, 1, 2): Task 3 would be sent to a
+            # rank that does not exist, so the original cannot run on 2 ranks.
+            print("skipping 2 ranks: the original task-rank layout needs 1 or >= 3")
+            continue
+        stage = ["start"]
+        try:
+            result["runs"][str(size)] = run_size(size, stage)
+        except Exception as exc:  # noqa: BLE001 - recorded verbatim for parity fixtures
+            if not args.record_errors:
+                raise
+            result["runs"][str(size)] = {
+                "error": f"{type(exc).__name__}: {exc}",
+                "stage": stage[0],
+            }
 
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(result, ensure_ascii=False, indent=1) + "\n")

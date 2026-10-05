@@ -7,7 +7,7 @@ import {
   SKIP_LINES_2,
   TWEETS_ID,
 } from "./constants";
-import { decodeLine } from "./decode";
+import { decodeLineStrict, UnicodeDecodeError } from "./decode";
 import { normaliseLocation, wordNgrams, type SalDict } from "./normalise";
 
 /** Column-oriented equivalent of the polars frame returned by the original. */
@@ -94,12 +94,24 @@ export function twitterProcessorV1(
   file.seek(cs);
 
   for (;;) {
+    const lineStart = file.tell();
     const raw = file.readline();
     linesRead++;
     if (raw.length === 0 && file.tell() >= file.size && tweetsId.length !== gcc.length) {
       throw new UnbalancedChunkError(`chunk ${cs}-${ce}`);
     }
-    const line = decodeLine(raw);
+    let line: string;
+    try {
+      line = decodeLineStrict(raw);
+    } catch (err) {
+      if (err instanceof UnicodeDecodeError) {
+        err.message +=
+          lineStart === cs
+            ? ` (the line at byte ${lineStart}, where this rank's chunk starts inside a multi-byte character)`
+            : ` (the line at byte ${lineStart})`;
+      }
+      throw err;
+    }
 
     const matchId = TWEETS_ID.exec(line);
     const matchLocation = LOCATION_ID.exec(line);
