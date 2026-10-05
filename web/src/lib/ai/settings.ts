@@ -125,3 +125,32 @@ export function maskKey(key: string): string {
   if (k.length <= 10) return "•".repeat(k.length);
   return `${k.slice(0, 6)}…${k.slice(-4)}`;
 }
+
+/**
+ * What pressing Save in the settings dialog should write, if anything.
+ *
+ * A newly pasted key is saved with the "remember" choice shown for that
+ * provider. An already saved key moves between session and local storage
+ * only when the visitor changed that provider's checkbox in this dialog, so
+ * switching provider and pressing Save never moves the other provider's key
+ * (for example, into localStorage, where it would outlive the tab).
+ */
+export function planKeySave({
+  draftKey,
+  stored,
+  remember,
+  rememberTouched,
+}: {
+  draftKey: string;
+  stored: StoredKey | null;
+  /** The checkbox as shown for the selected provider. */
+  remember: boolean;
+  /** The visitor changed the checkbox for the selected provider. */
+  rememberTouched: boolean;
+}): { key: string; remember: boolean } | null {
+  if (draftKey.trim()) return { key: draftKey, remember };
+  if (stored && rememberTouched && stored.remembered !== remember) {
+    return { key: stored.key, remember };
+  }
+  return null;
+}

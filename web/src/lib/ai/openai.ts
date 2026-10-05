@@ -4,6 +4,7 @@
  * validated with the same zod schema as the Anthropic one, under the same
  * output-token budget, and failures carry the same evidence.
  */
+import { DEFAULT_MAX_TOKENS } from "./models";
 import { openAiJsonSchema, parseStructured } from "./schema";
 import {
   AiError,
@@ -34,7 +35,7 @@ export async function callOpenAI<T>(
     signal,
   }: { fetch?: FetchLike; signal?: AbortSignal } = {},
 ): Promise<StructuredResponse<T>> {
-  const maxTokens = req.maxTokens ?? 4096;
+  const maxTokens = req.maxTokens ?? DEFAULT_MAX_TOKENS;
   const body = {
     model,
     max_completion_tokens: maxTokens,

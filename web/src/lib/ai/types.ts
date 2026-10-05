@@ -38,6 +38,21 @@ export interface StructuredRequest<T> {
   maxTokens?: number;
 }
 
+/**
+ * The request settings that shape an answer besides the model and prompt
+ * text. Recorded with every audit entry and evaluation run so results can be
+ * compared like for like.
+ */
+export interface RequestParams {
+  maxTokens: number;
+  /** Reasoning effort sent ("low"), or null when none is sent (the provider's default). */
+  effort: string | null;
+  /** Anthropic server-side fallback mode ("default"), or null when off. */
+  serverFallback: string | null;
+  /** SHA-256 of the full system prompt (rules and context together). */
+  promptSha256: string;
+}
+
 export interface TokenUsage {
   inputTokens: number;
   outputTokens: number;
@@ -111,13 +126,15 @@ export class AiError extends Error {
 
 export const isAiError = (e: unknown): e is AiError => e instanceof AiError;
 
-/** Errors after which repeating the same call cannot succeed (stop a batch). */
-export const isFatalForBatch = (e: AiError) =>
-  e.kind === "missing-key" ||
-  e.kind === "invalid-key" ||
-  e.kind === "permission" ||
-  e.kind === "rate-limit" ||
-  e.kind === "network" ||
-  e.kind === "aborted";
+/** Error kinds after which repeating the same call cannot succeed (stop a batch). */
+export const isFatalKind = (kind: AiErrorKind) =>
+  kind === "missing-key" ||
+  kind === "invalid-key" ||
+  kind === "permission" ||
+  kind === "rate-limit" ||
+  kind === "network" ||
+  kind === "aborted";
+
+export const isFatalForBatch = (e: AiError) => isFatalKind(e.kind);
 
 export type FetchLike = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;

@@ -4,6 +4,8 @@
  */
 import { callAnthropic } from "./anthropic";
 import { newAuditId, type AuditEntry, type AuditStore, type HumanDecision } from "./audit-log";
+import { sha256HexOrUnavailable } from "./hash";
+import { requestParams } from "./models";
 import { callOpenAI } from "./openai";
 import {
   AiError,
@@ -28,6 +30,12 @@ export interface CallOptions {
 
 export interface CallResult<T> extends StructuredResponse<T> {
   entry: AuditEntry;
+  /**
+   * False when the answer arrived but could not be written to the audit log
+   * (for example, browser storage is full). The answer is still returned:
+   * the visitor has paid for it, and the UI says it is not logged.
+   */
+  logged: boolean;
 }
 
 export async function callStructured<T>(
@@ -44,12 +52,19 @@ export async function callStructured<T>(
     clock = () => new Date(),
   }: CallOptions,
 ): Promise<CallResult<T>> {
+  const params = requestParams(
+    credentials.provider,
+    credentials.model,
+    await sha256HexOrUnavailable(req.system),
+    req.maxTokens,
+  );
   const base = {
     id: newAuditId(),
     timestamp: clock().toISOString(),
     feature: req.feature,
     provider: credentials.provider,
     model: credentials.model,
+    params,
     // The request payload only. The key is never part of an entry.
     input: { system: req.system, user: req.user, schema: req.schemaName },
     contextHash,
@@ -58,24 +73,11 @@ export async function callStructured<T>(
   } satisfies Partial<AuditEntry>;
 
   const started = now();
+  let res: StructuredResponse<T>;
   try {
     if (!credentials.apiKey.trim()) throw new AiError("missing-key");
     const call = credentials.provider === "anthropic" ? callAnthropic : callOpenAI;
-    const res = await call(credentials.apiKey.trim(), credentials.model, req, { fetch, signal });
-    const entry: AuditEntry = {
-      ...base,
-      model:
-        res.model && res.model !== credentials.model
-          ? `${credentials.model} → ${res.model}`
-          : credentials.model,
-      output: res.data,
-      outputText: res.rawText,
-      error: null,
-      latencyMs: now() - started,
-      usage: res.usage,
-    };
-    await audit.add(entry);
-    return { ...res, entry };
+    res = await call(credentials.apiKey.trim(), credentials.model, req, { fetch, signal });
   } catch (err) {
     const error = err instanceof AiError ? err : new AiError("network", String(err));
     const entry: AuditEntry = {
@@ -93,4 +95,22 @@ export async function callStructured<T>(
     await audit.add(entry).catch(() => undefined);
     throw error;
   }
+
+  const entry: AuditEntry = {
+    ...base,
+    servedModel: res.model || null,
+    output: res.data,
+    outputText: res.rawText,
+    error: null,
+    latencyMs: now() - started,
+    usage: res.usage,
+  };
+  // The call succeeded and is paid for: a logging failure must not throw the answer away.
+  let logged = true;
+  try {
+    await audit.add(entry);
+  } catch {
+    logged = false;
+  }
+  return { ...res, entry, logged };
 }

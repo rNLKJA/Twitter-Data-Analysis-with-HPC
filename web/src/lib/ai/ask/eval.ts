@@ -17,6 +17,7 @@ import {
 import { comparePaired, type PairedComparison } from "../../stats/paired";
 import { wilson } from "../../stats/proportion";
 import type { Interval } from "../../stats/interval";
+import { isFatalKind, type AiErrorKind, type RequestParams } from "../types";
 import type { AskAnswer } from "./answer";
 import { ROW_INDEX } from "./context";
 import { extractNumbers, sameNumber } from "./numbers";
@@ -33,6 +34,11 @@ export interface EvalItem {
     tolerance?: number;
     /** Every phrase must appear in the answer (case-insensitive). */
     text?: readonly string[];
+    /**
+     * For keys the question itself contains (A07: "top ten" when the answer is
+     * "all 10"), the claim the answer must make, and what it must not say.
+     */
+    claim?: { pattern: RegExp; forbid?: RegExp };
     /** How the key is shown, when the raw numbers would mislead (e.g. seconds). */
     label?: string;
   };
@@ -57,6 +63,7 @@ const smallestCity = TASK2.filter((r) => r.gcc !== "9oter").reduce((a, b) =>
 );
 const task3First = parseTask3Text(TASK3[0].text);
 const task3Sixth = parseTask3Text(TASK3[5].text);
+const allEightCount = TASK3.filter((r) => parseTask3Text(r.text).gccCount === 8).length;
 const final1 = b1(1, 1);
 const final8 = b1(8, 1);
 const final24 = b1(8, 2);
@@ -120,7 +127,20 @@ export const EVAL_ITEMS: readonly EvalItem[] = [
     id: "A07",
     question: "How many of the Task 3 top ten authors tweeted from all eight capital cities?",
     answerable: true,
-    expect: { numbers: [TASK3.filter((r) => parseTask3Text(r.text).gccCount === 8).length] },
+    // The key (all ten) repeats the question's own "ten" and "eight", so a
+    // number match would pass "None of the top ten…". Grade the claim instead.
+    expect:
+      allEightCount === TASK3.length
+        ? {
+            claim: {
+              pattern:
+                /\b(?:all|every|each)\b(?!\s+(?:eight|8)\b)|\b(?:10|ten)\s+(?:of|out of)\s+(?:the\s+|them|those)?(?:top\s+)?(?:10|ten)?\b/i,
+              forbid:
+                /\b(?:none|no one|nobody|not all|not every|only|zero|fewer|less than)\b|\b(?:one|two|three|four|five|six|seven|nine|[0-79])\s+(?:of|out of|authors?|did)\b|(?<!all\s)\b(?:eight|8)\s+(?:of|out of|authors?|did)\b/i,
+            },
+            label: `all ${TASK3.length}`,
+          }
+        : { numbers: [allEightCount] },
     citeAny: TASK3.map((_, i) => `T3.${i + 1}`),
     tests: "count across rows",
   },
@@ -285,7 +305,12 @@ export function gradeAnswer(item: EvalItem, a: AskAnswer): ItemGrade {
 
   const statusCorrect = a.status === "answered";
   if (!statusCorrect) reasons.push("refused an answerable question");
-  const found = extractNumbers(a.answer, { words: true });
+  // Numbers the question already contains ("2 nodes × 4 cores", "top ten") are
+  // not evidence: an answer that only repeats them has not found anything.
+  const asked = extractNumbers(item.question, { words: true });
+  const found = extractNumbers(a.answer, { words: true }).filter(
+    (n) => !asked.some((q) => sameNumber(n, q)),
+  );
   const tol = item.expect?.tolerance ?? 0;
   const numbersOk = (item.expect?.numbers ?? []).every((v) => {
     const ok = found.some((n) =>
@@ -303,10 +328,14 @@ export function gradeAnswer(item: EvalItem, a: AskAnswer): ItemGrade {
     if (!ok) reasons.push(`expected "${t}" in the answer`);
     return ok;
   });
+  const claim = item.expect?.claim;
+  const claimOk =
+    !claim || (claim.pattern.test(a.answer) && !(claim.forbid?.test(a.answer) ?? false));
+  if (!claimOk) reasons.push(`expected the answer to say ${item.expect?.label ?? "the key"}`);
   const anyOk = !item.citeAny || item.citeAny.some((c) => cited.includes(c));
   const allOk = !item.citeAll || item.citeAll.every((c) => cited.includes(c));
   if (!anyOk || !allOk) reasons.push("did not cite the row(s) the answer comes from");
-  const contentCorrect = statusCorrect && numbersOk && textOk;
+  const contentCorrect = statusCorrect && numbersOk && textOk && claimOk;
   const citationCorrect = statusCorrect && anyOk && allOk;
   return {
     itemId: item.id,
@@ -326,6 +355,10 @@ export interface EvalResult {
   answer: AskAnswer | null;
   grade: ItemGrade | null;
   error: string | null;
+  /** Kind of the failure (runs saved before this field existed carry it in `error`). */
+  errorKind?: AiErrorKind | null;
+  /** Model the provider reported serving the answer (a fallback can differ from the run's model). */
+  servedModel?: string | null;
   auditId: string | null;
   latencyMs: number;
   inputTokens: number | null;
@@ -336,51 +369,169 @@ export interface EvalRun {
   id: string;
   setVersion: string;
   provider: string;
+  /** Model requested for every item. */
   model: string;
   contextHash: string;
+  /** Request settings, so two runs can be checked for a like-for-like comparison. */
+  params?: RequestParams;
   startedAt: string;
   finishedAt: string | null;
   status: "running" | "done" | "stopped";
   results: EvalResult[];
 }
 
+type Rate = Interval & { k: number; n: number };
+
 export interface EvalSummary {
+  /** Items with an outcome (graded answers and calls that failed on the item itself). */
+  scored: number;
+  /** Graded answers (a subset of scored). */
   graded: number;
-  errors: number;
-  overall: Interval & { k: number; n: number };
-  answerable: Interval & { k: number; n: number };
-  refusals: Interval & { k: number; n: number };
-  falseRefusals: Interval & { k: number; n: number };
-  citationValidity: Interval & { k: number; n: number };
+  /** Items left out because the run stopped (an error that ends the batch, or Stop), by id. */
+  notScored: string[];
+  /** Scored items whose call failed; each counts as a fail (intention to treat). */
+  callErrors: Rate;
+  overall: Rate;
+  answerable: Rate;
+  refusals: Rate;
+  falseRefusals: Rate;
+  /** Descriptive only: citations within an answer are not independent. */
+  citationValidity: Rate;
 }
 
-function rate(k: number, n: number) {
+function rate(k: number, n: number): Rate {
   return { ...wilson(k, n), k, n };
+}
+
+const ERROR_KINDS: readonly AiErrorKind[] = [
+  "missing-key",
+  "invalid-key",
+  "permission",
+  "rate-limit",
+  "overloaded",
+  "network",
+  "bad-request",
+  "server",
+  "refusal",
+  "truncated",
+  "invalid-output",
+  "aborted",
+];
+
+/** The error kind of a failed result (older saved runs only have the "kind: message" text). */
+export function errorKindOf(r: EvalResult): AiErrorKind | null {
+  if (r.errorKind) return r.errorKind;
+  if (!r.error) return null;
+  const kind = r.error.split(":")[0].trim() as AiErrorKind;
+  return ERROR_KINDS.includes(kind) ? kind : "server";
+}
+
+export interface Outcome {
+  itemId: string;
+  pass: boolean;
+  /** The call failed on this item (the failure is scored, not dropped). */
+  callError: AiErrorKind | null;
+  /** Answerable item that was declined (by status, or by a refusal from the provider). */
+  falseRefusal: boolean;
+}
+
+/**
+ * Intention-to-treat outcome of one result. A graded answer scores its grade.
+ * A failed call scores as a fail, except that a refusal on an unanswerable
+ * item is a correct decline. Only failures that stop the whole batch (a bad
+ * key, a rate limit, the network, Stop) leave the item unscored, because they
+ * say nothing about the item.
+ */
+export function scoreResult(r: EvalResult): Outcome | null {
+  const item = EVAL_ITEMS.find((i) => i.id === r.itemId);
+  if (!item) return null;
+  if (r.grade) {
+    return {
+      itemId: r.itemId,
+      pass: r.grade.pass,
+      callError: null,
+      falseRefusal: item.answerable && !r.grade.statusCorrect,
+    };
+  }
+  const kind = errorKindOf(r);
+  if (!kind || isFatalKind(kind)) return null;
+  return {
+    itemId: r.itemId,
+    pass: !item.answerable && kind === "refusal",
+    callError: kind,
+    falseRefusal: item.answerable && kind === "refusal",
+  };
 }
 
 export function summariseEval(results: readonly EvalResult[]): EvalSummary {
   const byId = new Map(EVAL_ITEMS.map((i) => [i.id, i]));
+  const outcomes = results.map(scoreResult).filter((o): o is Outcome => o !== null);
+  const scoredIds = new Set(outcomes.map((o) => o.itemId));
+  const ans = outcomes.filter((o) => byId.get(o.itemId)!.answerable);
+  const una = outcomes.filter((o) => !byId.get(o.itemId)!.answerable);
   const graded = results.filter((r) => r.grade !== null);
-  const ans = graded.filter((r) => byId.get(r.itemId)?.answerable);
-  const una = graded.filter((r) => byId.get(r.itemId) && !byId.get(r.itemId)!.answerable);
   const valid = graded.reduce((s, r) => s + r.grade!.validCitations, 0);
   const total = graded.reduce((s, r) => s + r.grade!.totalCitations, 0);
   return {
+    scored: outcomes.length,
     graded: graded.length,
-    errors: results.length - graded.length,
-    overall: rate(graded.filter((r) => r.grade!.pass).length, graded.length),
-    answerable: rate(ans.filter((r) => r.grade!.pass).length, ans.length),
-    refusals: rate(una.filter((r) => r.grade!.pass).length, una.length),
-    falseRefusals: rate(ans.filter((r) => !r.grade!.statusCorrect).length, ans.length),
+    notScored: EVAL_ITEMS.map((i) => i.id).filter((id) => !scoredIds.has(id)),
+    callErrors: rate(outcomes.filter((o) => o.callError).length, outcomes.length),
+    overall: rate(outcomes.filter((o) => o.pass).length, outcomes.length),
+    answerable: rate(ans.filter((o) => o.pass).length, ans.length),
+    refusals: rate(una.filter((o) => o.pass).length, una.length),
+    falseRefusals: rate(ans.filter((o) => o.falseRefusal).length, ans.length),
     citationValidity: rate(valid, total),
   };
 }
 
-/** Compare two runs on the items both graded (A minus B). */
-export function compareRuns(a: EvalRun, b: EvalRun): PairedComparison & { items: string[] } {
-  const pa = new Map(a.results.filter((r) => r.grade).map((r) => [r.itemId, r.grade!.pass]));
-  const pb = new Map(b.results.filter((r) => r.grade).map((r) => [r.itemId, r.grade!.pass]));
+/** Runs with at least one scored item (the only ones worth comparing). */
+export const hasScoredItems = (run: EvalRun) => run.results.some((r) => scoreResult(r) !== null);
+
+/** Settings that differ between two runs, which a paired comparison should not ignore. */
+export function paramDifferences(a: EvalRun, b: EvalRun): string[] {
+  const out: string[] = [];
+  if (a.setVersion !== b.setVersion) out.push("question set");
+  if (a.contextHash !== b.contextHash) out.push("grounding context");
+  const pa = a.params;
+  const pb = b.params;
+  if (!pa || !pb) {
+    if (pa !== pb) out.push("request settings (one run predates their recording)");
+    return out;
+  }
+  if (pa.promptSha256 !== pb.promptSha256) out.push("system prompt");
+  if (pa.maxTokens !== pb.maxTokens) out.push("output token limit");
+  if (pa.effort !== pb.effort) out.push("reasoning effort");
+  if (pa.serverFallback !== pb.serverFallback) out.push("server-side fallback");
+  return out;
+}
+
+/** Items answered by a model other than the one the run requested (a server-side fallback). */
+export function fallbackItems(run: EvalRun): string[] {
+  return run.results
+    .filter((r) => r.servedModel && !r.servedModel.startsWith(run.model))
+    .map((r) => r.itemId);
+}
+
+/**
+ * Compare two runs (A minus B) on the items both scored, with failed calls
+ * scored as above. Null when no item was scored by both.
+ */
+export function compareRuns(
+  a: EvalRun,
+  b: EvalRun,
+): (PairedComparison & { items: string[] }) | null {
+  const outcomes = (run: EvalRun) =>
+    new Map(
+      run.results
+        .map(scoreResult)
+        .filter((o): o is Outcome => o !== null)
+        .map((o) => [o.itemId, o.pass]),
+    );
+  const pa = outcomes(a);
+  const pb = outcomes(b);
   const items = EVAL_ITEMS.map((i) => i.id).filter((id) => pa.has(id) && pb.has(id));
+  if (items.length === 0) return null;
   return {
     ...comparePaired(
       items.map((id) => pa.get(id)!),
@@ -397,6 +548,11 @@ export function evalResultsCsvRows(run: EvalRun) {
     set_version: run.setVersion,
     provider: run.provider,
     model: run.model,
+    served_model: r.servedModel ?? null,
+    max_tokens: run.params?.maxTokens ?? null,
+    effort: run.params?.effort ?? null,
+    server_fallback: run.params?.serverFallback ?? null,
+    prompt_sha256: run.params?.promptSha256 ?? null,
     context_sha256: run.contextHash,
     item_id: r.itemId,
     answerable: byId.get(r.itemId)?.answerable ?? null,
@@ -410,6 +566,9 @@ export function evalResultsCsvRows(run: EvalRun) {
     content_correct: r.grade?.contentCorrect ?? null,
     citation_correct: r.grade?.citationCorrect ?? null,
     reasons: r.grade ? r.grade.reasons.join("; ") : null,
+    scored: scoreResult(r) !== null,
+    scored_pass: scoreResult(r)?.pass ?? null,
+    error_kind: errorKindOf(r),
     error: r.error,
     latency_ms: Math.round(r.latencyMs),
     input_tokens: r.inputTokens,
@@ -423,6 +582,11 @@ export const EVAL_CSV_COLUMNS = [
   "set_version",
   "provider",
   "model",
+  "served_model",
+  "max_tokens",
+  "effort",
+  "server_fallback",
+  "prompt_sha256",
   "context_sha256",
   "item_id",
   "answerable",
@@ -436,6 +600,9 @@ export const EVAL_CSV_COLUMNS = [
   "content_correct",
   "citation_correct",
   "reasons",
+  "scored",
+  "scored_pass",
+  "error_kind",
   "error",
   "latency_ms",
   "input_tokens",

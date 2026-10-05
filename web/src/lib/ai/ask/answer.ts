@@ -4,6 +4,7 @@
  */
 import { z } from "zod";
 
+import { checkCalculation, showsValue } from "./arithmetic";
 import { ASK_CONTEXT, ROW_INDEX } from "./context";
 import { extractNumbers, tracesTo, type FoundNumber } from "./numbers";
 
@@ -44,8 +45,12 @@ export interface GroundingCheck {
   invalidCitations: string[];
   /** An answer was given without citing any row. */
   uncited: boolean;
-  /** Numbers in the answer found neither in the cited rows nor in the calculation. */
+  /** Numbers in the answer found neither in the cited rows nor among checked results. */
   untracedNumbers: string[];
+  /** Statements in the calculation whose arithmetic does not hold. */
+  arithmeticErrors: string[];
+  /** Operands in the calculation that do not come from the cited rows. */
+  unverifiedInputs: string[];
   /** A refusal that still cites rows (harmless, but inconsistent). */
   refusalWithCitations: boolean;
 }
@@ -53,33 +58,55 @@ export interface GroundingCheck {
 /** Numbers small enough to be ordinals or counts of things ("Task 2", "8 cores"), not checked. */
 const isTrivial = (n: FoundNumber) => n.digits !== null && n.value < 10;
 
+/** Numbers in a row's cells. "#1879gmel" inside a Task 3 cell is read as 1879. */
+export function rowNumbers(id: string): FoundNumber[] {
+  const row = ROW_INDEX.get(id);
+  if (!row) return [];
+  return row.cells.flatMap((cell) =>
+    extractNumbers(String(cell).replace(/(\d)([a-z])/gi, "$1 $2")),
+  );
+}
+
+/**
+ * The checks every answer gets before a person sees it. A number in the
+ * answer counts as traced only if it is in a cited row, or is the result of
+ * a calculation statement whose operands all come from cited rows (or
+ * earlier checked results) and whose arithmetic holds as written. Numbers
+ * that merely appear in the calculation do not count.
+ */
 export function checkGrounding(a: AskAnswer): GroundingCheck {
   const cited = [...new Set(a.citations.map((c) => c.trim()))];
   const invalidCitations = cited.filter((c) => !ROW_INDEX.has(c));
   const valid = cited.filter((c) => ROW_INDEX.has(c));
-  const pool: FoundNumber[] = [
-    ...valid.flatMap((id) =>
-      ROW_INDEX.get(id)!.cells.flatMap((cell) => extractNumbers(String(cell))),
-    ),
-    ...extractNumbers(a.calculation),
-  ];
+  const pool: FoundNumber[] = valid.flatMap(rowNumbers);
+  const calc = checkCalculation(a.calculation, pool, tracesTo);
+  const traced = (n: FoundNumber) =>
+    pool.some((p) => tracesTo(n, p)) || calc.derived.some((d) => showsValue(n, d.value));
   const untraced =
     a.status === "answered"
       ? extractNumbers(a.answer)
           .filter((n) => !isTrivial(n))
-          .filter((n) => !pool.some((p) => tracesTo(n, p)))
+          .filter((n) => !traced(n))
           .map((n) => n.text)
       : [];
   return {
     invalidCitations,
     uncited: a.status === "answered" && valid.length === 0,
     untracedNumbers: [...new Set(untraced)],
+    arithmeticErrors: calc.arithmeticErrors,
+    unverifiedInputs: calc.unverifiedInputs,
     refusalWithCitations: a.status === "not_answerable" && cited.length > 0,
   };
 }
 
 export function hasGroundingIssue(c: GroundingCheck): boolean {
-  return c.invalidCitations.length > 0 || c.uncited || c.untracedNumbers.length > 0;
+  return (
+    c.invalidCitations.length > 0 ||
+    c.uncited ||
+    c.untracedNumbers.length > 0 ||
+    c.arithmeticErrors.length > 0 ||
+    c.unverifiedInputs.length > 0
+  );
 }
 
 /** The question as sent: trimmed and capped. */

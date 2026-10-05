@@ -12,10 +12,10 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useId, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
-import type { HumanDecision } from "@/lib/ai/audit-log";
+import type { DecisionRecord, HumanDecision } from "@/lib/ai/audit-log";
 import {
   checkGrounding,
   MAX_QUESTION_CHARS,
@@ -24,6 +24,7 @@ import {
 } from "@/lib/ai/ask/answer";
 import { ROW_INDEX } from "@/lib/ai/ask/context";
 import { askResults } from "@/lib/ai/ask/run";
+import { isFallbackModel } from "@/lib/ai/models";
 import { AiError, PROVIDER_LABEL } from "@/lib/ai/types";
 import { formatMs } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -34,15 +35,52 @@ import { useAi } from "./ai-provider";
 interface Asked {
   id: string;
   question: string;
+  /** Model requested. */
   model: string;
+  /** Model the provider reported (a dated snapshot, or a fallback model). */
+  servedModel?: string | null;
   provider: string;
   answer: AskAnswer;
   check: GroundingCheck;
   latencyMs: number;
   tokens: { input: number; output: number } | null;
+  /** Latest decision. */
   decision: HumanDecision;
+  /** Latest edit, kept when a later decision follows it. */
   edited?: string;
+  decisions?: DecisionRecord[];
+  /** False when the answer could not be written to the audit log. */
+  logged?: boolean;
 }
+
+/*
+ * Answers are kept in session storage so leaving the page (for example to the
+ * audit log) does not strand them unreviewed. Model output only, never the key.
+ */
+const STORE_KEY = "spartan-tweet-cruncher.ai.ask-answers";
+const MAX_KEPT = 20;
+
+function loadAsked(): Asked[] {
+  try {
+    const raw = sessionStorage.getItem(STORE_KEY);
+    const parsed = raw ? (JSON.parse(raw) as Asked[]) : [];
+    // Re-run the checks: the stored copy may predate a change to them.
+    return parsed.map((a) => ({ ...a, check: checkGrounding(a.answer) }));
+  } catch {
+    return [];
+  }
+}
+
+function saveAsked(items: readonly Asked[]) {
+  try {
+    sessionStorage.setItem(STORE_KEY, JSON.stringify(items.slice(0, MAX_KEPT)));
+  } catch {
+    /* storage full or disabled: keep in memory */
+  }
+}
+
+const time = (iso: string) =>
+  new Date(iso).toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit" });
 
 const EXAMPLES = [
   "Which capital city had the most tweets, and by how much did it lead?",
@@ -83,7 +121,7 @@ function AnswerCard({
   onDecide,
 }: {
   item: Asked;
-  onDecide: (decision: HumanDecision, edited?: string) => void;
+  onDecide: (decision: DecisionRecord["decision"], edited?: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(item.edited ?? item.answer.answer);
@@ -93,15 +131,24 @@ function AnswerCard({
   const issues = [
     ...c.invalidCitations.map((id) => `cites ${id}, which is not in the context`),
     ...(c.uncited ? ["gives an answer without citing any row"] : []),
+    ...c.arithmeticErrors.map((st) => `shows arithmetic that does not hold (${st})`),
+    ...(c.unverifiedInputs.length
+      ? [`calculates with ${c.unverifiedInputs.join(", ")}, not found in the cited rows`]
+      : []),
     ...(c.untracedNumbers.length
-      ? [`mentions ${c.untracedNumbers.join(", ")}, not found in the cited rows or the calculation`]
+      ? [
+          `mentions ${c.untracedNumbers.join(", ")}, found neither in the cited rows nor as a checked result of the calculation`,
+        ]
       : []),
   ];
+  const fallback = isFallbackModel(item.model, item.servedModel);
 
   return (
     <article className="panel space-y-3 p-4" aria-label={`Answer to: ${item.question}`}>
       <div className="flex flex-wrap items-center gap-2">
-        <AiBadge detail={item.model} />
+        <AiBadge
+          detail={fallback ? `${item.model} → ${item.servedModel} (fallback)` : item.model}
+        />
         <span
           className={cn(
             "rounded-full px-2 py-0.5 text-[0.7rem] font-medium",
@@ -120,9 +167,16 @@ function AnswerCard({
         </span>
       </div>
       <p className="text-sm font-medium">Q: {item.question}</p>
-      {item.decision === "edited" && item.edited ? (
+      {item.edited ? (
         <div className="space-y-1">
-          <p className="text-sm whitespace-pre-wrap">{item.edited}</p>
+          <p
+            className={cn(
+              "text-sm whitespace-pre-wrap",
+              item.decision === "rejected" && "line-through opacity-60",
+            )}
+          >
+            {item.edited}
+          </p>
           <p className="text-xs text-muted-foreground">
             Edited by you. Model&apos;s original: <span className="italic">{a.answer}</span>
           </p>
@@ -170,7 +224,7 @@ function AnswerCard({
           {issues.length
             ? `Automatic check: the answer ${issues.join("; ")}. Check it against the tables before relying on it.`
             : a.status === "answered"
-              ? "Automatic check: every cited row exists and every number in the answer appears in a cited row or the shown calculation. It does not prove the answer is right."
+              ? "Automatic check: every cited row exists, the shown arithmetic holds on numbers from the cited rows, and every number in the answer is in a cited row or a checked result. It does not prove the answer is right."
               : "Automatic check: the model declined and cited nothing."}
         </span>
       </div>
@@ -233,7 +287,22 @@ function AnswerCard({
           <span className="ml-auto text-[0.68rem] text-muted-foreground">
             {item.decision === "pending" ? "not reviewed yet" : `recorded: ${item.decision}`}
           </span>
+          {item.decisions && item.decisions.length > 1 && (
+            <span className="w-full text-[0.68rem] text-muted-foreground">
+              History: {item.decisions.map((d) => `${d.decision} ${time(d.at)}`).join(" → ")}
+            </span>
+          )}
         </div>
+      )}
+      {item.logged === false && (
+        <p
+          className="flex items-start gap-2 rounded-md bg-caution/10 px-2.5 py-1.5 text-xs"
+          role="status"
+        >
+          <CircleAlert className="mt-0.5 size-3.5 shrink-0 text-caution" aria-hidden />
+          Answer received but it could not be written to the audit log (browser storage may be full
+          or disabled), so it and your review are not recorded there.
+        </p>
       )}
     </article>
   );
@@ -247,6 +316,19 @@ export function AskPanel({ contextHash }: { contextHash: string }) {
   const [asked, setAsked] = useState<Asked[]>([]);
   const abortRef = useRef<AbortController | null>(null);
   const qId = useId();
+
+  // Session storage is read after hydration (the server has none).
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-off sync from browser storage
+    setAsked(loadAsked());
+  }, []);
+
+  const update = (fn: (prev: Asked[]) => Asked[]) =>
+    setAsked((prev) => {
+      const next = fn(prev);
+      saveAsked(next);
+      return next;
+    });
 
   const submit = async (e?: FormEvent) => {
     e?.preventDefault();
@@ -265,11 +347,12 @@ export function AskPanel({ contextHash }: { contextHash: string }) {
         contextHash,
         signal: controller.signal,
       });
-      setAsked((prev) => [
+      update((prev) => [
         {
           id: res.entry.id,
           question: res.entry.input.user,
           model: res.entry.model,
+          servedModel: res.entry.servedModel ?? null,
           provider: PROVIDER_LABEL[credentials.provider],
           answer: res.data,
           check: checkGrounding(res.data),
@@ -278,6 +361,8 @@ export function AskPanel({ contextHash }: { contextHash: string }) {
             ? { input: res.usage.inputTokens, output: res.usage.outputTokens }
             : null,
           decision: "pending",
+          decisions: [],
+          logged: res.logged,
         },
         ...prev,
       ]);
@@ -290,12 +375,24 @@ export function AskPanel({ contextHash }: { contextHash: string }) {
     }
   };
 
-  const decide = (id: string, decision: HumanDecision, edited?: string) => {
-    setAsked((prev) => prev.map((a) => (a.id === id ? { ...a, decision, edited } : a)));
+  const decide = (id: string, decision: DecisionRecord["decision"], edited?: string) => {
+    const at = new Date().toISOString();
+    const current = asked.find((a) => a.id === id);
+    if (!current) return;
+    // Decisions are appended, and a later accept or reject keeps the earlier edit.
+    const record: DecisionRecord =
+      decision === "edited" ? { decision, editedOutput: edited, at } : { decision, at };
+    const decisions = [...(current.decisions ?? []), record];
+    const editedOutput = decision === "edited" ? edited : current.edited;
+    update((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, decision, edited: editedOutput, decisions } : a)),
+    );
+    if (current.logged === false) return;
     void audit.update(id, {
       humanDecision: decision,
-      editedOutput: decision === "edited" ? edited : undefined,
-      decidedAt: new Date().toISOString(),
+      ...(editedOutput ? { editedOutput } : {}),
+      decidedAt: at,
+      decisions,
     });
   };
 
@@ -324,7 +421,14 @@ export function AskPanel({ contextHash }: { contextHash: string }) {
           value={question}
           onChange={(e) => setQuestion(e.target.value.slice(0, MAX_QUESTION_CHARS))}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
+            // Enter confirms an input-method candidate (Chinese, Japanese, Korean) while
+            // composing; only a plain Enter sends the (paid) request.
+            if (
+              e.key === "Enter" &&
+              !e.shiftKey &&
+              !e.nativeEvent.isComposing &&
+              e.keyCode !== 229
+            ) {
               e.preventDefault();
               void submit();
             }
@@ -356,7 +460,7 @@ export function AskPanel({ contextHash }: { contextHash: string }) {
               : `Default: ${PROVIDER_LABEL[prefs.provider]}`}
           </span>
         </div>
-        <div className="flex flex-wrap gap-1.5" aria-label="Example questions">
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Example questions">
           {EXAMPLES.map((q) => (
             <button
               key={q}

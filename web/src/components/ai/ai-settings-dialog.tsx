@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ANTHROPIC_MODELS, DEFAULT_OPENAI_MODEL } from "@/lib/ai/models";
-import { maskKey } from "@/lib/ai/settings";
+import { maskKey, planKeySave } from "@/lib/ai/settings";
 import { PROVIDER_LABEL, type Provider } from "@/lib/ai/types";
 
 import { useAi } from "./ai-provider";
@@ -50,7 +50,17 @@ function SettingsForm({ onDone }: { onDone: () => void }) {
   const otherSaved = (Object.keys(savedKeys) as Provider[]).filter((p) => p !== prefs.provider);
   const anySaved = Object.keys(savedKeys).length > 0;
   const [draftKey, setDraftKey] = useState("");
-  const [remember, setRemember] = useState(storedKey?.remembered ?? false);
+  // "Remember" is per provider: each checkbox starts from where that provider's
+  // key is stored now, and only a box the visitor changed can move a saved key.
+  const [rememberBy, setRememberBy] = useState<Record<Provider, boolean>>(() => ({
+    anthropic: savedKeys.anthropic?.remembered ?? false,
+    openai: savedKeys.openai?.remembered ?? false,
+  }));
+  const [touched, setTouched] = useState<Record<Provider, boolean>>({
+    anthropic: false,
+    openai: false,
+  });
+  const remember = rememberBy[prefs.provider];
   const [showKey, setShowKey] = useState(false);
   const [openaiModel, setOpenaiModel] = useState(prefs.openaiModel);
   const id = useId();
@@ -58,12 +68,23 @@ function SettingsForm({ onDone }: { onDone: () => void }) {
   const setProvider = (provider: Provider) => {
     setPrefs({ ...prefs, provider });
     setDraftKey("");
+    setShowKey(false);
+  };
+
+  const setRemember = (value: boolean) => {
+    setRememberBy((r) => ({ ...r, [prefs.provider]: value }));
+    setTouched((t) => ({ ...t, [prefs.provider]: true }));
   };
 
   const save = () => {
     setPrefs({ ...prefs, openaiModel: openaiModel.trim() || DEFAULT_OPENAI_MODEL });
-    if (draftKey.trim()) saveApiKey(draftKey, remember);
-    else if (storedKey && storedKey.remembered !== remember) saveApiKey(storedKey.key, remember);
+    const plan = planKeySave({
+      draftKey,
+      stored: storedKey,
+      remember,
+      rememberTouched: touched[prefs.provider],
+    });
+    if (plan) saveApiKey(plan.key, plan.remember);
     onDone();
   };
 
@@ -225,7 +246,7 @@ function SettingsForm({ onDone }: { onDone: () => void }) {
             className="mt-1 size-4 accent-[var(--primary)]"
           />
           <span>
-            Remember on this device
+            Remember {PROVIDER_LABEL[prefs.provider]} key on this device
             <span className="block text-xs text-muted-foreground">
               Off: kept in session storage and cleared when the tab closes. On: kept in local
               storage until you forget it.
@@ -241,7 +262,8 @@ function SettingsForm({ onDone }: { onDone: () => void }) {
             onClick={() => {
               forgetApiKeys();
               setDraftKey("");
-              setRemember(false);
+              setRememberBy({ anthropic: false, openai: false });
+              setTouched({ anthropic: false, openai: false });
             }}
             className="sm:mr-auto"
           >

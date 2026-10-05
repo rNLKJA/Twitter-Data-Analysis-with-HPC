@@ -11,6 +11,7 @@ import {
   onAuditChange,
   type AuditEntry,
 } from "@/lib/ai/audit-log";
+import { isFallbackModel } from "@/lib/ai/models";
 import { FEATURE_LABEL, PROVIDER_LABEL } from "@/lib/ai/types";
 import { downloadText } from "@/lib/download";
 import { formatMs } from "@/lib/format";
@@ -34,6 +35,7 @@ function Entry({ e }: { e: AuditEntry }) {
         <span className="font-medium">{FEATURE_LABEL[e.feature] ?? e.feature}</span>
         <span className="font-mono text-muted-foreground">
           {PROVIDER_LABEL[e.provider]} · {e.model}
+          {isFallbackModel(e.model, e.servedModel) ? ` → ${e.servedModel} (fallback)` : ""}
         </span>
         <span className="min-w-0 flex-1 truncate text-muted-foreground">“{e.input.user}”</span>
         <span
@@ -67,6 +69,18 @@ function Entry({ e }: { e: AuditEntry }) {
             <dt className="text-muted-foreground">Context sha256</dt>
             <dd className="font-mono break-all">{e.contextHash ?? "none"}</dd>
           </div>
+          <div className="col-span-2">
+            <dt className="text-muted-foreground">Model served</dt>
+            <dd className="font-mono break-all">{e.servedModel ?? "not reported"}</dd>
+          </div>
+          <div className="col-span-2">
+            <dt className="text-muted-foreground">Request settings</dt>
+            <dd className="font-mono break-all">
+              {e.params
+                ? `max_tokens ${e.params.maxTokens} · effort ${e.params.effort ?? "provider default"} · fallback ${e.params.serverFallback ?? "off"} · prompt sha256 ${e.params.promptSha256.slice(0, 12)}…`
+                : "not recorded"}
+            </dd>
+          </div>
           <div className="col-span-2 sm:col-span-4">
             <dt className="text-muted-foreground">Entry id</dt>
             <dd className="font-mono break-all">{e.id}</dd>
@@ -89,13 +103,41 @@ function Entry({ e }: { e: AuditEntry }) {
         {e.error && (
           <p className="rounded-md bg-destructive/5 px-2.5 py-1.5 text-destructive">
             {e.error.message}
-            {e.outputText ? ` Raw reply: ${e.outputText}` : ""}
           </p>
+        )}
+        {e.error && e.outputText && (
+          <div>
+            <p className="mb-1 flex items-center gap-2 font-medium">
+              Raw reply (failed validation) <AiBadge />
+            </p>
+            <pre className="overflow-x-auto rounded-md bg-muted/40 px-2.5 py-1.5 font-mono text-[0.7rem] whitespace-pre-wrap">
+              {e.outputText}
+            </pre>
+          </div>
         )}
         {e.editedOutput && (
           <div>
             <p className="mb-1 font-medium">Human-edited answer</p>
             <p className="rounded-md bg-muted/40 px-2.5 py-1.5">{e.editedOutput}</p>
+          </div>
+        )}
+        {e.decisions && e.decisions.length > 0 && (
+          <div>
+            <p className="mb-1 font-medium">Review history</p>
+            <ol className="space-y-0.5 font-mono text-[0.68rem] text-muted-foreground">
+              {e.decisions.map((d, i) => (
+                <li key={`${d.at}-${i}`}>
+                  <time dateTime={d.at}>
+                    {new Date(d.at).toLocaleString("en-AU", {
+                      dateStyle: "short",
+                      timeStyle: "medium",
+                    })}
+                  </time>{" "}
+                  {DECISION_LABEL[d.decision].toLowerCase()}
+                  {d.editedOutput ? `: “${d.editedOutput}”` : ""}
+                </li>
+              ))}
+            </ol>
           </div>
         )}
         {e.context && (

@@ -16,7 +16,13 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 
-import { SERVER_FALLBACK_BETA, supportsEffort, usesServerFallback } from "./models";
+import {
+  ANTHROPIC_EFFORT,
+  DEFAULT_MAX_TOKENS,
+  SERVER_FALLBACK_BETA,
+  supportsEffort,
+  usesServerFallback,
+} from "./models";
 import { parseStructured } from "./schema";
 import {
   AiError,
@@ -69,7 +75,7 @@ export async function callAnthropic<T>(
     timeout: 90_000,
     ...(fetch ? { fetch } : {}),
   });
-  const maxTokens = req.maxTokens ?? 4096;
+  const maxTokens = req.maxTokens ?? DEFAULT_MAX_TOKENS;
   const format = zodOutputFormat(req.schema);
   const base = {
     model,
@@ -82,7 +88,7 @@ export async function callAnthropic<T>(
     output_config: {
       format: { type: "json_schema" as const, schema: format.schema },
       // Short factual answers: keep Sonnet's thinking light. Haiku 4.5 takes no effort.
-      ...(supportsEffort(model) ? { effort: "low" as const } : {}),
+      ...(supportsEffort(model) ? { effort: ANTHROPIC_EFFORT } : {}),
     },
   };
 

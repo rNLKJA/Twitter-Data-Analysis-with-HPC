@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  CircleAlert,
   CircleCheck,
   CircleX,
   Download,
@@ -14,16 +15,21 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   compareRuns,
+  errorKindOf,
   EVAL_CSV_COLUMNS,
   EVAL_ITEMS,
   EVAL_SET_VERSION,
   evalResultsCsvRows,
+  fallbackItems,
+  hasScoredItems,
+  paramDifferences,
+  scoreResult,
   summariseEval,
   type EvalItem,
   type EvalRun,
 } from "@/lib/ai/ask/eval";
 import { runEvaluation } from "@/lib/ai/ask/run";
-import { PROVIDER_LABEL } from "@/lib/ai/types";
+import { isFatalKind, PROVIDER_LABEL, type Provider, type RequestParams } from "@/lib/ai/types";
 import { toCsv } from "@/lib/csv";
 import { downloadText } from "@/lib/download";
 import { formatPct } from "@/lib/format";
@@ -87,13 +93,36 @@ function Rate({
   );
 }
 
+const providerLabel = (p: string) => PROVIDER_LABEL[p as Provider] ?? p;
+
 function runLabel(r: EvalRun) {
   const time = new Date(r.startedAt).toLocaleTimeString("en-AU", {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
   });
-  return `${r.model} · ${time}${r.status === "done" ? "" : ` (${r.status})`}`;
+  return `${providerLabel(r.provider)} ${r.model} · ${time}${r.status === "done" ? "" : ` (${r.status})`}`;
+}
+
+/** "max 4,096 tokens, effort low, fallback default" */
+function paramsText(p: RequestParams | undefined): string {
+  if (!p) return "settings not recorded";
+  return [
+    `max ${p.maxTokens.toLocaleString("en-AU")} output tokens`,
+    p.effort ? `effort ${p.effort}` : "provider-default effort",
+    p.serverFallback ? `server-side fallback ${p.serverFallback}` : "no fallback",
+    `prompt sha256 ${p.promptSha256.slice(0, 8)}…`,
+  ].join(", ");
+}
+
+/** Why a stopped run stopped, from its last result (null if it was stopped between items). */
+function stopReason(run: EvalRun) {
+  if (run.status !== "stopped") return null;
+  const last = run.results.at(-1);
+  const kind = last ? errorKindOf(last) : null;
+  if (!last || !kind || !isFatalKind(kind)) return null;
+  const message = last.error?.replace(/^[a-z-]+:\s*/, "") ?? kind;
+  return { kind, message, itemId: last.itemId };
 }
 
 export function AskEval({ contextHash }: { contextHash: string }) {
@@ -152,13 +181,17 @@ export function AskEval({ contextHash }: { contextHash: string }) {
 
   const current = runs.find((r) => r.id === selected) ?? runs[0] ?? null;
   const summary = useMemo(() => (current ? summariseEval(current.results) : null), [current]);
+  // Only runs with at least one scored item can be compared.
   const comparable = runs.filter(
-    (r) => r.setVersion === EVAL_SET_VERSION && r.status !== "running",
+    (r) => r.setVersion === EVAL_SET_VERSION && r.status !== "running" && hasScoredItems(r),
   );
   const [aId, bId] = pair ?? [comparable[0]?.id, comparable[1]?.id];
   const runA = comparable.find((r) => r.id === aId);
   const runB = comparable.find((r) => r.id === bId);
-  const paired = runA && runB && runA.id !== runB.id ? compareRuns(runA, runB) : null;
+  const sameRun = !runA || !runB || runA.id === runB.id;
+  const paired = !sameRun ? compareRuns(runA, runB) : null;
+  const differences = !sameRun ? paramDifferences(runA, runB) : [];
+  const stopped = current ? stopReason(current) : null;
 
   const exportCsv = (r: EvalRun) =>
     downloadText(`${r.id}.csv`, toCsv(evalResultsCsvRows(r), EVAL_CSV_COLUMNS), "text/csv");
@@ -206,6 +239,28 @@ export function AskEval({ contextHash }: { contextHash: string }) {
         )}
       </div>
 
+      {stopped && !running && (
+        <div
+          role={stopped.kind === "aborted" ? "status" : "alert"}
+          className="flex flex-wrap items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm"
+        >
+          <CircleAlert className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden />
+          <p className="min-w-0 flex-1">
+            {stopped.kind === "aborted"
+              ? `You stopped this run at item ${stopped.itemId}.`
+              : `The run stopped at item ${stopped.itemId}: ${stopped.message}`}{" "}
+            Items it did not reach are not scored.
+          </p>
+          {(stopped.kind === "invalid-key" ||
+            stopped.kind === "missing-key" ||
+            stopped.kind === "permission") && (
+            <Button size="sm" variant="outline" onClick={openSettings}>
+              AI settings
+            </Button>
+          )}
+        </div>
+      )}
+
       {runs.length > 0 && current && summary && (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -246,7 +301,7 @@ export function AskEval({ contextHash }: { contextHash: string }) {
             </div>
           </div>
 
-          <dl className="grid grid-cols-2 gap-4 rounded-lg border bg-muted/20 p-4 md:grid-cols-4">
+          <dl className="grid grid-cols-2 gap-4 rounded-lg border bg-muted/20 p-4 sm:grid-cols-3 lg:grid-cols-5">
             <Rate
               label="Answerable, correct"
               r={summary.answerable}
@@ -259,14 +314,27 @@ export function AskEval({ contextHash }: { contextHash: string }) {
               r={summary.citationValidity}
               hint="descriptive: citations are not independent"
             />
+            <Rate label="Call errors" r={summary.callErrors} hint="scored as fails" />
           </dl>
           <p className="text-xs text-muted-foreground">
-            {current.provider} · {current.model} · question set {current.setVersion} · context
-            sha256 <code className="font-mono">{current.contextHash.slice(0, 12)}…</code> ·{" "}
-            {summary.graded} graded
-            {summary.errors ? `, ${summary.errors} failed calls left out` : ""}. Intervals are
-            Wilson 95%; with {ANSWERABLE} and {EVAL_ITEMS.length - ANSWERABLE} items they are wide
-            by design, so read them as a check, not a benchmark score.
+            {providerLabel(current.provider)} · {current.model} · {paramsText(current.params)} ·
+            question set {current.setVersion} · context sha256{" "}
+            <code className="font-mono">{current.contextHash.slice(0, 12)}…</code>. {summary.scored}{" "}
+            of {EVAL_ITEMS.length} items scored. A call that fails on an item counts as a fail (a
+            provider refusal on an unanswerable item counts as a correct decline), so failing on
+            hard items cannot raise the score.
+            {summary.notScored.length > 0 &&
+              (summary.notScored.length <= 6
+                ? ` Not scored because the run stopped before answering them: ${summary.notScored.join(", ")}.`
+                : ` ${summary.notScored.length} items are not scored because the run stopped before answering them (listed in the JSON export).`)}
+            {fallbackItems(current).length > 0 &&
+              ` Answered by a fallback model, not ${current.model}: ${fallbackItems(current).join(", ")}.`}{" "}
+            Intervals are Wilson 95%; with {ANSWERABLE} and {EVAL_ITEMS.length - ANSWERABLE} items
+            they are wide by design, so read them as a check, not a benchmark score.
+          </p>
+
+          <p className="text-xs text-muted-foreground sm:hidden">
+            Swipe the table sideways for the answers and grades.
           </p>
 
           <div
@@ -326,7 +394,22 @@ export function AskEval({ contextHash }: { contextHash: string }) {
                         )}
                       </td>
                       <td className="px-2.5 py-1.5">
-                        {r?.grade ? (
+                        {r && !r.grade ? (
+                          (() => {
+                            const o = scoreResult(r);
+                            return o === null ? (
+                              <span className="text-muted-foreground">not scored</span>
+                            ) : o.pass ? (
+                              <span className="inline-flex items-center gap-1 text-success">
+                                <CircleCheck className="size-3.5" aria-hidden /> pass (declined)
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-destructive">
+                                <CircleX className="size-3.5" aria-hidden /> fail (call error)
+                              </span>
+                            );
+                          })()
+                        ) : r?.grade ? (
                           r.grade.pass ? (
                             <span className="inline-flex items-center gap-1 text-success">
                               <CircleCheck className="size-3.5" aria-hidden /> pass
@@ -390,10 +473,43 @@ export function AskEval({ contextHash }: { contextHash: string }) {
               ))}
             </select>
           </div>
-          {paired ? (
+          {!sameRun && (
+            <dl className="grid gap-1 text-xs text-muted-foreground">
+              {(
+                [
+                  ["A", runA],
+                  ["B", runB],
+                ] as const
+              ).map(([label, r]) => (
+                <div key={label} className="flex gap-1.5">
+                  <dt className="font-mono font-medium text-foreground">{label}</dt>
+                  <dd className="min-w-0">
+                    {providerLabel(r.provider)} {r.model}: {paramsText(r.params)}
+                    {fallbackItems(r).length > 0 &&
+                      `; ${fallbackItems(r).length} item(s) answered by a fallback model`}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          )}
+          {differences.length > 0 && (
+            <p
+              className="flex items-start gap-2 rounded-md bg-caution/10 px-2.5 py-1.5 text-xs"
+              role="note"
+            >
+              <CircleAlert className="mt-0.5 size-3.5 shrink-0 text-caution" aria-hidden />
+              The runs differ in more than the model: {differences.join(", ")}. The difference below
+              mixes those effects.
+            </p>
+          )}
+          {sameRun ? (
+            <p className="text-xs text-muted-foreground">Pick two different runs.</p>
+          ) : !paired ? (
+            <p className="text-xs text-muted-foreground">No items were scored by both runs.</p>
+          ) : (
             <div className="space-y-2 text-sm">
               <p>
-                On the {paired.n} items both runs graded, A passed{" "}
+                On the {paired.n} items both runs scored, A passed{" "}
                 <strong>{paired.bothPass + paired.onlyA}</strong> and B passed{" "}
                 <strong>{paired.bothPass + paired.onlyB}</strong>. They disagree on{" "}
                 {paired.onlyA + paired.onlyB} item{paired.onlyA + paired.onlyB === 1 ? "" : "s"} (
@@ -412,12 +528,10 @@ export function AskEval({ contextHash }: { contextHash: string }) {
               </p>
               <p className="text-xs text-muted-foreground">
                 Only the items where the runs disagree carry information about the difference, so
-                McNemar&apos;s test uses exactly those. Bootstrap: 2,000 resamples of items, seed
-                90024.
+                McNemar&apos;s test uses exactly those. Failed calls are scored as fails in both
+                runs. Bootstrap: 2,000 resamples of items, seed 90024.
               </p>
             </div>
-          ) : (
-            <p className="text-xs text-muted-foreground">Pick two different runs.</p>
           )}
         </section>
       )}

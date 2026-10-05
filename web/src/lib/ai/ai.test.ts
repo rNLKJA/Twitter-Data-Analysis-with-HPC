@@ -10,7 +10,9 @@ import {
   type AuditEntry,
 } from "./audit-log";
 import { callStructured } from "./client";
+import { csvField, toCsv } from "../csv";
 import { sha256Hex } from "./hash";
+import { isFallbackModel, requestParams } from "./models";
 import { callOpenAI, OPENAI_URL } from "./openai";
 import { openAiJsonSchema, parseStructured, strictJsonSchema } from "./schema";
 import {
@@ -20,6 +22,7 @@ import {
   loadKey,
   loadPrefs,
   maskKey,
+  planKeySave,
   saveKey,
   savePrefs,
 } from "./settings";
@@ -128,6 +131,36 @@ describe("settings", () => {
     local.setItem("spartan-tweet-cruncher.ai.prefs", "not json");
     expect(loadPrefs(local)).toEqual(DEFAULT_PREFS);
     expect(DEFAULT_PREFS.anthropicModel).toBe("claude-haiku-4-5");
+  });
+
+  it("only moves a saved key between storages when that provider's checkbox was changed", () => {
+    const sessionKey = { key: "sk-openai-xyz-123456", remembered: false };
+    const remembered = { key: KEY, remembered: true };
+    // Switching to a provider whose key is session-only, with the other provider's ticked
+    // checkbox carried over, then Save: nothing moves.
+    expect(
+      planKeySave({ draftKey: "", stored: sessionKey, remember: true, rememberTouched: false }),
+    ).toBeNull();
+    // And the other way round: a remembered key is not silently demoted to the session.
+    expect(
+      planKeySave({ draftKey: "", stored: remembered, remember: false, rememberTouched: false }),
+    ).toBeNull();
+    // The visitor ticked the box for this provider: move it.
+    expect(
+      planKeySave({ draftKey: "", stored: sessionKey, remember: true, rememberTouched: true }),
+    ).toEqual({ key: sessionKey.key, remember: true });
+    // A pasted key is saved with the choice shown.
+    expect(
+      planKeySave({
+        draftKey: "sk-new-key-0000",
+        stored: null,
+        remember: false,
+        rememberTouched: false,
+      }),
+    ).toEqual({ key: "sk-new-key-0000", remember: false });
+    expect(
+      planKeySave({ draftKey: "  ", stored: null, remember: true, rememberTouched: true }),
+    ).toBeNull();
   });
 
   it("masks keys", () => {
@@ -337,7 +370,15 @@ describe("callStructured audit trail", () => {
     expect(entry).toMatchObject({
       feature: "ask",
       provider: "anthropic",
-      model: "claude-haiku-4-5 → claude-haiku-4-5-20251001",
+      // The dated snapshot of the alias is recorded separately: it is not a fallback.
+      model: "claude-haiku-4-5",
+      servedModel: "claude-haiku-4-5-20251001",
+      params: {
+        maxTokens: 4096,
+        effort: null,
+        serverFallback: null,
+        promptSha256: await sha256Hex("SYSTEM PROMPT"),
+      },
       contextHash: "abc123",
       timestamp: "2026-10-06T00:00:00.000Z",
       latencyMs: 250,
@@ -347,9 +388,40 @@ describe("callStructured audit trail", () => {
       input: { system: "SYSTEM PROMPT", user: "How many tweets?", schema: "test_answer" },
     });
     expect(res.entry.id).toBe(entry.id);
+    expect(res.logged).toBe(true);
+    expect(isFallbackModel(entry.model, entry.servedModel)).toBe(false);
+    expect(isFallbackModel("claude-sonnet-5-5", "claude-opus-5-5")).toBe(true);
     expect(JSON.stringify(entry)).not.toContain(KEY);
     expect(auditToJson([entry])).not.toContain(KEY);
     expect(auditToCsv([entry])).not.toContain(KEY);
+  });
+
+  it("records the request settings each model is called with", () => {
+    expect(requestParams("anthropic", "claude-sonnet-5-5", "h")).toEqual({
+      maxTokens: 4096,
+      effort: "low",
+      serverFallback: "default",
+      promptSha256: "h",
+    });
+    expect(requestParams("anthropic", "claude-haiku-4-5", "h")).toMatchObject({
+      effort: null,
+      serverFallback: null,
+    });
+    expect(requestParams("openai", "gpt-5-mini", "h")).toMatchObject({
+      effort: null,
+      serverFallback: null,
+    });
+  });
+
+  it("returns a paid-for answer even when the audit log cannot be written", async () => {
+    const audit = new MemoryAuditStore();
+    audit.add = async () => {
+      throw new DOMException("quota", "QuotaExceededError");
+    };
+    const { fetch } = mockFetch(() => json(claudeMessage(GOOD)));
+    const res = await callStructured(creds, REQ, { audit, fetch });
+    expect(res.logged).toBe(false);
+    expect(res.data).toEqual(JSON.parse(GOOD));
   });
 
   it("logs failures too, and refuses to call without a key", async () => {
@@ -386,6 +458,39 @@ describe("callStructured audit trail", () => {
     expect(csv).toContain('"Melbourne: 2,284,909, ""per T2.2"""');
     await audit.clear();
     expect(await audit.list()).toEqual([]);
+  });
+
+  it("keeps every decision, so a later accept does not erase an edit", async () => {
+    const audit = new MemoryAuditStore();
+    const { fetch } = mockFetch(() => json(claudeMessage(GOOD)));
+    const { entry } = await callStructured(creds, REQ, { audit, fetch });
+    const decisions = [
+      { decision: "edited" as const, editedOutput: "Corrected.", at: "2026-10-06T01:00:00Z" },
+      { decision: "accepted" as const, at: "2026-10-06T01:01:00Z" },
+    ];
+    await audit.update(entry.id, {
+      humanDecision: "accepted",
+      editedOutput: "Corrected.",
+      decidedAt: "2026-10-06T01:01:00Z",
+      decisions,
+    });
+    const [e] = await audit.list();
+    expect(e).toMatchObject({ humanDecision: "accepted", editedOutput: "Corrected.", decisions });
+    expect(auditToCsv([e])).toContain("Corrected.");
+  });
+});
+
+describe("CSV export", () => {
+  it("neutralises cells a spreadsheet would run as a formula", () => {
+    expect(csvField('=HYPERLINK("http://x")')).toBe(`"'=HYPERLINK(""http://x"")"`);
+    expect(csvField("+61 8 8000 0000")).toBe("'+61 8 8000 0000");
+    expect(csvField("-1+2")).toBe("'-1+2");
+    expect(csvField("@SUM(A1)")).toBe("'@SUM(A1)");
+    expect(csvField("\tcmd")).toBe("'\tcmd");
+    // Numbers stay numbers; ordinary text is unchanged.
+    expect(csvField(-3.5)).toBe("-3.5");
+    expect(csvField("Melbourne")).toBe("Melbourne");
+    expect(toCsv([{ a: "=1+1", b: 2 }], ["a", "b"])).toBe("a,b\r\n'=1+1,2\r\n");
   });
 });
 

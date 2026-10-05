@@ -18,7 +18,11 @@ import { ASK_CONTEXT, CONTEXT_TABLES, ROW_INDEX, rowText } from "./context";
 import {
   compareRuns,
   EVAL_ITEMS,
+  fallbackItems,
   gradeAnswer,
+  hasScoredItems,
+  paramDifferences,
+  scoreResult,
   summariseEval,
   type EvalItem,
   type EvalRun,
@@ -92,6 +96,8 @@ describe("checkGrounding", () => {
       invalidCitations: [],
       uncited: false,
       untracedNumbers: [],
+      arithmeticErrors: [],
+      unverifiedInputs: [],
       refusalWithCitations: false,
     });
     expect(hasGroundingIssue(c)).toBe(false);
@@ -117,6 +123,77 @@ describe("checkGrounding", () => {
     expect(checkGrounding(answered("It took 1:41.", ["B1.3"])).untracedNumbers).toEqual([]);
   });
 
+  it("reads counts inside the verbatim Task 3 cells", () => {
+    const c = checkGrounding(answered("They tweeted 1,879 times from Melbourne.", ["T3.1"]));
+    expect(c.untracedNumbers).toEqual([]);
+  });
+
+  it("checks the arithmetic, not just that a number appears in the calculation", () => {
+    // Transposed digits in the sum: the arithmetic fails and the total is not traced.
+    const wrongSum = checkGrounding(
+      answered(
+        "Sydney and Melbourne together had 4,503,589 tweets.",
+        ["T2.1", "T2.2"],
+        "2,218,689 + 2,284,909 = 4,503,589",
+      ),
+    );
+    expect(wrongSum.arithmeticErrors).toEqual(["2,218,689 + 2,284,909 = 4,503,589"]);
+    expect(wrongSum.untracedNumbers).toEqual(["4,503,589"]);
+    expect(hasGroundingIssue(wrongSum)).toBe(true);
+
+    const rightSum = checkGrounding(
+      answered(
+        "Together they had 4,503,598 tweets.",
+        ["T2.1", "T2.2"],
+        "Sydney 2,218,689 + Melbourne 2,284,909 = 4,503,598",
+      ),
+    );
+    expect(hasGroundingIssue(rightSum)).toBe(false);
+
+    // A made-up figure repeated in the calculation is still untraced.
+    const repeated = checkGrounding(
+      answered("Sydney had 3,500,000 tweets.", ["T2.1"], "3,500,000"),
+    );
+    expect(repeated.untracedNumbers).toEqual(["3,500,000"]);
+    const fabricatedInputs = checkGrounding(
+      answered("Sydney had 3,500,000 tweets.", ["T2.1"], "1,750,000 + 1,750,000 = 3,500,000"),
+    );
+    expect(fabricatedInputs.unverifiedInputs).toEqual(["1,750,000"]);
+    expect(fabricatedInputs.untracedNumbers).toEqual(["3,500,000"]);
+  });
+
+  it("follows chained calculations, clock times, labels and percentages", () => {
+    const c = checkGrounding(
+      answered(
+        "The 1 node × 8 cores job was 6.54 times faster, an efficiency of 81.8%.",
+        ["B1.1", "B1.2"],
+        "Speedup S(8) = T1 / T8 = 11:01 / 1:41 = 661 / 101 ≈ 6.54; efficiency = 6.54 / 8 = 0.818 = 81.8%",
+      ),
+    );
+    expect(c).toMatchObject({ arithmeticErrors: [], unverifiedInputs: [], untracedNumbers: [] });
+    const sloppyChain = checkGrounding(
+      answered(
+        "Efficiency was 0.82.",
+        ["B1.1", "B1.2"],
+        "8-core speedup = 661 / 101 = 6.54 / 8 = 0.82",
+      ),
+    );
+    expect(sloppyChain).toMatchObject({ arithmeticErrors: [], untracedNumbers: [] });
+    const difference = checkGrounding(
+      answered(
+        "Melbourne led Sydney by 66,220 tweets.",
+        ["T2.1", "T2.2"],
+        "2,284,909 − 2,218,689 = 66,220",
+      ),
+    );
+    expect(hasGroundingIssue(difference)).toBe(false);
+    const wrongRatio = checkGrounding(
+      answered("It was 7.54 times faster.", ["B1.1", "B1.2"], "661 / 101 = 7.54"),
+    );
+    expect(wrongRatio.arithmeticErrors).toHaveLength(1);
+    expect(wrongRatio.untracedNumbers).toEqual(["7.54"]);
+  });
+
   it("flags made-up rows, uncited answers and numbers it cannot trace", () => {
     const c = checkGrounding(answered("Melbourne had 2,300,000 tweets.", ["T2.99"]));
     expect(c.invalidCitations).toEqual(["T2.99"]);
@@ -135,7 +212,23 @@ describe("evaluation set", () => {
     for (const i of EVAL_ITEMS.filter((x) => x.answerable)) {
       for (const id of [...(i.citeAny ?? []), ...(i.citeAll ?? [])])
         expect(ROW_INDEX.has(id), id).toBe(true);
-      expect((i.expect?.numbers?.length ?? 0) + (i.expect?.text?.length ?? 0)).toBeGreaterThan(0);
+      expect(
+        (i.expect?.numbers?.length ?? 0) +
+          (i.expect?.text?.length ?? 0) +
+          (i.expect?.claim ? 1 : 0),
+      ).toBeGreaterThan(0);
+    }
+  });
+
+  it("never keys an answer to a number the question already contains", () => {
+    for (const i of EVAL_ITEMS.filter((x) => x.answerable)) {
+      const asked = extractNumbers(i.question, { words: true });
+      for (const v of i.expect?.numbers ?? []) {
+        const inQuestion = asked.some((q) =>
+          sameNumber(q, { value: v, digits: null, decimals: 0, text: "" }),
+        );
+        expect(inQuestion, `${i.id}: ${v} is in the question`).toBe(false);
+      }
     }
   });
 
@@ -143,12 +236,32 @@ describe("evaluation set", () => {
     expect(item("A01").expect!.numbers).toEqual([2_284_909]);
     expect(item("A02").expect!.numbers).toEqual([46_772]);
     expect(item("A05").expect!.numbers).toEqual([101]);
-    expect(item("A07").expect!.numbers).toEqual([10]);
+    // All ten Task 3 authors tweeted from all eight cities: graded as a claim, not a number.
+    expect(item("A07").expect!.claim).toBeDefined();
+    expect(item("A07").expect!.label).toBe("all 10");
     expect(item("A08").expect!.numbers).toEqual([1879]);
     expect(item("A09").expect!.numbers![0]).toBeCloseTo(6.5446, 3);
     expect(item("A11").expect!.numbers).toEqual([4_503_598]);
     expect(item("A13").expect!.numbers).toEqual([1383]);
     expect(item("A14").expect!.numbers).toEqual([193]);
+  });
+
+  it("does not pass wrong answers that only repeat the question's numbers", () => {
+    for (const wrong of [
+      "None of the top ten authors tweeted from all eight capital cities.",
+      "Only 9 of the top 10 authors tweeted from all eight capital cities.",
+      "Seven of the top ten did.",
+      "Eight of the top ten authors did.",
+      "None of them tweeted from each of the eight cities.",
+    ]) {
+      const g = gradeAnswer(item("A07"), answered(wrong, ["T3.1"]));
+      expect(g.pass, wrong).toBe(false);
+      expect(g.reasons.join()).toMatch(/expected the answer to say all 10/);
+    }
+    // A05 asks about "2 nodes × 4 cores": repeating 2 and 4 is not the 101 s it needs.
+    expect(gradeAnswer(item("A05"), answered("The 2 × 4 job took 4 minutes.", ["B1.3"])).pass).toBe(
+      false,
+    );
   });
 
   it("grades answers on content, citations and refusals", () => {
@@ -162,6 +275,13 @@ describe("evaluation set", () => {
       true,
     );
     expect(gradeAnswer(item("A07"), answered("All ten of them.", ["T3.1"])).pass).toBe(true);
+    expect(
+      gradeAnswer(
+        item("A07"),
+        answered("All 10 authors in the top ten tweeted from all eight capital cities.", ["T3.1"]),
+      ).pass,
+    ).toBe(true);
+    expect(gradeAnswer(item("A07"), answered("10 of the top 10 did.", ["T3.1"])).pass).toBe(true);
     expect(gradeAnswer(item("A09"), answered("About 6.5 times.", ["B1.1", "B1.2"])).pass).toBe(
       true,
     );
@@ -175,7 +295,12 @@ describe("evaluation set", () => {
   });
 });
 
-function run(id: string, passes: Record<string, boolean>, errors: string[] = []): EvalRun {
+function run(
+  id: string,
+  passes: Record<string, boolean>,
+  errors: string[] = [],
+  errorKind = "server",
+): EvalRun {
   return {
     id,
     setVersion: "test",
@@ -191,7 +316,7 @@ function run(id: string, passes: Record<string, boolean>, errors: string[] = [])
           itemId: i.id,
           answer: null,
           grade: null,
-          error: "server",
+          error: `${errorKind}: failed`,
           auditId: null,
           latencyMs: 0,
           inputTokens: null,
@@ -222,28 +347,90 @@ function run(id: string, passes: Record<string, boolean>, errors: string[] = [])
 }
 
 describe("summaries and paired comparison", () => {
-  it("reports rates with Wilson intervals and keeps errors out of the denominators", () => {
+  it("scores failed calls as fails (intention to treat), with Wilson intervals", () => {
     const s = summariseEval(run("a", { A01: false, U01: false }, ["A02"]).results);
+    expect(s.scored).toBe(24);
     expect(s.graded).toBe(23);
-    expect(s.errors).toBe(1);
-    expect(s.answerable).toMatchObject({ k: 12, n: 13 });
+    expect(s.notScored).toEqual([]);
+    expect(s.callErrors).toMatchObject({ k: 1, n: 24 });
+    expect(s.answerable).toMatchObject({ k: 12, n: 14 });
     expect(s.refusals).toMatchObject({ k: 9, n: 10 });
-    expect(s.overall).toMatchObject({ k: 21, n: 23 });
-    expect(s.answerable.lo).toBeGreaterThan(0.6);
+    expect(s.overall).toMatchObject({ k: 21, n: 24 });
+    expect(s.answerable.lo).toBeGreaterThan(0.55);
     expect(s.answerable.hi).toBeLessThan(1);
     expect(s.citationValidity).toMatchObject({ k: 23, n: 23 });
   });
 
-  it("compares two runs item by item", () => {
+  it("cannot raise its score by failing on hard items", () => {
+    // One pass and one malformed reply on answerable items: 1/2, not 1/1.
+    const items = run("x", {}).results.filter((r) => r.itemId === "A01" || r.itemId === "A02");
+    const results = [items[0], { ...items[1], grade: null, error: "invalid-output: bad JSON" }];
+    const s = summariseEval(results);
+    expect(s.answerable).toMatchObject({ k: 1, n: 2 });
+    expect(s.callErrors).toMatchObject({ k: 1, n: 2 });
+  });
+
+  it("counts a provider refusal as a correct decline only on unanswerable items", () => {
+    const r = run("r", {}, ["U01", "A03"], "refusal");
+    expect(scoreResult(r.results.find((x) => x.itemId === "U01")!)).toMatchObject({ pass: true });
+    expect(scoreResult(r.results.find((x) => x.itemId === "A03")!)).toMatchObject({
+      pass: false,
+      falseRefusal: true,
+    });
+    expect(summariseEval(r.results).falseRefusals).toMatchObject({ k: 1, n: 14 });
+  });
+
+  it("leaves out, and lists, only items a batch-stopping error never answered", () => {
+    const stopped = run("s", {}, ["A02"], "rate-limit");
+    stopped.results = stopped.results.filter((r) => ["A01", "A02"].includes(r.itemId));
+    const s = summariseEval(stopped.results);
+    expect(s.scored).toBe(1);
+    expect(s.notScored).toHaveLength(23);
+    expect(s.notScored).toContain("A02");
+    expect(hasScoredItems(stopped)).toBe(true);
+    const nothing = { ...stopped, results: stopped.results.filter((r) => r.itemId === "A02") };
+    expect(hasScoredItems(nothing)).toBe(false);
+  });
+
+  it("compares two runs item by item, scoring errors the same way", () => {
     const a = run("a", { A01: true, A02: true, U01: true });
     const b = run("b", { A01: false, A02: false, U01: false, A03: false });
-    const c = compareRuns(a, b);
+    const c = compareRuns(a, b)!;
     expect(c).toMatchObject({ n: 24, onlyA: 4, onlyB: 0 });
     expect(c.difference.estimate).toBeCloseTo(4 / 24, 12);
     expect(c.p).toBeCloseTo(0.125, 12);
-    const d = compareRuns(a, run("c", {}, ["A01"]));
-    expect(d.n).toBe(23);
-    expect(d.items).not.toContain("A01");
+    // A server error on A01 is a fail, so the item stays in the comparison.
+    const d = compareRuns(a, run("c", {}, ["A01"]))!;
+    expect(d.n).toBe(24);
+    expect(d).toMatchObject({ onlyA: 1, onlyB: 0 });
+    // A batch-stopping error leaves the item out.
+    const e = compareRuns(a, run("e", {}, ["A01"], "invalid-key"))!;
+    expect(e.n).toBe(23);
+    expect(e.items).not.toContain("A01");
+  });
+
+  it("returns no comparison when the runs share no scored item", () => {
+    const a = run("a", {});
+    const empty = { ...run("b", {}), results: [] };
+    expect(compareRuns(a, empty)).toBeNull();
+  });
+
+  it("flags settings that differ and items a fallback model answered", () => {
+    const params = { maxTokens: 4096, effort: null, serverFallback: null, promptSha256: "p" };
+    const a = { ...run("a", {}), params };
+    const b = { ...run("b", {}), params: { ...params, effort: "low", serverFallback: "default" } };
+    expect(paramDifferences(a, a)).toEqual([]);
+    expect(paramDifferences(a, b)).toEqual(["reasoning effort", "server-side fallback"]);
+    expect(paramDifferences(a, { ...a, contextHash: "other" })).toEqual(["grounding context"]);
+    const withFallback = {
+      ...b,
+      model: "claude-sonnet-5-5",
+      results: b.results.map((r, i) => ({
+        ...r,
+        servedModel: i === 0 ? "claude-opus-5-5" : "claude-sonnet-5-5-20260901",
+      })),
+    };
+    expect(fallbackItems(withFallback)).toEqual(["A01"]);
   });
 });
 
@@ -318,6 +505,10 @@ describe("askResults and runEvaluation (fetch mocked)", () => {
     expect(out.status).toBe("stopped");
     expect(out.results.map((r) => r.grade?.pass ?? null)).toEqual([true, true, null]);
     expect(out.results[2].error).toMatch(/^rate-limit/);
+    expect(out.results[2].errorKind).toBe("rate-limit");
+    expect(out.results[0].servedModel).toBe("claude-haiku-4-5");
+    expect(out.params).toMatchObject({ maxTokens: 4096, effort: null, serverFallback: null });
+    expect(out.params!.promptSha256).toBe(await sha256Hex(ASK_SYSTEM_PROMPT));
     expect(progress.at(-1)).toBe(3);
     const entries = await audit.list();
     expect(entries).toHaveLength(3);

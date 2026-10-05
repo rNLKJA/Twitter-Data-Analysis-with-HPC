@@ -9,7 +9,7 @@
  * request payload only, and the key is passed to the adapters separately.
  */
 import { toCsv, type CsvValue } from "../csv";
-import type { AiErrorKind, AiFeature, Provider, TokenUsage } from "./types";
+import type { AiErrorKind, AiFeature, Provider, RequestParams, TokenUsage } from "./types";
 
 export type HumanDecision = "pending" | "accepted" | "edited" | "rejected" | "not-applicable";
 
@@ -21,14 +21,29 @@ export const DECISION_LABEL: Record<HumanDecision, string> = {
   "not-applicable": "n/a (automated evaluation)",
 };
 
+/** One human review action, kept in order so an edit is never lost by a later accept. */
+export interface DecisionRecord {
+  decision: Exclude<HumanDecision, "pending" | "not-applicable">;
+  /** The edited answer, for "edited". */
+  editedOutput?: string;
+  at: string;
+}
+
 export interface AuditEntry {
   id: string;
   /** ISO 8601 time the call started. */
   timestamp: string;
   feature: AiFeature;
   provider: Provider;
-  /** Model requested (and, when it differs, the one the provider reported). */
+  /** Model requested. */
   model: string;
+  /**
+   * Model the provider reported serving the call: usually a dated snapshot of
+   * the requested alias, or another model when a server-side fallback answered.
+   */
+  servedModel?: string | null;
+  /** Request settings (token limit, effort, fallback, system prompt hash). */
+  params?: RequestParams;
   input: { system: string; user: string; schema: string };
   /** SHA-256 (hex) of the grounding context the model was given, if any. */
   contextHash: string | null;
@@ -39,10 +54,13 @@ export interface AuditEntry {
   error: { kind: AiErrorKind; message: string } | null;
   latencyMs: number;
   usage: TokenUsage | null;
+  /** The latest review decision. */
   humanDecision: HumanDecision;
-  /** The human's edited answer, when the decision is "edited". */
+  /** The human's most recent edit of the answer (kept if a later decision follows it). */
   editedOutput?: string;
   decidedAt?: string;
+  /** Every review decision, oldest first. */
+  decisions?: DecisionRecord[];
   /** Non-sensitive context such as the evaluation run and item. */
   context?: Record<string, string | number | boolean | null>;
 }
@@ -178,6 +196,11 @@ export const AUDIT_CSV_COLUMNS = [
   "feature",
   "provider",
   "model",
+  "served_model",
+  "max_tokens",
+  "effort",
+  "server_fallback",
+  "prompt_sha256",
   "context_sha256",
   "latency_ms",
   "input_tokens",
@@ -192,6 +215,7 @@ export const AUDIT_CSV_COLUMNS = [
   "output",
   "output_text",
   "edited_output",
+  "decisions",
   "context",
 ] as const;
 
@@ -202,6 +226,11 @@ export function auditToCsv(entries: readonly AuditEntry[]): string {
     feature: e.feature,
     provider: e.provider,
     model: e.model,
+    served_model: e.servedModel ?? null,
+    max_tokens: e.params?.maxTokens ?? null,
+    effort: e.params?.effort ?? null,
+    server_fallback: e.params?.serverFallback ?? null,
+    prompt_sha256: e.params?.promptSha256 ?? null,
     context_sha256: e.contextHash,
     latency_ms: Math.round(e.latencyMs),
     input_tokens: e.usage?.inputTokens ?? null,
@@ -216,6 +245,7 @@ export function auditToCsv(entries: readonly AuditEntry[]): string {
     output: e.output === null || e.output === undefined ? null : JSON.stringify(e.output),
     output_text: e.outputText,
     edited_output: e.editedOutput ?? null,
+    decisions: e.decisions?.length ? JSON.stringify(e.decisions) : null,
     context: e.context ? JSON.stringify(e.context) : null,
   }));
   return toCsv(rows, AUDIT_CSV_COLUMNS);

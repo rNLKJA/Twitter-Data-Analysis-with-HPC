@@ -13,6 +13,8 @@ export interface FoundNumber {
   /** Digits after the decimal point as written (0 for integers and clock times). */
   decimals: number;
   text: string;
+  /** Written as a percentage ("87.13%"). */
+  percent?: boolean;
 }
 
 const ROW_ID = /\b[DTB]\d?\.\d+\b/g;
@@ -46,11 +48,13 @@ export function extractNumbers(text: string, { words = false } = {}): FoundNumbe
   for (const m of rest.matchAll(NUMBER)) {
     const raw = m[0].replace(/,/g, "");
     const isInt = /^-?\d+$/.test(raw);
+    const percent = /^\s?%/.test(rest.slice(m.index + m[0].length));
     out.push({
       value: Number(raw),
       digits: isInt ? raw.replace(/^-/, "") : null,
       decimals: isInt ? 0 : raw.split(".")[1].length,
       text: m[0],
+      ...(percent ? { percent } : {}),
     });
   }
   if (words) {

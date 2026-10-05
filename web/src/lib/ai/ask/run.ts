@@ -5,6 +5,8 @@
  */
 import type { AuditStore } from "../audit-log";
 import { callStructured, type CallResult } from "../client";
+import { sha256HexOrUnavailable } from "../hash";
+import { requestParams } from "../models";
 import { AiError, isFatalForBatch, type Credentials, type FetchLike } from "../types";
 import {
   ASK_SCHEMA_NAME,
@@ -85,6 +87,11 @@ export async function runEvaluation(
     provider: credentials.provider,
     model: credentials.model,
     contextHash: opts.contextHash,
+    params: requestParams(
+      credentials.provider,
+      credentials.model,
+      await sha256HexOrUnavailable(ASK_SYSTEM_PROMPT),
+    ),
     startedAt: clock().toISOString(),
     finishedAt: null,
     status: "running",
@@ -111,7 +118,9 @@ export async function runEvaluation(
         answer: res.data,
         grade: gradeAnswer(item, res.data),
         error: null,
-        auditId: res.entry.id,
+        errorKind: null,
+        servedModel: res.entry.servedModel ?? null,
+        auditId: res.logged ? res.entry.id : null,
         latencyMs: res.entry.latencyMs,
         inputTokens: res.usage?.inputTokens ?? null,
         outputTokens: res.usage?.outputTokens ?? null,
@@ -127,6 +136,8 @@ export async function runEvaluation(
             answer: null,
             grade: null,
             error: `${e.kind}: ${e.message}`,
+            errorKind: e.kind,
+            servedModel: null,
             auditId: null,
             latencyMs: 0,
             inputTokens: e.usage?.inputTokens ?? null,
