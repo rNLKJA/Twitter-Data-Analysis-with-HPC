@@ -1,0 +1,16 @@
+{
+  "abbotsbury": { "ste": "1", "gcc": "1gsyd", "sal": "10002" },
+  "abbotsford (nsw)": { "ste": "1", "gcc": "1gsyd", "sal": "10003" },
+  "alison (central coast - nsw)": { "ste": "1", "gcc": "1gsyd", "sal": "10004" },
+  "box hill": { "ste": "2", "gcc": "2rvic", "sal": "20001" },
+  "box hill (nsw)": { "ste": "1", "gcc": "1gsyd", "sal": "10005" },
+  "box hill (vic.)": { "ste": "2", "gcc": "2gmel", "sal": "20002" },
+  "richmond (nsw)": { "ste": "1", "gcc": "1gsyd", "sal": "10006" },
+  "richmond (vic.)": { "ste": "2", "gcc": "2gmel", "sal": "20003" },
+  "st. kilda (vic.)": { "ste": "2", "gcc": "2gmel", "sal": "20004" },
+  "mount gambier - east": { "ste": "4", "gcc": "4rsau", "sal": "40001" },
+  "macquarie (act)": { "ste": "8", "gcc": "8acte", "sal": "80001" },
+  "west island": { "ste": "9", "gcc": "9oter", "sal": "90001" },
+  "sydney": { "ste": "1", "gcc": "1gsyd", "sal": "13730" },
+  "melbourne": { "ste": "2", "gcc": "2gmel", "sal": "21640" }
+}
