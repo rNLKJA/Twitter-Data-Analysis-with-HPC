@@ -111,7 +111,8 @@ async function findDoubleCountRanks(blob: Blob, starts: readonly number[]): Prom
 
 const noopSubscribe = () => () => {};
 const readCores = () => navigator.hardwareConcurrency || 0;
-const serverCores = () => 0;
+/** -1 = not known yet (server render / before hydration); 0 = the browser does not say. */
+const serverCores = () => -1;
 
 /**
  * Offer up to the machine's logical cores (at least 4 so the layout is visible,
@@ -119,7 +120,7 @@ const serverCores = () => 0;
  * placeholder that matches most machines, so the picker rarely shifts.
  */
 export function maxWorkersFor(cores: number): number {
-  return Math.min(16, Math.max(4, cores || 8));
+  return Math.min(16, Math.max(4, cores > 0 ? cores : 8));
 }
 
 export function useMpiLab() {

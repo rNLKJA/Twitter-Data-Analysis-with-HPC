@@ -46,7 +46,11 @@ export function RunControls({
         </h2>
         <span className="ml-auto flex items-center gap-1.5 font-mono text-[0.7rem] text-muted-foreground">
           <Cpu className="size-3.5" aria-hidden />
-          {cores > 0 ? `${cores} logical cores` : "cores unknown"}
+          {cores > 0
+            ? `${cores} logical cores`
+            : cores < 0
+              ? "detecting cores"
+              : "cores not reported"}
         </span>
       </div>
 
