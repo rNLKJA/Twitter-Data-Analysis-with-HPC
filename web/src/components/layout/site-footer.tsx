@@ -50,8 +50,9 @@ export function SiteFooter() {
             <GitHubMark className="size-4" /> rNLKJA/Twitter-Data-Analysis-with-HPC
           </a>
           <p className="text-xs text-muted-foreground">
-            The original submission is preserved unchanged in{" "}
-            <code className="font-mono">coursework/</code>. MIT licence.
+            The original submission is kept in <code className="font-mono">coursework/</code>:
+            analysis logic unchanged, reformatted with black and isort, credentials moved to
+            environment variables. MIT licence.
           </p>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TASK1, TASK2, TASK3 } from "@/lib/data/original";
+import { TASK1, TASK1_ID_NOTE, TASK2, TASK3 } from "@/lib/data/original";
 
 function csvLine(cells: readonly (string | number)[]) {
   return cells
@@ -7,10 +7,19 @@ function csvLine(cells: readonly (string | number)[]) {
     .join(",");
 }
 
-const FILES = [
+interface ResultFile {
+  id: string;
+  file: string;
+  /** Caveat shown above the file. */
+  note?: string;
+  lines: string[];
+}
+
+const FILES: ResultFile[] = [
   {
     id: "task1",
     file: "data/result/task1.csv",
+    note: `Reconstructed from the report. ${TASK1_ID_NOTE}`,
     lines: [
       csvLine(["Rank", "Author Id", "Number of Tweets Made"]),
       ...TASK1.map((r) => csvLine([`#${r.rank}`, r.authorId, r.tweets])),
@@ -34,7 +43,10 @@ const FILES = [
   },
 ];
 
-/** The three result files in the shape main.py writes them (header typo included). */
+/**
+ * The three result files in the shape main.py writes them (header typo
+ * included). Task 1's author IDs are the report's rounded ones, and say so.
+ */
 export function RawOutput() {
   return (
     <Tabs defaultValue="task1" className="w-full">
@@ -47,6 +59,7 @@ export function RawOutput() {
       </TabsList>
       {FILES.map((f) => (
         <TabsContent key={f.id} value={f.id}>
+          {f.note && <p className="mt-2 text-xs text-muted-foreground">{f.note}</p>}
           <div className="mt-2 overflow-hidden rounded-lg border bg-muted/40">
             <div className="flex items-center justify-between border-b px-3 py-1.5 font-mono text-[0.7rem] text-muted-foreground">
               <span>{f.file}</span>

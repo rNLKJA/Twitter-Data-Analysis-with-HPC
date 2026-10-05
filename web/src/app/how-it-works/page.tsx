@@ -201,9 +201,9 @@ export default function HowItWorksPage() {
         <SectionHeading id="fidelity" eyebrow="Fidelity" title="Ported, not reinvented">
           <p>
             The browser runs a line-for-line TypeScript port of the 2023 code, magic numbers and
-            quirks included. The original Python, unchanged, was run outside Spartan (with mpi4py
-            stubbed and the ranks re-enacted in order) to produce reference outputs, and the test
-            suite checks the port against them:
+            quirks included. The original Python in coursework/ (analysis logic as submitted) was
+            run outside Spartan (with mpi4py stubbed and the ranks re-enacted in order) to produce
+            reference outputs, and the test suite checks the port against them:
           </p>
         </SectionHeading>
         <div className="mt-5 grid gap-4 md:grid-cols-2">

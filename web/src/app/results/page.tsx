@@ -17,6 +17,14 @@ export const metadata: Metadata = {
     "The three answers from the 2023 Spartan run over bigTwitter.json: top tweeters, tweets per Greater Capital City, and the authors who tweeted from the most capital cities.",
 };
 
+const MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ");
+
+/** "2021-07-05" → "Jul 2021" */
+function monthYear(isoDay: string): string {
+  const [year, month] = isoDay.split("-");
+  return `${MONTHS[Number(month) - 1]} ${year}`;
+}
+
 export default function ResultsPage() {
   const map = australiaMap(800, 680);
   const cities: CityDatum[] = TASK2.map((r) => {
@@ -55,7 +63,8 @@ export default function ResultsPage() {
           The assignment asked three questions of a {formatBytes(DATASET.bytes)} file of geotagged
           tweets. These are the answers our MPI program wrote to{" "}
           <code className="font-mono text-[0.9em]">data/result/</code> on Spartan in April 2023,
-          transcribed exactly. The raw tweets were course data and are not reproduced here.
+          transcribed from the submission (the Task 1 author IDs only as precisely as the report
+          printed them). The raw tweets were course data and are not reproduced here.
         </p>
       </PageHeader>
 
@@ -73,7 +82,16 @@ export default function ResultsPage() {
         <Metric
           label="Window"
           value="18 months"
-          hint={`${DATASET.firstDay} → ${DATASET.lastDay}`}
+          hint={
+            <>
+              <span className="whitespace-nowrap lg:hidden">
+                {monthYear(DATASET.firstDay)} → {monthYear(DATASET.lastDay)}
+              </span>
+              <span className="hidden whitespace-nowrap lg:inline">
+                {DATASET.firstDay} → {DATASET.lastDay}
+              </span>
+            </>
+          }
         />
         <Metric
           label="In a capital city"
@@ -149,7 +167,7 @@ export default function ResultsPage() {
         </SectionHeading>
         <Panel
           title="Tweets per city for the top 10 city-hoppers"
-          description="Parsed from task3.csv; hover a cell for its share"
+          description="Parsed from task3.csv; shading is each city's share of the author's tweets (hover a cell for the figure)"
         >
           <CityHopperHeatmap />
         </Panel>
@@ -159,11 +177,14 @@ export default function ResultsPage() {
         className="mt-16 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]"
         aria-labelledby="raw"
       >
-        <SectionHeading id="raw" eyebrow="Raw output" title="Exactly what main.py wrote">
+        <SectionHeading id="raw" eyebrow="Raw output" title="The result files, as published">
           <p>
-            Rank 0 wrote Task 1, rank 1 wrote Task 2 and rank 2 wrote Task 3, each as a CSV. The
-            header typo (&ldquo;Captical&rdquo;) is the original&apos;s and is preserved, because
-            the browser port reproduces these files byte for byte.
+            Rank 0 wrote Task 1, rank 1 wrote Task 2 and rank 2 wrote Task 3, each as a CSV. They
+            are laid out here in main.py&apos;s format, header typo (&ldquo;Captical&rdquo;)
+            included, because that is also the format the browser port writes. Task 2 and Task 3 are
+            as submitted. The Task 1 author IDs went through a spreadsheet on the way into the
+            report and lost their trailing digits; main.py wrote them in full, and the counts are
+            exact.
           </p>
         </SectionHeading>
         <Panel>

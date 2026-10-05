@@ -1,6 +1,6 @@
 /**
  * Run the TypeScript port end to end on a Twitter JSON file and print the same
- * JSON shape as scripts/parity/run_original.py, so the two can be diffed.
+ * JSON shape as scripts/run_original.py (repo root), so the two can be diffed.
  *
  *   pnpm tsx scripts/run-pipeline.ts --twitter FILE (--sal sal.json | --gazetteer gazetteer.json) \
  *       --ranks 1 3 4 8 --out out.json [--records] [--dump-sal-dict path]

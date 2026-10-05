@@ -324,10 +324,12 @@ export default function HomePage() {
           </dl>
           <p className="rounded-lg border bg-muted/30 p-4 text-xs text-muted-foreground">
             <strong className="font-semibold text-foreground">Academic integrity.</strong> The
-            original 2023 submission is preserved unchanged in the repository&apos;s{" "}
-            <code className="font-mono">coursework/</code> folder for reference. The assignment
-            brief, the course datasets and the written report are not reproduced here; the task is
-            paraphrased. If you are taking COMP90024, please do your own work.
+            original 2023 submission is kept for reference in the repository&apos;s{" "}
+            <code className="font-mono">coursework/</code> folder, with its analysis logic unchanged
+            (it has since been reformatted with black and isort, and a hard-coded email credential
+            was moved to environment variables). The assignment brief, the course datasets and the
+            written report are not reproduced here; the task is paraphrased. If you are taking
+            COMP90024, please do your own work.
           </p>
         </div>
         <div className="panel overflow-hidden">

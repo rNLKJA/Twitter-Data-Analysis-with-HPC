@@ -56,28 +56,33 @@ Fitting Amdahl's law to these runs gives a serial fraction of about 3.2%, a ceil
 - **Task 2:** Melbourne (2,284,909) edged out Sydney (2,218,689); 74.7% of all tweets resolved to a capital city.
 - **Task 3:** all ten top authors tweeted from all eight capital cities.
 
-Every table is on the [Results](https://comp90024-spartan-twitter.vercel.app/results) page, transcribed exactly
-from the submission.
+Every table is on the [Results](https://comp90024-spartan-twitter.vercel.app/results) page, transcribed from the
+submission. The Task 1 author IDs are shown as the report printed them: they passed through a spreadsheet, which
+kept only 15 significant digits, so their trailing digits are lost (the counts are exact).
 
 ## What the revival adds (2026)
 
 | Route | What it does |
 | --- | --- |
 | `/` | Plain-language overview, key numbers, about the project |
-| `/results` | Task 2 map of Australia + table, Task 1 top tweeters, Task 3 heatmap, and the raw CSVs as `main.py` wrote them |
+| `/results` | Task 2 map of Australia + table, Task 1 top tweeters, Task 3 heatmap, and the three result CSVs in `main.py`'s format (Task 1 author IDs as published) |
 | `/scaling` | The final and an earlier set of Spartan benchmark jobs, speedup, efficiency, Karp–Flatt serial fraction, and an Amdahl's law explorer fitted to the measured runs |
-| `/lab` | **MPI in your browser.** Generates a seeded synthetic file with the exact line layout of `bigTwitter.json`, splits it with the original chunking, and processes it with one Web Worker per rank. Live per-rank progress, a scan/reduce timeline, the three answers, a check that every run's output matches the first, and a speedup curve fitted to your machine. You can also load your own course-format files locally |
+| `/lab` | **MPI in your browser.** Generates a seeded synthetic file with the exact line layout of `bigTwitter.json`, splits it with the original chunking, and processes it with one Web Worker per rank. Live per-rank progress, a scan/reduce timeline, the three answers, a check of every run's output against a clean baseline run (one that counted no tweet twice), and a speedup curve fitted to your machine. You can also load your own course-format files locally |
 | `/how-it-works` | Interactive chunk explorer on the real file size, a line-by-line trace of the scanner, the place matcher step by step, and the gather/reduce design |
 
 ### Faithful port, verified against the original
 
 The browser runs a TypeScript port of the original algorithm in [`web/src/lib/cruncher`](./web/src/lib/cruncher),
-magic numbers and quirks included. The original Python, unchanged, is run outside Spartan by
+magic numbers and quirks included. The original Python in `coursework/` (analysis logic as submitted) is run
+outside Spartan by
 [`scripts/run_original.py`](./scripts/run_original.py) (mpi4py stubbed, ranks re-enacted in `gather_task_tdf`
 order, 2023 dependency pins) to produce reference outputs. The Vitest suite then checks that the port gives:
 
 - identical per-tweet records (id, author, normalised place, city) and per-rank tweet counts for 1, 3, 4 and 7 ranks;
 - identical `task1.csv`, `task2.csv`, `task3.csv` and `task3_1.csv`;
+- the same crash where the original crashes: when a chunk starts inside a multi-byte UTF-8 character, the
+  original's strict `line.decode()` raises `UnicodeDecodeError` and so does the port, with the same message
+  (17 and 29 ranks on a 400-tweet file with non-ASCII text);
 - the same `sal.json` dictionary (keys, codes and insertion order) on a sample;
 - the same resolution for every place in the demo vocabulary as against the full `sal.json`.
 
@@ -91,6 +96,10 @@ line still matches the `_id` regex while the previous rank reads that line in fu
 tweet**. It is about a 1 in 500 chance per boundary on `bigTwitter.json`. The original Python does it (verified:
 400 tweets read as 401 at 27 and 39 ranks), so the port keeps it, a parity test pins it, and the lab explains it
 when one of your runs hits it.
+
+Two more ways the 2023 code can fail are kept as well: a rank whose chunk starts inside a multi-byte character
+raises `UnicodeDecodeError` (the lab reports it as that rank's error), and a file in which no tweet resolves to a
+capital city makes Task 3 stop with a polars `ComputeError` (the lab shows the empty answer and says so).
 
 ## Tech stack
 
@@ -115,12 +124,14 @@ when one of your runs hits it.
 │   ├── slurm/                   the three benchmark jobs
 │   └── _archive/                the README as submitted
 ├── scripts/                     Python (uv) scripts that run the ORIGINAL code to make web artefacts
-│   ├── _original.py             loads coursework/scripts/* unchanged outside Spartan
+│   ├── _original.py             loads coursework/scripts/* as they are, outside Spartan
 │   ├── run_original.py          re-enacts main.py rank by rank, dumps results as JSON
 │   └── build_gazetteer.py       builds web/public/data/gazetteer.json
 └── web/                         the Next.js app (Vercel root)
     ├── public/data/gazetteer.json
-    ├── scripts/                 write-synthetic.ts, run-pipeline.ts (TS counterparts for parity checks)
+    ├── scripts/                 write-synthetic.ts, run-pipeline.ts: TS counterparts for parity checks. They
+    │                            live with the web package (not in root scripts/) because they import its port
+    │                            and run with its tsx: `pnpm gen:synthetic`, `pnpm run:pipeline`
     └── src/
         ├── app/                 /, /results, /scaling, /lab, /how-it-works, not-found, icon, OG image
         ├── components/          ui/ (shadcn), layout/, charts/, results/, scaling/, lab/, how/, home/
@@ -148,7 +159,7 @@ No course data is committed or served. The site uses:
 | --- | --- | --- |
 | `web/src/lib/data/original.ts` | transcribed | Final results and benchmark numbers from the submission; earlier benchmarks from the Slurm logs on the `Spartan-running-test` branch |
 | `web/public/data/gazetteer.json` | `scripts/build_gazetteer.py` | The original `process_salV1` + `normalise_location` run on `sal.json`, restricted to the keys any demo place name can hit (117 keys, 18 kB) |
-| `web/src/lib/__fixtures__/*.json` | `scripts/run_original.py` | Outputs of the original Python on synthetic files, used by the parity tests |
+| `web/src/lib/__fixtures__/*.json` | `scripts/run_original.py` | Outputs of the original Python on synthetic files (plain, and with non-ASCII text), used by the parity tests |
 | Synthetic tweet files | `web/src/lib/synth` | Seeded, made-up tweets with `bigTwitter.json`'s line layout, generated in the browser |
 
 To regenerate them you need `sal.json` from the course (place it anywhere, for example `scripts/.cache/`, which is
@@ -166,6 +177,12 @@ uv run scripts/run_original.py --twitter scripts/.cache/synthetic-2023-400.json 
 uv run scripts/run_original.py --twitter scripts/.cache/synthetic-2023-400.json \
   --sal scripts/.cache/sal.json --ranks 27 39 \
   --out web/src/lib/__fixtures__/parity-boundary-2023-400.json
+
+# the same tweets with non-ASCII text: 17 and 29 ranks cut inside a character and crash
+(cd web && pnpm gen:synthetic --seed 2023 --tweets 400 --non-ascii --out ../scripts/.cache/utf8-2023-400.json)
+uv run scripts/run_original.py --twitter scripts/.cache/utf8-2023-400.json \
+  --sal scripts/.cache/sal.json --ranks 1 4 17 29 --record-errors \
+  --out web/src/lib/__fixtures__/parity-utf8-2023-400.json
 
 # compare the port directly on any course-format file
 (cd web && pnpm run:pipeline --twitter ../scripts/.cache/tinyTwitter.json \
