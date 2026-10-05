@@ -69,11 +69,8 @@ export function RunControls({
           n === 2 ? (
             <Tooltip key={n}>
               <TooltipTrigger asChild>
-                <span
-                  tabIndex={0}
-                  className="rounded-lg"
-                  aria-label="2 ranks: unsupported by the original"
-                >
+                <span tabIndex={0} className="rounded-lg">
+                  <span className="sr-only">2 ranks: unsupported by the original</span>
                   <ToggleGroupItem
                     value="2"
                     disabled

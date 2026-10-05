@@ -37,7 +37,7 @@ export function ScannerTrace({
         <Switch checked={showSkipped} onCheckedChange={setShowSkipped} label="Show skipped lines" />
       </div>
       <ol
-        className="max-h-[32rem] overflow-auto py-2 font-mono text-[0.72rem] leading-[1.55]"
+        className="relative max-h-[32rem] overflow-auto py-2 font-mono text-[0.72rem] leading-[1.55]"
         tabIndex={0}
         aria-label="Scanner trace"
       >
@@ -49,17 +49,17 @@ export function ScannerTrace({
               className={cn(
                 "grid grid-cols-[2.75rem_1.25rem_1fr] items-start gap-x-2 border-l-2 border-transparent pr-3",
                 hit && HIT_STYLE[hit.kind],
-                l.mode === "skip" && "text-muted-foreground/55",
+                l.mode === "skip" && "text-muted-foreground italic",
               )}
             >
               <span className="num pl-2 text-right text-muted-foreground/70 select-none">
                 {l.n}
               </span>
-              <span
-                className="text-center select-none"
-                aria-label={l.mode === "read" ? "read" : "skipped"}
-              >
-                {l.mode === "read" ? <span className="text-primary">›</span> : "·"}
+              <span className="text-center select-none">
+                <span aria-hidden>
+                  {l.mode === "read" ? <span className="text-primary">›</span> : "·"}
+                </span>
+                <span className="sr-only">{l.mode === "read" ? "read:" : "skipped:"}</span>
               </span>
               <span className="min-w-0">
                 <span className="break-all whitespace-pre-wrap">{l.text || " "}</span>

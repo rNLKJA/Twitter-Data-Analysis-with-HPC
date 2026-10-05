@@ -40,13 +40,13 @@ export function ChunkExplorer() {
           <div
             key={r}
             className={cn(
-              "relative flex items-center justify-center overflow-hidden rounded-[4px] font-mono text-[0.65rem]",
-              r % 2 ? "bg-series-1/55" : "bg-series-1/80",
+              "relative flex items-center justify-center overflow-hidden rounded-[4px] border border-series-1/60 font-mono text-[0.65rem] text-foreground",
+              r % 2 ? "bg-series-1/15" : "bg-series-1/35",
               !supported && r >= 2 && "opacity-40",
             )}
             style={{ flexGrow: end[r] - s }}
           >
-            <span className="text-[var(--on-series-1)]">{size <= 12 ? r : ""}</span>
+            <span>{size <= 12 ? r : ""}</span>
           </div>
         ))}
       </div>

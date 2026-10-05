@@ -21,7 +21,7 @@ export function CityHopperHeatmap() {
         Swipe the table sideways to see all eight cities.
       </p>
       <div
-        className="-mx-1 overflow-x-auto px-1 pb-1"
+        className="relative -mx-1 overflow-x-auto px-1 pb-1"
         tabIndex={0}
         aria-label="Task 3 heatmap, scrollable"
       >
@@ -85,6 +85,10 @@ export function CityHopperHeatmap() {
                         title={`${c.name}: ${formatInt(n)} of ${formatInt(r.parsed.tweets)} tweets (${formatPct(share)})`}
                       >
                         {n === 0 ? <span className="text-muted-foreground">0</span> : formatInt(n)}
+                        <span className="sr-only">
+                          {" "}
+                          tweets from {c.city}, {formatPct(share)} of this author&apos;s
+                        </span>
                       </td>
                     );
                   })}
