@@ -46,7 +46,7 @@ function Marker({ shape = "circle", x, y }: { shape?: MarkerShape; x: number; y:
   return <circle cx={x} cy={y} r={5.5} className="fill-series-2 stroke-card" strokeWidth={2} />;
 }
 
-export function MarkerIcon({ shape = "circle" }: { shape?: MarkerShape }) {
+function MarkerIcon({ shape = "circle" }: { shape?: MarkerShape }) {
   return (
     <svg width="18" height="18" viewBox="-9 -9 18 18" aria-hidden className="shrink-0">
       <Marker shape={shape} x={0} y={0} />

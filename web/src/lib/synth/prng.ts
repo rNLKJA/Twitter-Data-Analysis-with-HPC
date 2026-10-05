@@ -1,5 +1,5 @@
 /** mulberry32: tiny, fast, deterministic 32-bit PRNG (same stream in every JS engine). */
-export function mulberry32(seed: number): () => number {
+function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
     a = (a + 0x6d2b79f5) >>> 0;

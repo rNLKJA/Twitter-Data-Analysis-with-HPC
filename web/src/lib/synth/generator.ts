@@ -126,7 +126,7 @@ function round6(x: number): number {
 }
 
 /** Deterministic author pool: Zipf-like activity, home places, a few travellers. */
-export function makeAuthors(rng: Rng, count: number): SynthAuthor[] {
+function makeAuthors(rng: Rng, count: number): SynthAuthor[] {
   const placeOf = weightedSampler(PLACES.map((p) => p.w));
   // Capital-city entries (one per GCC) that travellers hop between.
   const capitals = CAPITAL_NAMES.map((n) => PLACES.findIndex((p) => p.name === n)).filter(
