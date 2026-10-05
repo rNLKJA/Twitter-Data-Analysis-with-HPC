@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  firstNgrams,
   isStateLocation,
+  ngramCount,
   normaliseLocation,
   resolveLocation,
+  resolveLocationBounded,
   returnWordsNgrams,
 } from "./normalise";
 
@@ -86,5 +89,44 @@ describe("resolveLocation", () => {
 
   it("returns null when nothing matches", () => {
     expect(resolveLocation("London, England", dict)).toMatchObject({ gcc: null, tried: 3 });
+  });
+});
+
+describe("resolveLocationBounded (the place matcher's capped lookup)", () => {
+  const dict = new Map([
+    ["sydney", "1gsyd"],
+    ["bay qld", "3gbri"],
+  ]);
+
+  it("agrees with resolveLocation whenever the search fits under the ceiling", () => {
+    for (const place of ["Hervey Bay, Queensland", "Sydney", "London, England", "a b c d e f g"]) {
+      const full = resolveLocation(place, dict);
+      const bounded = resolveLocationBounded(place, dict, 1000);
+      expect(bounded).toEqual({
+        ...full,
+        complete: true,
+        total: ngramCount(full.location.split(" ").length),
+      });
+    }
+  });
+
+  it("stops at the ceiling on long unmatched input instead of trying 2^n − 1 combinations", () => {
+    const place = Array.from({ length: 40 }, (_, i) => String.fromCharCode(97 + (i % 26))).join(
+      " ",
+    );
+    const r = resolveLocationBounded(place, dict, 5000);
+    expect(r).toMatchObject({ gcc: null, tried: 5000, complete: false, total: 2 ** 40 - 1 });
+  });
+
+  it("firstNgrams takes a prefix of return_words_ngrams lazily", () => {
+    const words = "a b c d e".split(" ");
+    expect(firstNgrams(words, 7)).toEqual(returnWordsNgrams(words).slice(0, 7));
+    expect(firstNgrams(words, 100)).toHaveLength(31);
+    expect(
+      firstNgrams(
+        Array.from({ length: 60 }, (_, i) => `w${i}`),
+        3,
+      ),
+    ).toEqual(["w0", "w1", "w2"]);
   });
 });

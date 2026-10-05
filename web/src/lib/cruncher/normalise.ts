@@ -114,3 +114,52 @@ export function resolveLocation(fullName: string, salDict: SalDict): Resolution 
   }
   return { location, gcc: null, matchedBy: null, tried };
 }
+
+/** How many n-grams `return_words_ngrams` yields for `words` words: 2^n − 1. */
+export function ngramCount(words: number): number {
+  return 2 ** words - 1;
+}
+
+export interface BoundedResolution extends Resolution {
+  /** False when the search stopped at `maxTries` with no hit; the original would keep trying. */
+  complete: boolean;
+  /** ngramCount(words): the most combinations the original could try. */
+  total: number;
+}
+
+/**
+ * resolveLocation with a ceiling on the number of n-grams tried, for
+ * interactive use: an unmatched place of n words costs the original 2^n − 1
+ * dictionary lookups, which freezes a browser tab from about 20 words up.
+ * Up to the ceiling the answer is identical to resolveLocation's.
+ */
+export function resolveLocationBounded(
+  fullName: string,
+  salDict: SalDict,
+  maxTries: number,
+): BoundedResolution {
+  const location = normaliseLocation(fullName.toLowerCase());
+  const words = location.split(" ");
+  const total = ngramCount(words.length);
+  let tried = 0;
+  for (const candidate of wordNgrams(words)) {
+    if (tried >= maxTries) {
+      return { location, gcc: null, matchedBy: null, tried, complete: false, total };
+    }
+    tried++;
+    const gcc = salDict.get(candidate);
+    if (gcc) return { location, gcc, matchedBy: candidate, tried, complete: true, total };
+  }
+  return { location, gcc: null, matchedBy: null, tried, complete: true, total };
+}
+
+/** The first `count` n-grams, without building the rest. */
+export function firstNgrams(words: readonly string[], count: number): string[] {
+  const out: string[] = [];
+  if (count <= 0) return out;
+  for (const g of wordNgrams(words)) {
+    out.push(g);
+    if (out.length >= count) break;
+  }
+  return out;
+}

@@ -4,7 +4,8 @@ import { ArrowRight, BadgeCheck } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 
 import gazetteer from "../../../public/data/gazetteer.json";
-import { normaliseLocation, resolveLocation, returnWordsNgrams } from "@/lib/cruncher/normalise";
+import { firstNgrams, normaliseLocation, resolveLocationBounded } from "@/lib/cruncher/normalise";
+import { formatInt } from "@/lib/format";
 import { gccLabel, isRural } from "@/lib/gcc";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +21,48 @@ const SUGGESTIONS = [
   "Victoria, Australia",
 ];
 
+/**
+ * An unmatched place of n words makes the original try 2^n − 1 combinations;
+ * past about 20 words that would freeze the tab, so the demo stops looking
+ * after this many (exact for up to 15 words) and says so.
+ */
+const MAX_TRIES = 1 << 15;
+/** Chips drawn before collapsing the rest into a count. */
+const MAX_CHIPS = 24;
+/** When the hit is far down the list: chips shown before the "… N more tried …" gap. */
+const HEAD_CHIPS = 12;
+
+type Chip =
+  | { kind: "gram"; text: string; state: "tried" | "hit" | "untried" }
+  | { kind: "gap"; text: string };
+
+function chipsFor(
+  words: readonly string[],
+  tried: number,
+  hit: string | null,
+  total: number,
+): Chip[] {
+  const gram = (text: string, i: number): Chip => ({
+    kind: "gram",
+    text,
+    state: hit !== null && i === tried - 1 ? "hit" : i < tried ? "tried" : "untried",
+  });
+  // The hit (or the end of the search) fits in the chip budget, with a few untried ones after it.
+  if (tried <= MAX_CHIPS - 2 || (hit === null && tried <= MAX_CHIPS)) {
+    const shown = firstNgrams(words, Math.min(total, Math.max(tried, 1) + 6, MAX_CHIPS));
+    return shown.map(gram);
+  }
+  const head = firstNgrams(words, HEAD_CHIPS).map(gram);
+  if (hit !== null) {
+    return [
+      ...head,
+      { kind: "gap", text: `… ${formatInt(tried - HEAD_CHIPS - 1)} more tried …` },
+      { kind: "gram", text: hit, state: "hit" },
+    ];
+  }
+  return [...head, { kind: "gap", text: `… ${formatInt(tried - HEAD_CHIPS)} more tried` }];
+}
+
 export function PlaceMatcher() {
   const [input, setInput] = useState("Box Hill, Melbourne");
   const inputId = useId();
@@ -28,15 +71,18 @@ export function PlaceMatcher() {
   const steps = useMemo(() => {
     const lower = input.toLowerCase();
     const normalised = normaliseLocation(lower);
-    const grams = returnWordsNgrams(normalised.split(" "));
-    const result = resolveLocation(input, DICT);
-    return { lower, normalised, grams, result };
+    const words = normalised.split(" ");
+    const result = resolveLocationBounded(input, DICT, MAX_TRIES);
+    const chips = chipsFor(words, result.tried, result.matchedBy, result.total);
+    return { lower, normalised, words, result, chips };
   }, [input]);
 
   const verified = VERIFIED.get(input);
-  const shownGrams = steps.grams.slice(0, Math.max(steps.result.tried, 1) + 6);
-  const hidden = steps.grams.length - shownGrams.length;
-  const gcc = steps.result.gcc;
+  const { result } = steps;
+  const untried = result.total - result.tried;
+  const shownUntried = steps.chips.filter((c) => c.kind === "gram" && c.state === "untried").length;
+  const hidden = untried - shownUntried;
+  const gcc = result.gcc;
 
   return (
     <div className="panel p-4 sm:p-6">
@@ -57,7 +103,7 @@ export function PlaceMatcher() {
           <option key={p.name} value={p.name} />
         ))}
       </datalist>
-      <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Examples">
+      <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label="Examples">
         {SUGGESTIONS.map((s) => (
           <button
             key={s}
@@ -87,37 +133,67 @@ export function PlaceMatcher() {
               Try every word combination in itertools order (shortest first) against sal_dict; the{" "}
               <em>first</em> hit wins
             </p>
-            <div className="mt-2 flex flex-wrap gap-1.5" aria-live="polite">
-              {shownGrams.map((g, i) => {
-                const isHit = steps.result.matchedBy === g && i === steps.result.tried - 1;
-                const tried = i < steps.result.tried;
-                return (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {steps.chips.map((c, i) =>
+                c.kind === "gap" ? (
+                  <span key={`gap-${i}`} className="px-1 font-mono text-xs text-muted-foreground">
+                    {c.text}
+                  </span>
+                ) : (
                   <span
-                    key={`${g}-${i}`}
+                    key={`${c.text}-${i}`}
                     className={cn(
                       "rounded-md border px-2 py-0.5 font-mono text-xs",
-                      isHit
+                      c.state === "hit"
                         ? "border-primary bg-primary/15 font-medium text-foreground"
-                        : tried
+                        : c.state === "tried"
                           ? "border-border text-muted-foreground line-through decoration-muted-foreground/50"
-                          : "border-dashed border-border/70 text-muted-foreground/60",
+                          : "border-dashed border-border text-muted-foreground",
                     )}
                   >
-                    {g || " "}
+                    {c.text || " "}
+                    <span className="sr-only">
+                      {c.state === "hit" ? " (match)" : c.state === "tried" ? " (no match)" : ""}
+                    </span>
                   </span>
-                );
-              })}
-              {hidden > 0 && (
-                <span className="px-1 font-mono text-xs text-muted-foreground">+{hidden} more</span>
+                ),
+              )}
+              {result.complete && hidden > 0 && (
+                <span className="px-1 font-mono text-xs text-muted-foreground">
+                  +{formatInt(hidden)} not needed
+                </span>
               )}
             </div>
+            <p className="mt-2 font-mono text-[0.7rem] text-muted-foreground">
+              {formatInt(steps.words.length)} word{steps.words.length === 1 ? "" : "s"} →{" "}
+              {formatInt(result.total)} combination{result.total === 1 ? "" : "s"};{" "}
+              {result.matchedBy !== null
+                ? `the first hit was number ${formatInt(result.tried)}`
+                : `tried ${formatInt(result.tried)}, no hit`}
+              .
+            </p>
+            {!result.complete && (
+              <p className="mt-2 rounded-lg border border-caution/40 bg-caution/10 p-2.5 text-xs">
+                Stopped after {formatInt(result.tried)} of {formatInt(result.total)} combinations
+                with no hit. The original would keep going through all of them, which is why a long
+                free-text place name is so expensive; this demo stops here to keep the page
+                responsive.
+              </p>
+            )}
           </div>
         </li>
         <li className="grid grid-cols-[1.75rem_1fr] gap-3">
           <StepNo n={4} />
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2" aria-live="polite">
             <ArrowRight className="size-4 text-muted-foreground" aria-hidden />
-            {gcc ? (
+            {!result.complete ? (
+              <>
+                <span className="rounded-md bg-muted px-2 py-0.5 font-mono text-sm">?</span>
+                <span className="text-xs text-muted-foreground">
+                  undecided: the browser stopped searching before the original would have
+                </span>
+              </>
+            ) : gcc ? (
               <>
                 <span className="rounded-md bg-primary/12 px-2 py-0.5 font-mono text-sm font-semibold text-primary">
                   {gcc}
