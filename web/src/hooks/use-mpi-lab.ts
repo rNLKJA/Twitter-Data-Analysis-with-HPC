@@ -11,7 +11,14 @@ import {
 } from "@/lib/cruncher/chunks";
 import { processSalV1, type SalEntry } from "@/lib/cruncher/sal";
 import type { RankPartials, Task1Row, Task2Row, Task3Result } from "@/lib/cruncher/tasks";
-import { resultsFingerprint, type RunRecord, type TaskResults } from "@/lib/lab/runs";
+import { PoolTerminatedError, RankPool } from "@/lib/lab/rank-pool";
+import {
+  dictHash,
+  resultsFingerprint,
+  runKey,
+  type RunRecord,
+  type TaskResults,
+} from "@/lib/lab/runs";
 import { now, type RankRequest, type RankResponse, type SynthResponse } from "@/workers/protocol";
 
 /**
@@ -47,7 +54,26 @@ export interface DictState {
   source: "gazetteer" | "sal";
   name: string;
   entries: ReadonlyArray<readonly [string, string]>;
+  /** dictHash(entries): part of the run key, so runs with different dictionaries are never compared. */
+  hash: string;
   message?: string;
+}
+
+function readyDict(
+  source: DictState["source"],
+  name: string,
+  entries: ReadonlyArray<readonly [string, string]>,
+): DictState {
+  return { status: "ready", source, name, entries, hash: dictHash(entries) };
+}
+
+function emptyDict(
+  status: "loading" | "error",
+  source: DictState["source"],
+  name: string,
+  message?: string,
+): DictState {
+  return { status, source, name, entries: [], hash: "", message };
 }
 
 export type Task = 1 | 2 | 3;
@@ -56,7 +82,7 @@ export interface RankView {
   rank: number;
   start: number;
   end: number;
-  phase: "queued" | "scanning" | "sent" | "reducing" | "done";
+  phase: "queued" | "scanning" | "sent" | "reducing" | "done" | "failed";
   bytesRead: number;
   tweets: number;
   matched: number;
@@ -70,7 +96,8 @@ export interface RankView {
 
 export interface RunView {
   id: number;
-  fileId: string;
+  /** runKey(file, dictionary): runs are only compared with runs of the same key. */
+  key: string;
   size: number;
   status: "warming" | "running" | "done" | "error" | "cancelled";
   t0: number;
@@ -79,10 +106,6 @@ export interface RunView {
   ranks: RankView[];
   results?: TaskResults;
   error?: string;
-  /** null when this is the first run on the file (it becomes the baseline). */
-  matchesBaseline?: boolean | null;
-  baselineRunId?: number;
-  baselineDoubleCounts?: number;
   /** Ranks whose byte range starts inside an `"_id"` line's indentation (each adds one tweet). */
   doubleCountRanks: number[];
 }
@@ -119,26 +142,28 @@ const serverCores = () => -1;
  * at most 16). Before hydration the core count is unknown (0); 8 is a neutral
  * placeholder that matches most machines, so the picker rarely shifts.
  */
-export function maxWorkersFor(cores: number): number {
+function maxWorkersFor(cores: number): number {
   return Math.min(16, Math.max(4, cores > 0 ? cores : 8));
 }
 
 export function useMpiLab() {
   const [source, setSource] = useState<SourceState>({ status: "empty" });
-  const [dict, setDict] = useState<DictState>({
-    status: "loading",
-    source: "gazetteer",
-    name: "gazetteer.json",
-    entries: [],
-  });
+  const [dict, setDict] = useState<DictState>(() =>
+    emptyDict("loading", "gazetteer", "gazetteer.json"),
+  );
   const [run, setRun] = useState<RunView | null>(null);
   const [history, setHistory] = useState<RunRecord[]>([]);
   const [sweeping, setSweeping] = useState(false);
   const cores = useSyncExternalStore(noopSubscribe, readCores, serverCores);
   const maxWorkers = maxWorkersFor(cores);
 
-  const poolRef = useRef<Array<{ worker: Worker; ready: Promise<void> }>>([]);
+  const poolRef = useRef<RankPool<Worker> | null>(null);
   const liveRef = useRef<LiveRun | null>(null);
+  /**
+   * Id of the run that is warming up or running, or null. cancel() clears it,
+   * which is how a run that is still awaiting its workers learns it was stopped.
+   */
+  const activeRef = useRef<number | null>(null);
   const runSeq = useRef(0);
   const synthRef = useRef<Worker | null>(null);
   const flushRef = useRef<number | null>(null);
@@ -155,22 +180,18 @@ export function useMpiLab() {
       })
       .then((g) => {
         if (cancelled) return;
-        setDict({
-          status: "ready",
-          source: "gazetteer",
-          name: "gazetteer.json",
-          entries: Object.entries(g.dict),
-        });
+        setDict(readyDict("gazetteer", "gazetteer.json", Object.entries(g.dict)));
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        setDict({
-          status: "error",
-          source: "gazetteer",
-          name: "gazetteer.json",
-          entries: [],
-          message: `Could not load the place gazetteer (${err instanceof Error ? err.message : String(err)}).`,
-        });
+        setDict(
+          emptyDict(
+            "error",
+            "gazetteer",
+            "gazetteer.json",
+            `Could not load the place gazetteer (${err instanceof Error ? err.message : String(err)}).`,
+          ),
+        );
       });
     return () => {
       cancelled = true;
@@ -192,8 +213,7 @@ export function useMpiLab() {
   }, []);
 
   const terminatePool = useCallback(() => {
-    for (const { worker } of poolRef.current) worker.terminate();
-    poolRef.current = [];
+    poolRef.current?.terminate();
   }, []);
 
   const finish = useCallback(
@@ -202,6 +222,7 @@ export function useMpiLab() {
       // A failed rank leaves its peers mid-scan; start from a clean pool next time.
       if (patch.status === "error") terminatePool();
       liveRef.current = null;
+      if (activeRef.current === live.view.id) activeRef.current = null;
       if (flushRef.current !== null) cancelAnimationFrame(flushRef.current);
       flushRef.current = null;
       const snapshot = {
@@ -222,7 +243,9 @@ export function useMpiLab() {
       const v = live.view;
 
       if (msg.type === "error") {
-        finish(live, { status: "error", error: msg.message, tEnd: now() });
+        const who = msg.rank === undefined ? "A task rank" : `Rank ${msg.rank}`;
+        if (msg.rank !== undefined && v.ranks[msg.rank]) v.ranks[msg.rank].phase = "failed";
+        finish(live, { status: "error", error: `${who} failed: ${msg.message}`, tEnd: now() });
         return;
       }
 
@@ -260,7 +283,7 @@ export function useMpiLab() {
             v.ranks[host].phase = "reducing";
             v.ranks[host].tasks.push({ task });
             const req: RankRequest = { type: "reduce", runId: v.id, task, partials };
-            poolRef.current[host].worker.postMessage(req);
+            poolRef.current?.worker(host)?.postMessage(req);
           });
         }
         scheduleFlush();
@@ -281,21 +304,19 @@ export function useMpiLab() {
 
         if (live.reduced[1] && live.reduced[2] && live.reduced[3]) {
           const tEnd = now();
-          for (const r of v.ranks) r.phase = "done";
+          for (let i = 0; i < v.ranks.length; i++) v.ranks[i].phase = "done";
           const results: TaskResults = {
             task1: live.reduced[1],
             task2: live.reduced[2],
             task3: live.reduced[3],
           };
-          const fingerprint = resultsFingerprint(results);
-          const baseline = historyRef.current.find((h) => h.fileId === v.fileId);
           const record: RunRecord = {
             id: v.id,
-            fileId: v.fileId,
+            key: v.key,
             size: v.size,
             wallMs: tEnd - v.t0,
             scanMs: Math.max(...v.ranks.map((r) => (r.scanEnd ?? 0) - (r.scanStart ?? 0))),
-            fingerprint,
+            fingerprint: resultsFingerprint(results),
             doubleCounts: v.doubleCountRanks.length,
           };
           historyRef.current = [...historyRef.current, record];
@@ -305,9 +326,6 @@ export function useMpiLab() {
             tEnd,
             wallMs: tEnd - v.t0,
             results,
-            matchesBaseline: baseline ? baseline.fingerprint === fingerprint : null,
-            baselineRunId: baseline?.id,
-            baselineDoubleCounts: baseline?.doubleCounts,
           });
         } else {
           scheduleFlush();
@@ -319,31 +337,28 @@ export function useMpiLab() {
 
   const ensurePool = useCallback(
     (size: number) => {
-      const pool = poolRef.current;
-      while (pool.length < size) {
-        const worker = new Worker(new URL("../workers/rank.worker.ts", import.meta.url), {
-          type: "module",
-          name: `rank-${pool.length}`,
-        });
-        const ready = new Promise<void>((resolve) => {
-          worker.addEventListener("message", function onReady(e: MessageEvent<RankResponse>) {
-            if (e.data.type === "ready") {
-              worker.removeEventListener("message", onReady);
-              resolve();
-            }
-          });
-        });
-        worker.addEventListener("message", (e: MessageEvent<RankResponse>) =>
-          handleRankMessage(e.data),
+      if (!poolRef.current) {
+        poolRef.current = new RankPool<Worker>(
+          (i) =>
+            new Worker(new URL("../workers/rank.worker.ts", import.meta.url), {
+              type: "module",
+              name: `rank-${i}`,
+            }),
+          {
+            onMessage: (data) => handleRankMessage(data as RankResponse),
+            onCrash: (message, index) => {
+              const live = liveRef.current;
+              if (live)
+                finish(live, {
+                  status: "error",
+                  error: `Rank ${index} crashed: ${message}`,
+                  tEnd: now(),
+                });
+            },
+          },
         );
-        worker.addEventListener("error", (e) => {
-          const live = liveRef.current;
-          if (live)
-            finish(live, { status: "error", error: e.message || "A worker crashed.", tEnd: now() });
-        });
-        pool.push({ worker, ready });
       }
-      return Promise.all(pool.slice(0, size).map((p) => p.ready));
+      return poolRef.current.ensure(size);
     },
     [finish, handleRankMessage],
   );
@@ -427,54 +442,53 @@ export function useMpiLab() {
 
   const loadSalFile = useCallback(async (file: File | null) => {
     if (!file) {
-      setDict({ status: "loading", source: "gazetteer", name: "gazetteer.json", entries: [] });
+      setDict(emptyDict("loading", "gazetteer", "gazetteer.json"));
       try {
         const res = await fetch("/data/gazetteer.json");
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const g = (await res.json()) as { dict: Record<string, string> };
-        setDict({
-          status: "ready",
-          source: "gazetteer",
-          name: "gazetteer.json",
-          entries: Object.entries(g.dict),
-        });
+        setDict(readyDict("gazetteer", "gazetteer.json", Object.entries(g.dict)));
       } catch (err) {
-        setDict({
-          status: "error",
-          source: "gazetteer",
-          name: "gazetteer.json",
-          entries: [],
-          message: `Could not load the place gazetteer (${err instanceof Error ? err.message : String(err)}).`,
-        });
+        setDict(
+          emptyDict(
+            "error",
+            "gazetteer",
+            "gazetteer.json",
+            `Could not load the place gazetteer (${err instanceof Error ? err.message : String(err)}).`,
+          ),
+        );
       }
       return;
     }
-    setDict({ status: "loading", source: "sal", name: file.name, entries: [] });
+    setDict(emptyDict("loading", "sal", file.name));
     try {
       const sal = JSON.parse(await file.text()) as Record<string, SalEntry>;
       const entries = [...processSalV1(sal).entries()];
       if (entries.length === 0) throw new Error("no entries found");
-      setDict({ status: "ready", source: "sal", name: file.name, entries });
+      setDict(readyDict("sal", file.name, entries));
     } catch (err) {
-      setDict({
-        status: "error",
-        source: "sal",
-        name: file.name,
-        entries: [],
-        message: `${file.name} is not a sal.json-style object (${err instanceof Error ? err.message : String(err)}).`,
-      });
+      setDict(
+        emptyDict(
+          "error",
+          "sal",
+          file.name,
+          `${file.name} is not a sal.json-style object (${err instanceof Error ? err.message : String(err)}).`,
+        ),
+      );
     }
   }, []);
 
   // ── runs ───────────────────────────────────────────────────────────────────
   const startRun = useCallback(
     async (size: number): Promise<RunView | null> => {
-      if (source.status !== "ready" || dict.status !== "ready" || liveRef.current) return null;
+      if (source.status !== "ready" || dict.status !== "ready" || activeRef.current !== null)
+        return null;
       const file = source.file;
+      const key = runKey(file.id, dict);
       const id = ++runSeq.current;
       const placeholder = (status: RunView["status"], error?: string): RunView => ({
         id,
-        fileId: file.id,
+        key,
         size,
         status,
         t0: now(),
@@ -497,11 +511,41 @@ export function useMpiLab() {
         return v;
       }
 
-      setRun(placeholder("warming"));
-      const [doubleCountRanks] = await Promise.all([
-        findDoubleCountRanks(file.blob, start),
-        ensurePool(size),
-      ]);
+      activeRef.current = id;
+      const warming = placeholder("warming");
+      setRun(warming);
+      // Only touch the display if it still shows this run (a newer one may have started).
+      const settle = (v: RunView) => {
+        setRun((prev) => (prev && prev.id !== id ? prev : v));
+        return v;
+      };
+
+      let doubleCountRanks: number[];
+      try {
+        [doubleCountRanks] = await Promise.all([
+          findDoubleCountRanks(file.blob, start),
+          ensurePool(size),
+        ]);
+      } catch (err) {
+        if (activeRef.current !== id || err instanceof PoolTerminatedError) {
+          if (activeRef.current === id) activeRef.current = null;
+          return settle({ ...warming, status: "cancelled", tEnd: now() });
+        }
+        activeRef.current = null;
+        terminatePool();
+        return settle({
+          ...warming,
+          status: "error",
+          error: err instanceof Error ? err.message : String(err),
+          tEnd: now(),
+        });
+      }
+      // Stopped while the workers were starting (or the pool was replaced).
+      const pool = poolRef.current;
+      if (activeRef.current !== id || !pool || pool.size < size) {
+        if (activeRef.current === id) activeRef.current = null;
+        return settle({ ...warming, status: "cancelled", tEnd: now() });
+      }
 
       const ranks: RankView[] = start.map((s, rank) => ({
         rank,
@@ -517,7 +561,7 @@ export function useMpiLab() {
       return new Promise<RunView>((resolve) => {
         const view: RunView = {
           id,
-          fileId: file.id,
+          key,
           size,
           status: "running",
           t0: now(),
@@ -537,18 +581,28 @@ export function useMpiLab() {
             end: end[rank],
             dict: dict.entries,
           };
-          poolRef.current[rank].worker.postMessage(req);
+          pool.worker(rank)!.postMessage(req);
         }
       });
     },
-    [dict, ensurePool, source],
+    [dict, ensurePool, source, terminatePool],
   );
 
   const cancel = useCallback(() => {
     cancelSweep.current = true;
     const live = liveRef.current;
+    const pending = activeRef.current;
+    activeRef.current = null;
     terminatePool();
     if (live) finish(live, { status: "cancelled", tEnd: now() });
+    else if (pending !== null)
+      // Still warming up: startRun is awaiting its workers and will also settle
+      // as cancelled, but show it straight away.
+      setRun((prev) =>
+        prev && prev.id === pending && prev.status === "warming"
+          ? { ...prev, status: "cancelled", tEnd: now() }
+          : prev,
+      );
   }, [finish, terminatePool]);
 
   const sweep = useCallback(
@@ -573,9 +627,14 @@ export function useMpiLab() {
     setHistory([]);
   }, []);
 
+  const key =
+    source.status === "ready" && dict.status === "ready" ? runKey(source.file.id, dict) : null;
+
   return {
     source,
     dict,
+    /** runKey of the current file + dictionary (null until both are ready). */
+    key,
     run,
     history,
     sweeping,

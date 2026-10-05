@@ -8,7 +8,7 @@ import { RankMonitor } from "@/components/lab/rank-monitor";
 import { RunControls } from "@/components/lab/run-controls";
 import { SpeedupPanel } from "@/components/lab/speedup-panel";
 import { useMpiLab } from "@/hooks/use-mpi-lab";
-import { sweepSizes } from "@/lib/lab/runs";
+import { checkOutput, sweepSizes } from "@/lib/lab/runs";
 
 export function MpiLab() {
   const lab = useMpiLab();
@@ -17,9 +17,11 @@ export function MpiLab() {
   const running = lab.run?.status === "running" || lab.run?.status === "warming";
   const busy = running || lab.sweeping;
   const ready = lab.source.status === "ready" && lab.dict.status === "ready";
-  const fileId = lab.source.status === "ready" ? lab.source.file.id : null;
   const fileBytes = lab.source.status === "ready" ? lab.source.file.bytes : null;
-  const currentRun = lab.run && lab.run.fileId === fileId ? lab.run : null;
+  // Runs belong to one file + dictionary; switching either starts a fresh comparison.
+  const currentRun = lab.run && lab.run.key === lab.key ? lab.run : null;
+  const record = currentRun ? lab.history.find((h) => h.id === currentRun.id) : undefined;
+  const check = record ? checkOutput(record, lab.history) : null;
 
   return (
     <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
@@ -63,7 +65,7 @@ export function MpiLab() {
               </span>
             )}
           </div>
-          <RankMonitor run={currentRun} fileBytes={fileBytes} />
+          <RankMonitor run={currentRun} check={check} fileBytes={fileBytes} />
         </section>
 
         <div className="grid gap-5 xl:grid-cols-2">
@@ -85,7 +87,7 @@ export function MpiLab() {
             </h2>
             <SpeedupPanel
               history={lab.history}
-              fileId={fileId}
+              runKey={lab.key}
               maxWorkers={lab.maxWorkers}
               onClear={lab.clearHistory}
             />

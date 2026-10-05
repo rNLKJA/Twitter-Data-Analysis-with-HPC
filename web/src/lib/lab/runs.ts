@@ -56,9 +56,43 @@ export function resultsFingerprint(r: TaskResults): string {
   ].join("\n");
 }
 
+/**
+ * Which runs are comparable: the same input file AND the same place
+ * dictionary (a different sal.json legitimately changes Tasks 2 and 3).
+ */
+export function runKey(fileId: string, dict: DictIdentity): string {
+  return `${fileId}|${dict.source}:${dict.name}:${dict.hash}`;
+}
+
+export interface DictIdentity {
+  source: string;
+  name: string;
+  /** dictHash(entries), computed once when the dictionary loads. */
+  hash: string;
+}
+
+/** FNV-1a over the dictionary's entries in order: cheap, and enough to tell two sal.json files apart. */
+export function dictHash(entries: ReadonlyArray<readonly [string, string]>): string {
+  let h = 0x811c9dc5;
+  const mix = (text: string) => {
+    for (let i = 0; i < text.length; i++) {
+      h ^= text.charCodeAt(i);
+      h = Math.imul(h, 0x01000193);
+    }
+  };
+  for (const [k, v] of entries) {
+    mix(k);
+    mix("\u0000");
+    mix(v);
+    mix("\u0001");
+  }
+  return `${entries.length}-${(h >>> 0).toString(16).padStart(8, "0")}`;
+}
+
 export interface RunRecord {
   id: number;
-  fileId: string;
+  /** runKey(file, dictionary): only runs with the same key are compared or fitted together. */
+  key: string;
   size: number;
   wallMs: number;
   /** Slowest rank's scan time: the parallel part. */
@@ -68,11 +102,50 @@ export interface RunRecord {
   doubleCounts: number;
 }
 
-/** Best (minimum) wall-clock per worker count for one file. */
-export function bestTimes(history: readonly RunRecord[], fileId: string): Map<number, number> {
+/**
+ * The run every other run with the same key is checked against: the first
+ * one with no double-counted tweet. (A 1-rank run never double-counts, so
+ * running 1 rank always yields a baseline.) Using simply the first run would
+ * make a run that hit the boundary quirk the reference and flag the correct
+ * runs after it as different.
+ */
+export function cleanBaseline(history: readonly RunRecord[], key: string): RunRecord | undefined {
+  return history.find((h) => h.key === key && h.doubleCounts === 0);
+}
+
+export type OutputCheck =
+  /** This run is the clean baseline. */
+  | { kind: "baseline" }
+  /** Same three result files as the baseline. */
+  | { kind: "identical"; baselineId: number }
+  /** Different, and fully explained by this run's own double-counted tweets. */
+  | { kind: "quirk"; baselineId: number | null; extra: number }
+  /** Different with no double count to explain it: a real discrepancy. */
+  | { kind: "differs"; baselineId: number };
+
+/** How `run`'s output compares with the clean baseline for its key. */
+export function checkOutput(run: RunRecord, history: readonly RunRecord[]): OutputCheck {
+  const baseline = cleanBaseline(history, run.key);
+  if (!baseline) {
+    // No clean run yet. A run that double-counted cannot be one; anything else
+    // would itself be the baseline once it is in the history.
+    return run.doubleCounts > 0
+      ? { kind: "quirk", baselineId: null, extra: run.doubleCounts }
+      : { kind: "baseline" };
+  }
+  if (baseline.id === run.id) return { kind: "baseline" };
+  if (run.fingerprint === baseline.fingerprint)
+    return { kind: "identical", baselineId: baseline.id };
+  if (run.doubleCounts > 0)
+    return { kind: "quirk", baselineId: baseline.id, extra: run.doubleCounts };
+  return { kind: "differs", baselineId: baseline.id };
+}
+
+/** Best (minimum) wall-clock per worker count for one key. */
+export function bestTimes(history: readonly RunRecord[], key: string): Map<number, number> {
   const best = new Map<number, number>();
   for (const r of history) {
-    if (r.fileId !== fileId) continue;
+    if (r.key !== key) continue;
     const prev = best.get(r.size);
     if (prev === undefined || r.wallMs < prev) best.set(r.size, r.wallMs);
   }
@@ -87,8 +160,8 @@ export interface SpeedupSummary {
   serialFraction: number | null;
 }
 
-export function summariseSpeedup(history: readonly RunRecord[], fileId: string): SpeedupSummary {
-  const best = bestTimes(history, fileId);
+export function summariseSpeedup(history: readonly RunRecord[], key: string): SpeedupSummary {
+  const best = bestTimes(history, key);
   const t1Ms = best.get(1) ?? null;
   const points = [...best.entries()]
     .sort((a, b) => a[0] - b[0])

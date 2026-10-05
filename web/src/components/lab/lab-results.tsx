@@ -3,7 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { TaskResults } from "@/lib/lab/runs";
 import { formatInt, formatPct } from "@/lib/format";
-import { gccLabel } from "@/lib/gcc";
+import { gccInfo, gccLabel } from "@/lib/gcc";
 
 export function LabResults({ results, size }: { results: TaskResults | undefined; size: number }) {
   if (!results) {
@@ -59,6 +59,7 @@ export function LabResults({ results, size }: { results: TaskResults | undefined
         <p className="mb-2 text-xs text-muted-foreground">
           Tweets per Greater Capital City, reduced on rank {host(2)}.
         </p>
+        {results.task2.length === 0 && <NoCityTweets />}
         <table className="w-full text-sm">
           <thead className="sr-only">
             <tr>
@@ -73,7 +74,7 @@ export function LabResults({ results, size }: { results: TaskResults | undefined
               .map((r) => (
                 <tr key={r.gcc}>
                   <th scope="row" className="py-1 pr-3 text-left font-normal whitespace-nowrap">
-                    {gccLabel(r.gcc).replace("Greater ", "")}
+                    {gccInfo(r.gcc)?.city ?? gccLabel(r.gcc)}
                     <span className="ml-1.5 font-mono text-[0.65rem] text-muted-foreground">
                       {r.gcc}
                     </span>
@@ -103,6 +104,7 @@ export function LabResults({ results, size }: { results: TaskResults | undefined
           Authors in the most capital cities, reduced on rank {host(3)}, in the original task3.csv
           format.
         </p>
+        {results.task3.rows.length === 0 && <NoCityTweets crash />}
         <ol className="space-y-1.5">
           {results.task3.rows.map((r) => (
             <li
@@ -121,5 +123,22 @@ export function LabResults({ results, size }: { results: TaskResults | undefined
         </ol>
       </TabsContent>
     </Tabs>
+  );
+}
+
+/** No tweet resolved to a capital city (e.g. an upload with foreign places only). */
+function NoCityTweets({ crash = false }: { crash?: boolean }) {
+  return (
+    <p className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
+      No tweet in this file resolved to a Greater Capital City, so there is nothing to count here.
+      {crash && (
+        <>
+          {" "}
+          The 2023 code does not survive this case: after writing task3_1.csv it stops with a polars
+          ComputeError (the empty per-author table&apos;s join key has the wrong type), so task3.csv
+          is never written. The port shows the empty result instead.
+        </>
+      )}
+    </p>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleCheck, CircleX, Trash2, TriangleAlert } from "lucide-react";
+import { CircleCheck, CircleDot, CircleX, Trash2, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 
 import { ScalingChart, ScalingLegend, type MeasuredPoint } from "@/components/charts/scaling-chart";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { amdahlLimit, fitSerialFraction } from "@/lib/amdahl";
 import { BENCHMARKS } from "@/lib/data/original";
 import { formatMs, formatPct } from "@/lib/format";
-import { summariseSpeedup, type RunRecord } from "@/lib/lab/runs";
+import { checkOutput, summariseSpeedup, type RunRecord } from "@/lib/lab/runs";
 
 const SPARTAN_T1 = BENCHMARKS.find((b) => b.cores === 1)!.seconds;
 const SPARTAN_F = fitSerialFraction(
@@ -17,24 +17,24 @@ const SPARTAN_F = fitSerialFraction(
 
 export function SpeedupPanel({
   history,
-  fileId,
+  runKey,
   maxWorkers,
   onClear,
 }: {
   history: RunRecord[];
-  fileId: string | null;
+  /** Current file + dictionary; only its runs are listed and fitted. */
+  runKey: string | null;
   maxWorkers: number;
   onClear: () => void;
 }) {
   const [hoverN, setHoverN] = useState<number | null>(null);
-  const runs = fileId ? history.filter((h) => h.fileId === fileId) : [];
-  const summary = fileId ? summariseSpeedup(history, fileId) : null;
-  const baseline = runs[0];
+  const runs = runKey ? history.filter((h) => h.key === runKey) : [];
+  const summary = runKey ? summariseSpeedup(history, runKey) : null;
 
   if (!summary || runs.length === 0) {
     return (
       <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-        Runs on the current file are collected here. Use{" "}
+        Runs on the current file and place dictionary are collected here. Use{" "}
         <span className="font-medium text-foreground">Sweep</span>, or run 1 rank and then a few
         larger counts, to fit Amdahl&apos;s law to your own machine.
       </p>
@@ -54,7 +54,7 @@ export function SpeedupPanel({
     <div className="space-y-4">
       {summary.t1Ms === null ? (
         <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-          Add a 1-rank run to get the baseline that speedup is measured against.
+          Add a 1-rank run: speedup is measured against its time.
         </p>
       ) : (
         <>
@@ -140,8 +140,7 @@ export function SpeedupPanel({
             </thead>
             <tbody>
               {[...runs].reverse().map((r) => {
-                const same = r.fingerprint === baseline.fingerprint;
-                const extra = r.doubleCounts - baseline.doubleCounts;
+                const check = checkOutput(r, history);
                 return (
                   <tr key={r.id} className="border-t border-border/60">
                     <td className="num px-2.5 py-1.5 font-mono">#{r.id}</td>
@@ -151,20 +150,33 @@ export function SpeedupPanel({
                       {summary.t1Ms === null ? "–" : `${(summary.t1Ms / r.wallMs).toFixed(2)}×`}
                     </td>
                     <td className="px-2.5 py-1.5 text-right">
-                      {same ? (
-                        <span className="inline-flex items-center gap-1 text-success">
+                      {check.kind === "baseline" ? (
+                        <span
+                          className="inline-flex items-center gap-1 text-muted-foreground"
+                          title="The first run with no double-counted tweet; the others are checked against it"
+                        >
+                          <CircleDot className="size-3.5" aria-hidden /> baseline
+                        </span>
+                      ) : check.kind === "identical" ? (
+                        <span
+                          className="inline-flex items-center gap-1 text-success"
+                          title={`Same three result files as run #${check.baselineId}`}
+                        >
                           <CircleCheck className="size-3.5" aria-hidden /> identical
                         </span>
-                      ) : extra !== 0 ? (
+                      ) : check.kind === "quirk" ? (
                         <span
                           className="inline-flex items-center gap-1 text-caution"
                           title="A chunk boundary inside an _id line's indentation made two ranks count the same tweet, exactly as the original does"
                         >
-                          <TriangleAlert className="size-3.5" aria-hidden /> {extra > 0 ? "+" : ""}
-                          {extra} tweet{Math.abs(extra) === 1 ? "" : "s"}
+                          <TriangleAlert className="size-3.5" aria-hidden /> +{check.extra} tweet
+                          {check.extra === 1 ? "" : "s"}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-destructive">
+                        <span
+                          className="inline-flex items-center gap-1 text-destructive"
+                          title={`Differs from run #${check.baselineId} with no boundary quirk to explain it`}
+                        >
                           <CircleX className="size-3.5" aria-hidden /> differs
                         </span>
                       )}

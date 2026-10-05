@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vitest";
 
 import gazetteer from "../../../public/data/gazetteer.json";
+import { idIndentBoundaryRanks } from "../cruncher/boundary";
+import { splitFileIntoChunks } from "../cruncher/chunks";
 import { runPipeline } from "../cruncher/pipeline";
 import { generateSyntheticFile } from "../synth/generator";
 import {
   bestTimes,
+  checkOutput,
+  cleanBaseline,
+  dictHash,
   resultsFingerprint,
+  runKey,
   summariseSpeedup,
   sweepSizes,
   type RunRecord,
@@ -30,9 +36,9 @@ describe("resultsFingerprint", () => {
 });
 
 describe("run history", () => {
-  const rec = (id: number, size: number, wallMs: number, fileId = "a"): RunRecord => ({
+  const rec = (id: number, size: number, wallMs: number, key = "a"): RunRecord => ({
     id,
-    fileId,
+    key,
     size,
     wallMs,
     scanMs: wallMs * 0.9,
@@ -70,6 +76,103 @@ describe("run history", () => {
     expect(s.t1Ms).toBeNull();
     expect(s.serialFraction).toBeNull();
     expect(s.points[0].speedup).toBeNull();
+  });
+});
+
+describe("checkOutput: the baseline is the first clean run", () => {
+  const rec = (
+    id: number,
+    size: number,
+    fingerprint: string,
+    doubleCounts = 0,
+    key = "f|d",
+  ): RunRecord => ({
+    id,
+    key,
+    size,
+    wallMs: 100,
+    scanMs: 90,
+    fingerprint,
+    doubleCounts,
+  });
+
+  it("6 ranks (double count) → 8 → 1: the 6-rank run is the odd one out, not the correct ones", () => {
+    const history = [rec(1, 6, "plus-one", 1), rec(2, 8, "clean"), rec(3, 1, "clean")];
+    expect(cleanBaseline(history, "f|d")?.id).toBe(2);
+    expect(checkOutput(history[0], history)).toEqual({ kind: "quirk", baselineId: 2, extra: 1 });
+    expect(checkOutput(history[1], history)).toEqual({ kind: "baseline" });
+    expect(checkOutput(history[2], history)).toEqual({ kind: "identical", baselineId: 2 });
+  });
+
+  it("6 → 9 ranks, each double-counting a different tweet: both explained, no false alarm", () => {
+    const history = [rec(1, 6, "plus-tweet-a", 1), rec(2, 9, "plus-tweet-b", 1)];
+    expect(cleanBaseline(history, "f|d")).toBeUndefined();
+    expect(checkOutput(history[0], history)).toEqual({ kind: "quirk", baselineId: null, extra: 1 });
+    expect(checkOutput(history[1], history)).toEqual({ kind: "quirk", baselineId: null, extra: 1 });
+    // a later 1-rank run becomes the baseline and both earlier runs are re-labelled against it
+    const later = [...history, rec(3, 1, "clean")];
+    expect(checkOutput(later[0], later)).toEqual({ kind: "quirk", baselineId: 3, extra: 1 });
+    expect(checkOutput(later[1], later)).toEqual({ kind: "quirk", baselineId: 3, extra: 1 });
+    expect(checkOutput(later[2], later)).toEqual({ kind: "baseline" });
+  });
+
+  it("6 → 1: the 1-rank run is the baseline, never '-1 tweet'", () => {
+    const history = [rec(1, 6, "plus-one", 1), rec(2, 1, "clean")];
+    expect(checkOutput(history[1], history)).toEqual({ kind: "baseline" });
+    expect(checkOutput(history[0], history)).toEqual({ kind: "quirk", baselineId: 2, extra: 1 });
+  });
+
+  it("flags a clean run that differs from the clean baseline", () => {
+    const history = [rec(1, 1, "clean"), rec(2, 4, "something-else")];
+    expect(checkOutput(history[1], history)).toEqual({ kind: "differs", baselineId: 1 });
+  });
+
+  it("only compares runs with the same file and dictionary", () => {
+    const history = [
+      rec(1, 1, "gazetteer-answer", 0, "f|gaz"),
+      rec(2, 1, "sal-answer", 0, "f|sal"),
+    ];
+    expect(checkOutput(history[1], history)).toEqual({ kind: "baseline" });
+    expect(bestTimes(history, "f|sal").size).toBe(1);
+  });
+
+  it("on the real port: 27 and 39 ranks double-count, 1 and 4 ranks match", () => {
+    const bytes = generateSyntheticFile({ seed: 2023, tweets: 400 });
+    const history: RunRecord[] = [];
+    for (const [id, size] of [27, 39, 1, 4].entries()) {
+      const r = runPipeline(bytes, dict, size);
+      const doubleCounts = idIndentBoundaryRanks(
+        bytes,
+        splitFileIntoChunks(bytes.length, size).start,
+      ).length;
+      history.push({
+        id: id + 1,
+        key: "synthetic",
+        size,
+        wallMs: 1,
+        scanMs: 1,
+        fingerprint: resultsFingerprint(r),
+        doubleCounts,
+      });
+    }
+    expect(history.map((h) => h.doubleCounts)).toEqual([1, 1, 0, 0]);
+    expect(checkOutput(history[2], history)).toEqual({ kind: "baseline" });
+    expect(checkOutput(history[3], history)).toEqual({ kind: "identical", baselineId: 3 });
+    for (const h of history.slice(0, 2)) {
+      expect(checkOutput(h, history).kind).not.toBe("differs");
+    }
+  });
+});
+
+describe("runKey", () => {
+  it("separates dictionaries with the same name but different entries", () => {
+    const a = dictHash([["melbourne", "2gmel"]]);
+    const b = dictHash([["melbourne", "1gsyd"]]);
+    expect(a).not.toBe(b);
+    expect(runKey("file", { source: "sal", name: "sal.json", hash: a })).not.toBe(
+      runKey("file", { source: "sal", name: "sal.json", hash: b }),
+    );
+    expect(dictHash([["melbourne", "2gmel"]])).toBe(a);
   });
 });
 

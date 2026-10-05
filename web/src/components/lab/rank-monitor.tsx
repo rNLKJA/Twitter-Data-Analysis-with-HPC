@@ -15,6 +15,7 @@ import type { RankView, RunView } from "@/hooks/use-mpi-lab";
 import { linearScale, niceStep } from "@/lib/chart";
 import { BENCHMARKS, DATASET } from "@/lib/data/original";
 import { formatBytes, formatInt, formatMs } from "@/lib/format";
+import type { OutputCheck } from "@/lib/lab/runs";
 import { cn } from "@/lib/utils";
 import { now } from "@/workers/protocol";
 
@@ -36,6 +37,12 @@ function useTicker(active: boolean, t0: number) {
   return elapsed;
 }
 
+/** "T1", "T2+T3" or "T1–T3" (a single rank hosts all three tasks). */
+function taskList(r: RankView): string {
+  const ids = r.tasks.map((t) => t.task);
+  return ids.length === 3 ? "T1–T3" : ids.map((t) => `T${t}`).join("+");
+}
+
 function phaseLabel(r: RankView): string {
   switch (r.phase) {
     case "queued":
@@ -45,13 +52,24 @@ function phaseLabel(r: RankView): string {
     case "sent":
       return r.tasks.length ? "waiting" : "sent partials";
     case "reducing":
-      return `reducing ${r.tasks.map((t) => `T${t.task}`).join("+")}`;
+      return `reducing ${taskList(r)}`;
     case "done":
-      return r.tasks.length ? `wrote ${r.tasks.map((t) => `task${t.task}`).join(", ")}` : "done";
+      return r.tasks.length ? `wrote ${taskList(r)}` : "done";
+    case "failed":
+      return "raised";
   }
 }
 
-export function RankMonitor({ run, fileBytes }: { run: RunView | null; fileBytes: number | null }) {
+export function RankMonitor({
+  run,
+  check,
+  fileBytes,
+}: {
+  run: RunView | null;
+  /** How this run's output compares with the clean baseline (null until it finishes). */
+  check: OutputCheck | null;
+  fileBytes: number | null;
+}) {
   const live = run?.status === "running" || run?.status === "warming";
   const elapsed = useTicker(!!live, run?.t0 ?? 0);
 
@@ -97,7 +115,7 @@ export function RankMonitor({ run, fileBytes }: { run: RunView | null; fileBytes
         />
       </dl>
 
-      <StatusLine run={run} />
+      <StatusLine run={run} check={check} />
 
       {run.ranks.length > 0 && <Lanes run={run} live={!!live} elapsed={elapsed} />}
 
@@ -127,7 +145,7 @@ function Stat({ label, value, accent }: { label: string; value: string; accent?:
   );
 }
 
-function StatusLine({ run }: { run: RunView }) {
+function StatusLine({ run, check }: { run: RunView; check: OutputCheck | null }) {
   if (run.status === "error") {
     return (
       <p
@@ -135,7 +153,16 @@ function StatusLine({ run }: { run: RunView }) {
         role="alert"
       >
         <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
-        <span>{run.error}</span>
+        <span>
+          {run.error}
+          {run.error?.includes("UnicodeDecodeError") && (
+            <span className="mt-1 block text-foreground">
+              The 2023 code fails here too: it decodes every line it reads strictly, so this rank
+              raises and the whole MPI job aborts. Any rank count whose chunks all start on a
+              character boundary works.
+            </span>
+          )}
+        </span>
       </p>
     );
   }
@@ -157,26 +184,39 @@ function StatusLine({ run }: { run: RunView }) {
     );
   }
   const extra = run.doubleCountRanks.length;
-  const explained = run.matchesBaseline === false && extra !== (run.baselineDoubleCounts ?? 0);
   return (
     <div className="space-y-2">
-      <p className="flex flex-wrap items-center gap-2 text-sm" role="status">
-        <CircleCheck className="size-4 text-success" aria-hidden />
+      <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm" role="status">
+        {check?.kind === "differs" ? (
+          <CircleAlert className="size-4 text-destructive" aria-hidden />
+        ) : (
+          <CircleCheck className="size-4 text-success" aria-hidden />
+        )}
         <span>Run #{run.id} finished.</span>
-        {run.matchesBaseline === null ? (
+        {check === null ? null : check.kind === "baseline" ? (
           <span className="text-muted-foreground">
-            It is the baseline the next runs on this file are checked against.
+            No tweet was counted twice, so it is the baseline the other runs on this file are
+            checked against.
           </span>
-        ) : run.matchesBaseline ? (
+        ) : check.kind === "identical" ? (
           <span className="text-muted-foreground">
-            All three result files are identical to run #{run.baselineRunId}&apos;s.
+            All three result files are identical to run #{check.baselineId}&apos;s, the baseline.
           </span>
-        ) : explained ? (
+        ) : check.kind === "quirk" && check.baselineId !== null ? (
           <span className="text-muted-foreground">
-            Results differ from run #{run.baselineRunId} because of the boundary quirk below.
+            It differs from run #{check.baselineId} (the baseline) only by the{" "}
+            {check.extra === 1 ? "tweet" : `${check.extra} tweets`} counted twice, explained below.
+          </span>
+        ) : check.kind === "quirk" ? (
+          <span className="text-muted-foreground">
+            It counted {check.extra === 1 ? "a tweet" : `${check.extra} tweets`} twice (below), so
+            it cannot be the baseline. A 1-rank run never double-counts; run one to get a baseline.
           </span>
         ) : (
-          <span className="text-destructive">Results differ from run #{run.baselineRunId}.</span>
+          <span className="text-destructive">
+            Results differ from run #{check.baselineId}, the baseline, and no boundary quirk
+            explains it.
+          </span>
         )}
       </p>
       {extra > 0 && (
@@ -234,7 +274,7 @@ function Lanes({ run, live, elapsed }: { run: RunView; live: boolean; elapsed: n
           return (
             <li
               key={r.rank}
-              className="grid grid-cols-[3.25rem_1fr] items-center gap-x-3 sm:grid-cols-[3.25rem_1fr_9.5rem]"
+              className="grid grid-cols-[3.25rem_1fr] items-center gap-x-3 sm:grid-cols-[3.25rem_1fr_10.5rem]"
             >
               <span className="font-mono text-xs">
                 rank <span className="text-primary">{r.rank}</span>
@@ -273,27 +313,35 @@ function Lanes({ run, live, elapsed }: { run: RunView; live: boolean; elapsed: n
                         width: `${Math.max(0.5, x(scanE) - x(scanS))}%`,
                       }}
                     />
-                    {r.tasks.map((t) =>
-                      t.start !== undefined && t.end !== undefined ? (
+                    {r.tasks.map((t) => {
+                      if (t.start === undefined || t.end === undefined) return null;
+                      const width = Math.max(1.2, x(t.end - run.t0) - x(t.start - run.t0));
+                      // keep tiny reduce bars inside the lane instead of clipping them
+                      const left = Math.min(x(t.start - run.t0), 100 - width);
+                      return (
                         <div
                           key={t.task}
-                          className="absolute inset-y-0 flex items-center justify-center rounded-[4px] border-l-2 border-card bg-series-2 font-mono text-[0.6rem] text-white"
-                          style={{
-                            left: `${x(t.start - run.t0)}%`,
-                            width: `${Math.max(1.2, x(t.end - run.t0) - x(t.start - run.t0))}%`,
-                          }}
+                          className="absolute inset-y-0 flex items-center justify-center overflow-hidden rounded-[4px] border-l-2 border-card bg-series-2 font-mono text-[0.6rem] text-white"
+                          style={{ left: `${left}%`, width: `${width}%` }}
                           title={`Task ${t.task}: ${formatMs(t.end - t.start)}`}
                         >
-                          <span className="hidden px-0.5 sm:inline">T{t.task}</span>
+                          {/* the label only where the bar is wide enough to hold it */}
+                          {width >= 5 && <span className="hidden px-0.5 sm:inline">T{t.task}</span>}
                         </div>
-                      ) : null,
-                    )}
+                      );
+                    })}
                   </>
                 )}
               </div>
-              <span className="col-start-2 flex items-center justify-between gap-2 font-mono text-[0.68rem] text-muted-foreground sm:col-start-3">
+              <span className="col-start-2 flex items-center justify-between gap-2 font-mono text-[0.68rem] whitespace-nowrap text-muted-foreground sm:col-start-3">
                 <span className="num">{formatInt(r.tweets)} tw</span>
-                <span className={cn("truncate", r.phase === "scanning" && "text-primary")}>
+                <span
+                  className={cn(
+                    "truncate",
+                    r.phase === "scanning" && "text-primary",
+                    r.phase === "failed" && "text-destructive",
+                  )}
+                >
                   {phaseLabel(r)}
                 </span>
               </span>
@@ -303,13 +351,20 @@ function Lanes({ run, live, elapsed }: { run: RunView; live: boolean; elapsed: n
       </ol>
       {done && (
         <div
-          className="mt-1 grid grid-cols-[3.25rem_1fr] gap-x-3 sm:grid-cols-[3.25rem_1fr_9.5rem]"
+          className="mt-1 grid grid-cols-[3.25rem_1fr] gap-x-3 sm:grid-cols-[3.25rem_1fr_10.5rem]"
           aria-hidden
         >
           <span />
-          <div className="relative h-4 font-mono text-[0.6rem] text-muted-foreground">
-            {ticks.map((t) => (
-              <span key={t} className="absolute -translate-x-1/2" style={{ left: `${x(t)}%` }}>
+          <div className="relative h-4 font-mono text-[0.6rem] whitespace-nowrap text-muted-foreground">
+            {ticks.map((t, i) => (
+              <span
+                key={t}
+                className={cn(
+                  "absolute",
+                  i === 0 ? "" : x(t) > 92 ? "-translate-x-full" : "-translate-x-1/2",
+                )}
+                style={{ left: `${x(t)}%` }}
+              >
                 {formatMs(t)}
               </span>
             ))}
