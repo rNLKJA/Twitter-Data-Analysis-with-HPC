@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
+import { AiSettingsButton } from "@/components/ai/ai-settings-button";
 import { GitHubMark, LogoMark } from "@/components/layout/brand";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -47,7 +48,7 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        <nav aria-label="Main" className="ml-auto hidden items-center gap-1 md:flex">
+        <nav aria-label="Main" className="ml-auto hidden items-center gap-0.5 lg:flex">
           {NAV.map((item) => {
             const active = isActive(pathname, item.href);
             return (
@@ -56,7 +57,7 @@ export function SiteHeader() {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground",
+                  "relative rounded-md px-2.5 py-1.5 text-sm whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground",
                   active && "text-foreground",
                 )}
               >
@@ -64,7 +65,7 @@ export function SiteHeader() {
                 {active && (
                   <span
                     aria-hidden
-                    className="absolute inset-x-3 -bottom-[0.6rem] h-px bg-primary"
+                    className="absolute inset-x-2.5 -bottom-[0.6rem] h-px bg-primary"
                   />
                 )}
               </Link>
@@ -72,7 +73,7 @@ export function SiteHeader() {
           })}
         </nav>
 
-        <div className="ml-auto flex items-center gap-1 md:ml-2">
+        <div className="ml-auto flex items-center gap-1 lg:ml-2">
           <Button variant="ghost" size="icon" asChild>
             <a
               href={SITE.repo}
@@ -83,13 +84,14 @@ export function SiteHeader() {
               <GitHubMark className="size-4" />
             </a>
           </Button>
+          <AiSettingsButton />
           <ThemeToggle />
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden"
+                className="lg:hidden"
                 aria-label="Open navigation menu"
               >
                 <Menu aria-hidden />

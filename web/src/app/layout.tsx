@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { IBM_Plex_Sans, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 
+import { AiProvider } from "@/components/ai/ai-provider";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { ThemeProvider } from "@/components/layout/theme-provider";
@@ -43,6 +44,8 @@ export const metadata: Metadata = {
     "HPC",
     "Spartan",
     "Amdahl's law",
+    "bootstrap confidence intervals",
+    "LLM evaluation",
     "Web Workers",
     "COMP90024",
     "Twitter analytics",
@@ -79,15 +82,17 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
           disableTransitionOnChange
         >
           <TooltipProvider delayDuration={150}>
-            <div
-              aria-hidden
-              className="bg-grid pointer-events-none absolute inset-x-0 top-0 -z-10 h-[720px]"
-            />
-            <SiteHeader />
-            <main id="main" className="flex-1">
-              {children}
-            </main>
-            <SiteFooter />
+            <AiProvider>
+              <div
+                aria-hidden
+                className="bg-grid pointer-events-none absolute inset-x-0 top-0 -z-10 h-[720px]"
+              />
+              <SiteHeader />
+              <main id="main" className="flex-1">
+                {children}
+              </main>
+              <SiteFooter />
+            </AiProvider>
           </TooltipProvider>
         </ThemeProvider>
       </body>
