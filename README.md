@@ -13,7 +13,7 @@ on your own CPU cores in the browser.
 [![Original: Python + mpi4py](https://img.shields.io/badge/original-Python%20%2B%20mpi4py-3776AB?logo=python&logoColor=white)](./coursework)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
-**Live demo:** https://comp90024-spartan-twitter.vercel.app (deployment pending)
+**Live demo:** [comp90024-spartan-twitter.vercel.app](https://comp90024-spartan-twitter.vercel.app)
 
 </div>
 
