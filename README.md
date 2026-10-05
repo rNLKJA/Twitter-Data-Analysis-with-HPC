@@ -17,6 +17,91 @@ on your own CPU cores in the browser.
 
 </div>
 
+## Showcase
+
+<p align="center">
+  <img src="docs/showcase/the-results.gif" width="960" alt="The results dashboard: tweets per capital city on a map of Australia, the top tweeters, the city-hoppers heatmap and the raw result files, with a numbered caption for each step">
+</p>
+
+**[Take the guided tour →](https://comp90024-spartan-twitter.vercel.app/tour)** Three captioned walkthrough videos and every screenshot below,
+recorded from a production build of the site (`pnpm build && pnpm start`) by a reproducible Playwright script
+([`web/e2e/showcase.spec.ts`](web/e2e/showcase.spec.ts), run with `pnpm showcase` in `web/`) that also checks
+each step: the published numbers, the fitted serial fraction, an 8-rank run matching the 1-rank baseline, a complete
+benchmark. Inputs are seeded, so the same file and settings come back every time; timings are measured live and vary by
+machine. No real API key appears anywhere: the AI steps use a placeholder key and a mocked reply, labelled on screen.
+
+### Key features
+
+| | |
+| --- | --- |
+| <img src="docs/showcase/01-landing-light.png" alt="Landing page in light mode: the hero, a Slurm job card and the key numbers"><br>**Landing page.** Nine million tweets, eight cores: the project, its answers and its speedup. | <img src="docs/showcase/02-landing-dark.png" alt="Landing page in dark mode"><br>**Landing page, dark mode.** The same page in dark mode. |
+| <img src="docs/showcase/03-results-map.png" alt="Results page: tweets per Greater Capital City on a map of Australia and in a table"><br>**Results: capital cities.** Task 2 on a map of Australia, with the per-city table. | <img src="docs/showcase/04-results-authors.png" alt="Results page: heatmap of tweets per capital city for the top 10 city-hoppers"><br>**Results: authors.** Task 3's city-hoppers heatmap: each cell is a city's share of an author's tweets. |
+| <img src="docs/showcase/05-scaling-amdahl.png" alt="Scaling page: Amdahl's law explorer with serial-fraction and worker sliders, speedup and time charts"><br>**Scaling lab.** Amdahl's law fitted to the Spartan jobs, with sliders for f and n. | <img src="docs/showcase/06-lab-run.png" alt="MPI lab after an 8-rank run: per-rank scan and reduce timeline, identical to the 1-rank baseline"><br>**MPI in your browser.** 8 Web Worker ranks over a seeded synthetic file: scan, reduce, check. |
+| <img src="docs/showcase/07-lab-benchmark.png" alt="MPI lab benchmark: speedup with bootstrap error bars, fitted Amdahl curve and band"><br>**Benchmark with intervals.** Repeated, shuffled rounds: bootstrap CIs for speedup and the fitted f. | <img src="docs/showcase/08-how-it-works.png" alt="How it works: byte-range chunk explorer on the real file size"><br>**How it works.** Byte-range chunking on the real 18.7 GB file size, step by step. |
+| <img src="docs/showcase/09-methods.png" alt="Methods page: contents and the data provenance table"><br>**Methods.** Provenance, evaluation design, limitations, decision records and AI use. | <img src="docs/showcase/10-ai-settings.png" alt="AI settings dialog for bringing your own key"><br>**Bring your own key.** AI settings: Anthropic by default, the key stays in this browser. |
+| <img src="docs/showcase/11-ask-mocked-answer.png" alt="Ask the results with a mocked answer, labelled AI-generated and mocked, with cited rows and the automatic check"><br>**Ask the results (mocked reply).** A mocked answer for illustration: cited rows, automatic check, your review. | <img src="docs/showcase/12-mobile-landing.png" width="260" alt="Landing page on a phone"><br>**Mobile: landing.** The landing page at 390 px. |
+| <img src="docs/showcase/13-mobile-results.png" width="260" alt="Results map and table on a phone"><br>**Mobile: results.** The Task 2 map and table on a phone. | <img src="docs/showcase/14-mobile-lab.png" width="260" alt="MPI lab rank monitor on a phone"><br>**Mobile: MPI lab.** A run on 8 ranks, on a phone. |
+| **[More on /tour →](https://comp90024-spartan-twitter.vercel.app/tour)** Every screenshot in a lightbox, and the three videos with captions and transcripts. | |
+
+### Workflow walkthrough
+
+The numbered steps are the captions shown on screen. The videos on [/tour](https://comp90024-spartan-twitter.vercel.app/tour) play in real time with
+captions; the GIFs here are shortened (waits on the app and scrolls are cut, and they play at 1.25× speed).
+
+#### 1. The results (`/results`)
+
+The dashboard of the three answers the MPI program wrote on Spartan in 2023: tweets per capital city on a map, the top tweeters, the city-hoppers heatmap and the raw result files.
+
+Setup: No input needed: every number is transcribed from the 2023 submission. (The GIF at the top of this section.)
+
+1. Open Results: the three answers from the final Spartan run over 9,092,274 tweets
+2. Task 2: tweets per Greater Capital City, on a map of Australia and in a table
+3. Hover a city to highlight it on the map and in the table: Melbourne edges out Sydney
+4. Task 1: the ten most prolific authors, ties sharing a place
+5. Task 3: ten authors tweeted from all eight capitals; each cell is a city's share
+6. The three result files, laid out in main.py's format
+
+#### 2. Scaling lab (`/scaling`)
+
+The Spartan benchmark jobs, their speedup and Karp–Flatt serial fraction, and an Amdahl's law explorer fitted to the measured runs, with the serial-fraction slider dragged to ask “what if”.
+
+Setup: Final submission's jobs 46094405–07 (1 × 1, 1 × 8 and 2 × 4 cores, one run each); the explorer starts from the least-squares fit.
+
+<img src="docs/showcase/scaling-lab.gif" width="960" alt="Scaling lab: The Spartan benchmark jobs, their speedup and Karp–Flatt serial fraction, and an Amdahl's law explorer fitted to the measured runs, with the serial-fraction slider dragged to ask “what if”.">
+
+1. Open Scaling: the 1 × 1, 1 × 8 and 2 × 4-core Spartan jobs, one run each
+2. Speedup, efficiency and the Karp–Flatt serial fraction for every job
+3. Amdahl's law explorer: the serial fraction fitted to the 8-core runs, about 3.2%
+4. Drag the serial fraction f: the curve, the predictions and the ceiling follow
+5. Drag the workers n: predicted time and speedup at that core count
+6. Gustafson's law for contrast: the same f if the input grew with the cores
+7. Reset to the fit: one run per layout, so 3.2% is a point estimate with no interval
+
+#### 3. MPI in your browser (`/lab`)
+
+A seeded synthetic file crunched by the ported algorithm with one Web Worker per MPI rank, a repeated benchmark across worker counts with interval estimates, then the optional bring-your-own-key question answering, shown with a mocked reply (no real key is used).
+
+Setup: Seed 2023, 100,000 tweets. Benchmark: 1 warm-up and 5 timed rounds per worker count, round order seed 2023, bootstrap seed 90024; worker counts 1, 3, 4, 6, 8 and 10 on the 10-core recording machine (2 is skipped: the original cannot run on 2 ranks). Ask: a placeholder key and a mocked reply.
+
+<img src="docs/showcase/mpi-in-your-browser.gif" width="960" alt="MPI in your browser: A seeded synthetic file crunched by the ported algorithm with one Web Worker per MPI rank, a repeated benchmark across worker counts with interval estimates, then the optional bring-your-own-key question answering, shown with a mocked reply (no real key is used).">
+
+1. Open the MPI lab: one Web Worker per MPI rank, running the ported algorithm
+2. Generate the seeded synthetic file: seed 2023, 100,000 tweets in bigTwitter.json's layout
+3. Run on 1 rank first: the clean baseline, like the 1 node × 1 core job
+4. Run on 8 ranks: each scans its own byte range, then ranks 0, 1 and 2 reduce the tasks
+5. Same three result files as the 1-rank baseline; the answers from the task ranks
+6. Benchmark: 5 timed rounds per worker count after a warm-up, in shuffled order
+7. Speedup with nominal 95% bootstrap intervals, the fitted Amdahl curve and its band
+8. Per worker count: median time with an exact interval, efficiency and Karp–Flatt
+9. Ask the results: optional, answered only from the result tables, with your own key
+10. AI settings: the key stays in this browser and goes only to the provider
+11. For this demo: a placeholder key, never a real one; provider calls are intercepted
+12. A mocked answer, labelled AI-generated, with cited rows and an automatic check
+13. Accept it: the review is recorded in the AI audit log, with JSON and CSV export
+14. Forget key: the placeholder is removed from this browser
+
+Steps 11 to 13 show a **mocked AI response for illustration**: a placeholder key is typed, every request to the provider is intercepted in the browser, and the reply is written by the tour script (its text starts “Mocked response for illustration.”). No model was called.
+
 ## What the assignment asked
 
 Each pair had to write a parallel program for Spartan that reads a very large Twitter dataset
