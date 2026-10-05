@@ -2,6 +2,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   ChartColumn,
+  CirclePlay,
   Cpu,
   Gauge,
   Map as MapIcon,
@@ -158,6 +159,9 @@ export default function HomePage() {
               </Link>
             </Button>
           </div>
+          <Link href="/tour" className="link inline-flex items-center gap-1.5 text-sm">
+            <CirclePlay className="size-4" aria-hidden /> Or watch the captioned walkthroughs first
+          </Link>
         </div>
         <JobCard />
       </section>

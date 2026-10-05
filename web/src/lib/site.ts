@@ -36,4 +36,5 @@ export const NAV: readonly NavItem[] = [
     blurb: "Provenance, evaluation design, limits and decision records",
   },
   { href: "/ask", label: "Ask AI", blurb: "Optional: question the results with your own key" },
+  { href: "/tour", label: "Tour", blurb: "Captioned walkthrough videos and screenshots" },
 ];

@@ -1,0 +1,31 @@
+WEBVTT
+
+NOTE Scaling lab: captions match the on-screen steps.
+
+1
+00:00:00.200 --> 00:00:04.205
+Step 1 of 7. Open Scaling: the 1 × 1, 1 × 8 and 2 × 4-core Spartan jobs, one run each.
+
+2
+00:00:04.205 --> 00:00:08.551
+Step 2 of 7. Speedup, efficiency and the Karp–Flatt serial fraction for every job.
+
+3
+00:00:08.551 --> 00:00:12.765
+Step 3 of 7. Amdahl's law explorer: the serial fraction fitted to the 8-core runs, about 3.2%.
+
+4
+00:00:12.765 --> 00:00:25.019
+Step 4 of 7. Drag the serial fraction f: the curve, the predictions and the ceiling follow.
+
+5
+00:00:25.019 --> 00:00:33.079
+Step 5 of 7. Drag the workers n: predicted time and speedup at that core count.
+
+6
+00:00:33.079 --> 00:00:37.087
+Step 6 of 7. Gustafson's law for contrast: the same f if the input grew with the cores.
+
+7
+00:00:37.087 --> 00:00:44.480
+Step 7 of 7. Reset to the fit: one run per layout, so 3.2% is a point estimate with no interval.
