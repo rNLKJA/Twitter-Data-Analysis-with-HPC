@@ -33,7 +33,16 @@ export function MpiLab() {
 
   return (
     <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-      <div className="space-y-5 lg:sticky lg:top-20">
+      {/*
+        On wide screens the controls stay in view while the monitor fills. They are
+        taller than a laptop window (800 px), so the column scrolls on its own
+        rather than hiding the run and benchmark buttons below the fold.
+      */}
+      <div
+        role="region"
+        aria-label="Input and run controls"
+        className="space-y-5 lg:sticky lg:top-20 lg:-mx-1 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto lg:overscroll-contain lg:px-1 lg:pb-1 lg:[scrollbar-width:thin]"
+      >
         <SourcePanel
           source={lab.source}
           dict={lab.dict}
