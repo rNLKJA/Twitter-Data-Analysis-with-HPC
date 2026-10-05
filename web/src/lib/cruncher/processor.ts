@@ -7,6 +7,7 @@ import {
   SKIP_LINES_2,
   TWEETS_ID,
 } from "./constants";
+import { decodeLine } from "./decode";
 import { normaliseLocation, wordNgrams, type SalDict } from "./normalise";
 
 /** Column-oriented equivalent of the polars frame returned by the original. */
@@ -50,8 +51,6 @@ export class UnbalancedChunkError extends Error {
     this.name = "UnbalancedChunkError";
   }
 }
-
-const decoder = new TextDecoder("utf-8");
 
 /** `np.int64(text)` → canonical decimal string (strips leading zeros, validates). */
 export function toInt64String(text: string): string {
@@ -100,7 +99,7 @@ export function twitterProcessorV1(
     if (raw.length === 0 && file.tell() >= file.size && tweetsId.length !== gcc.length) {
       throw new UnbalancedChunkError(`chunk ${cs}-${ce}`);
     }
-    const line = decoder.decode(raw);
+    const line = decodeLine(raw);
 
     const matchId = TWEETS_ID.exec(line);
     const matchLocation = LOCATION_ID.exec(line);

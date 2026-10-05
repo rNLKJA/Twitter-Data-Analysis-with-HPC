@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 
 import gazetteer from "../../../public/data/gazetteer.json";
+import boundaryFixture from "../__fixtures__/parity-boundary-2023-400.json";
 import fixture from "../__fixtures__/parity-synthetic-2023-400.json";
 import { generateSyntheticFile } from "../synth/generator";
 import { resolveLocation } from "./normalise";
@@ -21,7 +22,14 @@ import { task1Csv, task2Csv, task31Csv, task3Csv } from "./tasks";
  */
 
 type Csv = string[][];
-type Run = { ranks: unknown[]; task1: Csv; task2: Csv; task3: Csv; task3_1: Csv; records?: unknown[][] };
+type Run = {
+  ranks: unknown[];
+  task1: Csv;
+  task2: Csv;
+  task3: Csv;
+  task3_1: Csv;
+  records?: unknown[][];
+};
 const runs = fixture.runs as Record<string, Run>;
 const dict = new Map(Object.entries(gazetteer.dict as Record<string, string>));
 const bytes = generateSyntheticFile({ seed: 2023, tweets: 400 });
@@ -74,6 +82,35 @@ describe("parity with the original Python pipeline", () => {
       const records = f.tweetId.map((id, i) => [id, f.authorId[i], f.location[i], f.gcc[i]]);
       expect(records).toEqual(expected.records);
     }
+  });
+});
+
+/**
+ * A latent bug in the original, found while porting: when a chunk boundary
+ * lands inside the four-space indentation before `"_id"`, the next rank's
+ * first (partial) line still matches TWEETS_ID, while the previous rank reads
+ * that whole line because it started before chunk_end. Both ranks count the
+ * tweet. parity-boundary-2023-400.json is the ORIGINAL Python on the same
+ * 400-tweet file with 27 and 39 ranks (one such boundary each): it reads 401
+ * tweets. The port must do exactly the same, not quietly fix it.
+ */
+describe("parity on the original's chunk-boundary double count", () => {
+  const runs = boundaryFixture.runs as Record<string, Run & { ranks: Array<{ tweets: number }> }>;
+
+  it("uses the same input file", () => {
+    expect(boundaryFixture.input.sha256).toBe(fixture.input.sha256);
+  });
+
+  it.each(Object.keys(runs))("matches the original on %s ranks, double count included", (size) => {
+    const expected = runs[size];
+    const got = runPipeline(bytes, dict, Number(size));
+    expect(got.ranks).toEqual(expected.ranks);
+    expect(got.ranks.reduce((s, r) => s + r.tweets, 0)).toBe(401);
+    expect(task1Csv(got.task1)).toEqual(expected.task1);
+    expect(task2Csv(got.task2)).toEqual(expected.task2);
+    expect(task3Csv(got.task3.rows).map((r) => [r[0], r[1], canonicalTask3(r[2])])).toEqual(
+      expected.task3.map((r) => [r[0], r[1], canonicalTask3(r[2])]),
+    );
   });
 });
 
