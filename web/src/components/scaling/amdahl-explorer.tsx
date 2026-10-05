@@ -141,7 +141,8 @@ export function AmdahlExplorer() {
               aria-pressed={gustafson}
               className={gustafson ? "border-primary/50 bg-primary/12 text-primary" : undefined}
             >
-              {gustafson ? "Hide" : "Show"} Gustafson&apos;s law
+              {/* A toggle button keeps a fixed name; aria-pressed carries the state. */}
+              Gustafson&apos;s law
             </Button>
           </div>
         </div>

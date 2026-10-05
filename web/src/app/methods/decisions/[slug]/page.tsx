@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/common/page-header";
 import { Markdown } from "@/components/methods/markdown";
 import { listDecisions, readDoc, withoutTitle } from "@/lib/content/docs";
-import { SITE } from "@/lib/site";
+import { sourceUrl } from "@/lib/site";
 
 export const dynamicParams = false;
 
@@ -65,7 +65,7 @@ export default async function DecisionPage({ params }: { params: Promise<{ slug:
       <p className="mt-6 text-xs text-muted-foreground">
         Source:{" "}
         <a
-          href={`${SITE.repo}/blob/main/docs/decisions/${slug}.md`}
+          href={sourceUrl(`docs/decisions/${slug}.md`)}
           target="_blank"
           rel="noreferrer"
           className="font-mono underline underline-offset-4"

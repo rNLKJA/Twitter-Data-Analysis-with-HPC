@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-import { SITE } from "@/lib/site";
+import { sourceUrl } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 type HastNode = { type?: string; tagName?: string; value?: string; children?: HastNode[] };
@@ -72,7 +72,7 @@ export function resolveDocHref(href: string): { href: string; external: boolean 
   if (href.endsWith("ai-use-statement.md")) return { href: "/methods#ai-use", external: false };
   if (href === "decisions" || href === "decisions/")
     return { href: "/methods#decisions", external: false };
-  return { href: `${SITE.repo}/blob/main/docs/${href}`, external: true };
+  return { href: sourceUrl(`docs/${href}`), external: true };
 }
 
 const components: Components = {

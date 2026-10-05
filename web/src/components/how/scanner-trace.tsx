@@ -52,9 +52,7 @@ export function ScannerTrace({
                 l.mode === "skip" && "text-muted-foreground italic",
               )}
             >
-              <span className="num pl-2 text-right text-muted-foreground/70 select-none">
-                {l.n}
-              </span>
+              <span className="num pl-2 text-right text-muted-foreground select-none">{l.n}</span>
               <span className="text-center select-none">
                 <span aria-hidden>
                   {l.mode === "read" ? <span className="text-primary">›</span> : "·"}

@@ -9,6 +9,12 @@ export const SITE = {
   repo: SUBJECT.repo,
 } as const;
 
+/** Commit the documentation links point at (set at build time in next.config.ts). */
+export const SOURCE_REF = process.env.NEXT_PUBLIC_SOURCE_REF || "main";
+
+/** GitHub URL of a file in this repository at SOURCE_REF. */
+export const sourceUrl = (path: string) => `${SITE.repo}/blob/${SOURCE_REF}/${path}`;
+
 export interface NavItem {
   href: string;
   label: string;

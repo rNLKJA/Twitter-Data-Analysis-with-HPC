@@ -5,7 +5,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/common/page-header";
 import { Markdown } from "@/components/methods/markdown";
 import { parseTitle, readDoc, withoutTitle } from "@/lib/content/docs";
-import { SITE } from "@/lib/site";
+import { sourceUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Model card",
@@ -34,7 +34,7 @@ export default function ModelCardPage() {
       <p className="mt-6 text-xs text-muted-foreground">
         Source:{" "}
         <a
-          href={`${SITE.repo}/blob/main/docs/model-card.md`}
+          href={sourceUrl("docs/model-card.md")}
           target="_blank"
           rel="noreferrer"
           className="font-mono underline underline-offset-4"
