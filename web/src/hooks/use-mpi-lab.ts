@@ -11,11 +11,18 @@ import {
 } from "@/lib/cruncher/chunks";
 import { processSalV1, type SalEntry } from "@/lib/cruncher/sal";
 import type { RankPartials, Task1Row, Task2Row, Task3Result } from "@/lib/cruncher/tasks";
+import {
+  planBenchmark,
+  type BenchmarkPlan,
+  type BenchmarkSample,
+  type PlannedRun,
+} from "@/lib/lab/benchmark";
 import { PoolTerminatedError, RankPool } from "@/lib/lab/rank-pool";
 import {
   dictHash,
   resultsFingerprint,
   runKey,
+  type BenchTag,
   type RunRecord,
   type TaskResults,
 } from "@/lib/lab/runs";
@@ -108,6 +115,28 @@ export interface RunView {
   error?: string;
   /** Ranks whose byte range starts inside an `"_id"` line's indentation (each adds one tweet). */
   doubleCountRanks: number[];
+  /** Set when the run belongs to a benchmark. */
+  bench?: BenchTag;
+}
+
+/** A repeated, randomised-order benchmark over several worker counts (see lib/lab/benchmark.ts). */
+export interface BenchState {
+  id: number;
+  /** runKey of the file + dictionary it measured. */
+  key: string;
+  plan: BenchmarkPlan;
+  status: "running" | "done" | "cancelled" | "error";
+  /** Runs finished so far (warm-up included) and the plan's total. */
+  done: number;
+  total: number;
+  current: PlannedRun | null;
+  /** Timed runs only. */
+  samples: BenchmarkSample[];
+  startedAt: string;
+  finishedAt?: string;
+  error?: string;
+  /** Logical cores the browser reported when the benchmark started. */
+  cores: number;
 }
 
 interface LiveRun {
@@ -132,6 +161,11 @@ async function findDoubleCountRanks(blob: Blob, starts: readonly number[]): Prom
   return hits.flatMap((hit, i) => (hit ? [i + 1] : []));
 }
 
+/** The parallel part of a run: the slowest rank's scan. */
+function slowestScanMs(ranks: readonly RankView[]): number {
+  return Math.max(0, ...ranks.map((r) => (r.scanEnd ?? 0) - (r.scanStart ?? 0)));
+}
+
 const noopSubscribe = () => () => {};
 const readCores = () => navigator.hardwareConcurrency || 0;
 /** -1 = not known yet (server render / before hydration); 0 = the browser does not say. */
@@ -154,6 +188,7 @@ export function useMpiLab() {
   const [run, setRun] = useState<RunView | null>(null);
   const [history, setHistory] = useState<RunRecord[]>([]);
   const [sweeping, setSweeping] = useState(false);
+  const [bench, setBench] = useState<BenchState | null>(null);
   const cores = useSyncExternalStore(noopSubscribe, readCores, serverCores);
   const maxWorkers = maxWorkersFor(cores);
 
@@ -169,6 +204,7 @@ export function useMpiLab() {
   const flushRef = useRef<number | null>(null);
   const historyRef = useRef<RunRecord[]>([]);
   const cancelSweep = useRef(false);
+  const benchSeq = useRef(0);
 
   // ── gazetteer (the published sal.json subset) ─────────────────────────────
   useEffect(() => {
@@ -315,9 +351,10 @@ export function useMpiLab() {
             key: v.key,
             size: v.size,
             wallMs: tEnd - v.t0,
-            scanMs: Math.max(...v.ranks.map((r) => (r.scanEnd ?? 0) - (r.scanStart ?? 0))),
+            scanMs: slowestScanMs(v.ranks),
             fingerprint: resultsFingerprint(results),
             doubleCounts: v.doubleCountRanks.length,
+            ...(v.bench ? { bench: v.bench } : {}),
           };
           historyRef.current = [...historyRef.current, record];
           setHistory(historyRef.current);
@@ -480,7 +517,7 @@ export function useMpiLab() {
 
   // ── runs ───────────────────────────────────────────────────────────────────
   const startRun = useCallback(
-    async (size: number): Promise<RunView | null> => {
+    async (size: number, benchTag?: BenchTag): Promise<RunView | null> => {
       if (source.status !== "ready" || dict.status !== "ready" || activeRef.current !== null)
         return null;
       const file = source.file;
@@ -495,6 +532,7 @@ export function useMpiLab() {
         ranks: [],
         error,
         doubleCountRanks: [],
+        ...(benchTag ? { bench: benchTag } : {}),
       });
       if (!isSupportedRankCount(size)) {
         const v = placeholder(
@@ -567,6 +605,7 @@ export function useMpiLab() {
           t0: now(),
           ranks,
           doubleCountRanks,
+          ...(benchTag ? { bench: benchTag } : {}),
         };
         liveRef.current = { view, partials: Array(size).fill(null), reduced: {}, resolve };
         setRun({ ...view });
@@ -605,21 +644,85 @@ export function useMpiLab() {
       );
   }, [finish, terminatePool]);
 
-  const sweep = useCallback(
-    async (sizes: number[]) => {
+  /**
+   * Run a benchmark plan: warm-up rounds (discarded), then R timed rounds,
+   * each running every worker count once in a seeded random order. Stops at
+   * the first run that does not finish (Stop, or an error).
+   */
+  const runBenchmark = useCallback(
+    async (plan: BenchmarkPlan) => {
+      if (source.status !== "ready" || dict.status !== "ready") return;
+      const runs = planBenchmark(plan);
+      const id = ++benchSeq.current;
+      const key = runKey(source.file.id, dict);
       cancelSweep.current = false;
       setSweeping(true);
+      let state: BenchState = {
+        id,
+        key,
+        plan,
+        status: "running",
+        done: 0,
+        total: runs.length,
+        current: null,
+        samples: [],
+        startedAt: new Date().toISOString(),
+        cores: navigator.hardwareConcurrency || 0,
+      };
+      const publish = (patch: Partial<BenchState>) => {
+        state = { ...state, ...patch };
+        setBench(state);
+      };
+      publish({});
       try {
-        for (const size of sizes) {
-          if (cancelSweep.current) break;
-          const v = await startRun(size);
-          if (!v || v.status !== "done") break;
+        for (const planned of runs) {
+          if (cancelSweep.current) {
+            publish({ status: "cancelled", current: null });
+            return;
+          }
+          publish({ current: planned });
+          const v = await startRun(planned.size, {
+            id,
+            round: planned.round,
+            warmup: planned.warmup,
+          });
+          if (!v || v.status !== "done" || v.wallMs === undefined) {
+            publish({
+              status: !v || v.status === "cancelled" ? "cancelled" : "error",
+              error: v?.error,
+              current: null,
+            });
+            return;
+          }
+          publish({
+            done: state.done + 1,
+            samples: planned.warmup
+              ? state.samples
+              : [
+                  ...state.samples,
+                  {
+                    round: planned.round,
+                    size: planned.size,
+                    wallMs: v.wallMs,
+                    scanMs: slowestScanMs(v.ranks),
+                    runId: v.id,
+                  },
+                ],
+          });
         }
+        publish({ status: "done", current: null });
+      } catch (err) {
+        publish({
+          status: "error",
+          error: err instanceof Error ? err.message : String(err),
+          current: null,
+        });
       } finally {
+        if (state.status !== "running") publish({ finishedAt: new Date().toISOString() });
         setSweeping(false);
       }
     },
-    [startRun],
+    [dict, source, startRun],
   );
 
   const clearHistory = useCallback(() => {
@@ -645,7 +748,8 @@ export function useMpiLab() {
     loadUpload,
     loadSalFile,
     startRun,
-    sweep,
+    bench,
+    runBenchmark,
     cancel,
     clearHistory,
   };

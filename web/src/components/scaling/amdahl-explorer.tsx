@@ -44,6 +44,7 @@ export function AmdahlExplorer() {
   const f = override ?? fitted;
   const [n, setN] = useState(16);
   const [hoverN, setHoverN] = useState<number | null>(null);
+  const [gustafson, setGustafson] = useState(false);
   const focusN = hoverN ?? n;
 
   const speedupPts = pointsFor(runs, "speedup");
@@ -131,9 +132,18 @@ export function AmdahlExplorer() {
             onValueChange={([v]) => setN(v)}
             aria-label="Number of workers"
           />
-          <p className="text-xs text-muted-foreground">
-            Moves the crosshair; hovering a chart does too.
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+            <span>Moves the crosshair; hovering a chart does too.</span>
+            <Button
+              variant="outline"
+              size="xs"
+              onClick={() => setGustafson((g) => !g)}
+              aria-pressed={gustafson}
+              className={gustafson ? "border-primary/50 bg-primary/12 text-primary" : undefined}
+            >
+              {gustafson ? "Hide" : "Show"} Gustafson&apos;s law
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -163,6 +173,7 @@ export function AmdahlExplorer() {
             kind="speedup"
             t1={t1}
             f={f}
+            showGustafson={gustafson}
             maxN={MAX_N}
             measured={speedupPts}
             focusN={focusN}
@@ -188,12 +199,22 @@ export function AmdahlExplorer() {
       </div>
       <div className="mt-4">
         <ScalingLegend
+          showGustafson={gustafson}
           measured={[
             { label: "1 node × 1 core", shape: "diamond" },
             { label: "1 node × 8 cores", shape: "circle" },
             { label: "2 nodes × 4 cores", shape: "ring-square" },
           ]}
         />
+        {gustafson && (
+          <p className="mt-3 max-w-3xl text-xs text-muted-foreground">
+            Gustafson&apos;s law, n − f(n − 1), uses the same f but assumes the input grows with the
+            number of workers, so the parallel part keeps them all busy (weak scaling). The
+            assignment kept the file fixed (strong scaling), so Amdahl&apos;s law is the one the
+            measurements test; Gustafson&apos;s line shows how much more work the same time would
+            have covered if the file had grown with the cores.
+          </p>
+        )}
       </div>
     </div>
   );

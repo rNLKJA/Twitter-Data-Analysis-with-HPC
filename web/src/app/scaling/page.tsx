@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Metric, PageHeader, Panel, SectionHeading } from "@/components/common/page-header";
 import { AmdahlExplorer } from "@/components/scaling/amdahl-explorer";
 import { BenchmarkTable } from "@/components/scaling/benchmark-table";
-import { amdahlLimit, fitSerialFraction } from "@/lib/amdahl";
+import { amdahlLimit, fitSerialFraction, serialFractionRoundingRange } from "@/lib/amdahl";
 import { BENCHMARKS, DATASET, DEV_BENCHMARKS, type BenchmarkRun } from "@/lib/data/original";
 import { formatBytes, formatClock, formatPct } from "@/lib/format";
 
@@ -30,6 +30,7 @@ export default function ScalingPage() {
   const earlier = stats(DEV_BENCHMARKS);
   const twoNode = BENCHMARKS.find((r) => r.nodes === 2)!;
   const throughput = DATASET.bytes / final.t1.seconds;
+  const [roundLo, roundHi] = serialFractionRoundingRange(final.t1.seconds, final.t8.seconds, 8);
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6">
@@ -138,6 +139,28 @@ export default function ScalingPage() {
             </p>
           </Panel>
         </div>
+        <Panel as="div" className="mt-6 space-y-2">
+          <h3 id="certainty" className="font-heading font-semibold">
+            How sure is {formatPct(final.f, 1)}?
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Not very, and the data cannot say how unsure. The benchmark is three configurations with
+            one run each, and both multi-core layouts used 8 cores, so the fitted serial fraction is
+            the Karp–Flatt value at a single point (n = 8): a point estimate with no repeat from
+            which to estimate run-to-run spread, and no way to tell Amdahl&apos;s law from any other
+            curve through that point. Slurm&apos;s whole-second timing alone moves it between{" "}
+            {formatPct(roundLo, 2)} and {formatPct(roundHi, 2)}; the {final.limit.toFixed(0)}×
+            ceiling is an extrapolation. The{" "}
+            <Link href="/lab" className="link">
+              MPI lab&apos;s benchmark
+            </Link>{" "}
+            repeats every configuration and reports intervals instead (
+            <Link href="/methods#benchmark" className="link">
+              method
+            </Link>
+            ).
+          </p>
+        </Panel>
         <p className="mt-6 text-sm text-muted-foreground">
           Want to measure this yourself?{" "}
           <Link href="/lab" className="link">

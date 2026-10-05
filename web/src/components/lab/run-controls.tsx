@@ -1,12 +1,21 @@
 "use client";
 
-import { Cpu, LoaderCircle, Play, Repeat, Square } from "lucide-react";
+import { Cpu, Gauge, LoaderCircle, Play, Square } from "lucide-react";
+import { useId } from "react";
 
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import type { BenchState } from "@/hooks/use-mpi-lab";
 import { getTaskRanks } from "@/lib/cruncher/chunks";
-import { sweepSizes } from "@/lib/lab/runs";
+
+export type CountsMode = "spaced" | "every";
+
+const REPEAT_OPTIONS = [3, 5, 7, 10];
+const WARMUP_OPTIONS = [0, 1, 2];
+
+const toggleOn =
+  "data-[state=on]:border-primary/50 data-[state=on]:bg-primary/12 data-[state=on]:text-primary";
 
 export function RunControls({
   size,
@@ -15,25 +24,44 @@ export function RunControls({
   cores,
   canRun,
   running,
-  sweeping,
   onRun,
-  onSweep,
   onCancel,
+  repeats,
+  onRepeats,
+  warmup,
+  onWarmup,
+  countsMode,
+  onCountsMode,
+  benchSizes,
+  onBenchmark,
+  bench,
 }: {
   size: number;
   onSize: (n: number) => void;
   maxWorkers: number;
   cores: number;
   canRun: boolean;
+  /** A run or a benchmark is in progress. */
   running: boolean;
-  sweeping: boolean;
   onRun: () => void;
-  onSweep: () => void;
   onCancel: () => void;
+  repeats: number;
+  onRepeats: (r: number) => void;
+  warmup: number;
+  onWarmup: (w: number) => void;
+  countsMode: CountsMode;
+  onCountsMode: (m: CountsMode) => void;
+  /** Worker counts the benchmark will measure. */
+  benchSizes: number[];
+  onBenchmark: () => void;
+  /** The benchmark in progress or last run (any file). */
+  bench: BenchState | null;
 }) {
   const options = Array.from({ length: maxWorkers }, (_, i) => i + 1);
   const [t1, t2, t3] = getTaskRanks(size);
-  const sweepList = sweepSizes(maxWorkers);
+  const id = useId();
+  const totalRuns = (repeats + warmup) * benchSizes.length;
+  const benchRunning = bench?.status === "running";
 
   return (
     <section className="panel p-4 sm:p-5" aria-labelledby="ranks-title">
@@ -91,7 +119,7 @@ export function RunControls({
             <ToggleGroupItem
               key={n}
               value={String(n)}
-              className="w-9 font-mono text-xs data-[state=on]:border-primary/50 data-[state=on]:bg-primary/12 data-[state=on]:text-primary"
+              className={`w-9 font-mono text-xs ${toggleOn}`}
               aria-label={`${n} rank${n === 1 ? "" : "s"}`}
             >
               {n}
@@ -117,26 +145,120 @@ export function RunControls({
             <Square aria-hidden /> Stop
           </Button>
         ) : (
-          <>
-            <Button onClick={onRun} disabled={!canRun} className="flex-1">
-              <Play aria-hidden /> Run on {size} rank{size === 1 ? "" : "s"}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={onSweep}
-              disabled={!canRun}
-              title={`Runs ${sweepList.join(", ")} ranks in turn`}
-            >
-              <Repeat aria-hidden /> Sweep 1–{maxWorkers}
-            </Button>
-          </>
+          <Button onClick={onRun} disabled={!canRun} className="flex-1">
+            <Play aria-hidden /> Run once on {size} rank{size === 1 ? "" : "s"}
+          </Button>
         )}
       </div>
-      {sweeping && (
-        <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground" role="status">
-          <LoaderCircle className="size-3 animate-spin" aria-hidden /> Sweeping{" "}
-          {sweepList.join(", ")} ranks…
+
+      <fieldset className="mt-5 space-y-3 border-t pt-4" disabled={running}>
+        <legend className="sr-only">Benchmark settings</legend>
+        <p className="flex items-center gap-2 font-heading text-sm font-semibold">
+          <Gauge className="size-4 text-primary" aria-hidden /> Benchmark
         </p>
+        <p className="text-xs text-muted-foreground">
+          Measures every worker count {repeats} times after {warmup === 0 ? "no" : warmup} warm-up
+          round{warmup === 1 ? "" : "s"}, each round in a shuffled order, and reports medians with
+          95% bootstrap intervals.
+        </p>
+        <div className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2.5 text-sm">
+          <span id={`${id}-reps`} className="text-xs font-medium">
+            Repeats
+          </span>
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            size="sm"
+            spacing={0}
+            value={String(repeats)}
+            onValueChange={(v) => v && onRepeats(Number(v))}
+            aria-labelledby={`${id}-reps`}
+          >
+            {REPEAT_OPTIONS.map((r) => (
+              <ToggleGroupItem
+                key={r}
+                value={String(r)}
+                className={`px-2.5 font-mono text-xs ${toggleOn}`}
+                aria-label={`${r} timed rounds`}
+              >
+                {r}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+          <span id={`${id}-warm`} className="text-xs font-medium">
+            Warm-up
+          </span>
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            size="sm"
+            spacing={0}
+            value={String(warmup)}
+            onValueChange={(v) => v && onWarmup(Number(v))}
+            aria-labelledby={`${id}-warm`}
+          >
+            {WARMUP_OPTIONS.map((w) => (
+              <ToggleGroupItem
+                key={w}
+                value={String(w)}
+                className={`px-2.5 font-mono text-xs ${toggleOn}`}
+                aria-label={`${w} warm-up round${w === 1 ? "" : "s"}`}
+              >
+                {w}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+          <span id={`${id}-counts`} className="text-xs font-medium">
+            Counts
+          </span>
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            size="sm"
+            spacing={0}
+            value={countsMode}
+            onValueChange={(v) => v && onCountsMode(v as CountsMode)}
+            aria-labelledby={`${id}-counts`}
+          >
+            <ToggleGroupItem value="spaced" className={`px-2.5 text-xs ${toggleOn}`}>
+              Spaced
+            </ToggleGroupItem>
+            <ToggleGroupItem value="every" className={`px-2.5 text-xs ${toggleOn}`}>
+              Every
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+        <p className="font-mono text-[0.7rem] text-muted-foreground">
+          n = {benchSizes.join(", ")} · ({warmup} + {repeats}) × {benchSizes.length} = {totalRuns}{" "}
+          runs
+        </p>
+        {!running && (
+          <Button variant="outline" onClick={onBenchmark} disabled={!canRun} className="w-full">
+            <Gauge aria-hidden /> Run benchmark
+          </Button>
+        )}
+      </fieldset>
+
+      {benchRunning && bench && (
+        <div className="mt-3 space-y-1.5" role="status" aria-live="polite">
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <LoaderCircle className="size-3 animate-spin" aria-hidden />
+            {bench.current
+              ? bench.current.warmup
+                ? `Warm-up, ${bench.current.size} rank${bench.current.size === 1 ? "" : "s"}`
+                : `Round ${bench.current.round + 1} of ${bench.plan.repeats}, ${bench.current.size} rank${bench.current.size === 1 ? "" : "s"}`
+              : "Starting…"}
+            <span className="ml-auto font-mono">
+              {bench.done}/{bench.total}
+            </span>
+          </p>
+          <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary transition-[width]"
+              style={{ width: `${(bench.done / Math.max(1, bench.total)) * 100}%` }}
+            />
+          </div>
+        </div>
       )}
     </section>
   );
