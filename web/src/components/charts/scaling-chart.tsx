@@ -18,6 +18,8 @@ export interface MeasuredPoint {
 }
 
 const M = { top: 18, right: 18, bottom: 44, left: 52 };
+/** Widest the hover readout gets (13rem); used to keep it inside the chart on phones. */
+const TIP_MAX_W = 208;
 
 function Marker({ shape = "circle", x, y }: { shape?: MarkerShape; x: number; y: number }) {
   if (shape === "ring-square")
@@ -115,6 +117,8 @@ export function ScalingChart({
   const fn = focusN != null && focusN >= 1 && focusN <= maxN ? focusN : null;
   const tipX = fn != null ? x(fn) : 0;
   const tipLeft = tipX > W * 0.62;
+  // beside the crosshair, but never past the chart's edge
+  const tipOffset = Math.max(0, Math.min((tipLeft ? W - tipX : tipX) + 10, W - TIP_MAX_W - 2));
 
   return (
     <figure ref={boxRef} className={cn("relative", className)}>
@@ -217,13 +221,9 @@ export function ScalingChart({
       {fn != null && (
         <div
           className={cn(
-            "pointer-events-none absolute top-2 z-10 min-w-40 rounded-lg border bg-popover/95 px-3 py-2 text-xs shadow-md backdrop-blur",
+            "pointer-events-none absolute top-2 z-10 max-w-[13rem] min-w-40 rounded-lg border bg-popover/95 px-3 py-2 text-xs shadow-md backdrop-blur",
           )}
-          style={
-            tipLeft
-              ? { right: `${((W - tipX) / W) * 100 + 2}%` }
-              : { left: `${(tipX / W) * 100 + 2}%` }
-          }
+          style={tipLeft ? { right: tipOffset } : { left: tipOffset }}
           role="status"
           aria-live="polite"
         >

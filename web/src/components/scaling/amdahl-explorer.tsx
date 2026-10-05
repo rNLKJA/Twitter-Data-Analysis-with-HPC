@@ -137,12 +137,15 @@ export function AmdahlExplorer() {
         </div>
       </div>
 
-      <dl className="mt-6 grid grid-cols-2 gap-4 rounded-lg border bg-muted/30 p-4 sm:grid-cols-4">
+      <p className="mt-6 text-xs text-muted-foreground">
+        Amdahl&apos;s law with f = {formatPct(f, 2)} predicts:
+      </p>
+      <dl className="mt-2 grid grid-cols-2 gap-4 rounded-lg border bg-muted/30 p-4 sm:grid-cols-4">
         {[
-          { k: `Predicted time, n = ${n}`, v: formatClock(amdahlTime(t1, f, n)) },
-          { k: "Predicted speedup", v: `${amdahlSpeedup(f, n).toFixed(2)}×` },
-          { k: "Parallel efficiency", v: formatPct(amdahlSpeedup(f, n) / n, 0) },
-          { k: "Ceiling as n → ∞", v: Number.isFinite(limit) ? `${limit.toFixed(1)}×` : "none" },
+          { k: `Time at n = ${n}`, v: formatClock(amdahlTime(t1, f, n)) },
+          { k: `Speedup at n = ${n}`, v: `${amdahlSpeedup(f, n).toFixed(2)}×` },
+          { k: "Efficiency", v: formatPct(amdahlSpeedup(f, n) / n, 0) },
+          { k: "Ceiling, n → ∞", v: Number.isFinite(limit) ? `${limit.toFixed(1)}×` : "none" },
         ].map((m) => (
           <div key={m.k}>
             <dt className="font-mono text-[0.65rem] tracking-[0.1em] text-muted-foreground uppercase">
