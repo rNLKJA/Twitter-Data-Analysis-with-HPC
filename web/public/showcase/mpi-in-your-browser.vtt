@@ -1,0 +1,59 @@
+WEBVTT
+
+NOTE MPI in your browser: captions match the on-screen steps.
+
+1
+00:00:00.201 --> 00:00:04.451
+Step 1 of 14. Open the MPI lab: one Web Worker per MPI rank, running the ported algorithm.
+
+2
+00:00:04.451 --> 00:00:10.929
+Step 2 of 14. Generate the seeded synthetic file: seed 2023, 100,000 tweets in bigTwitter.json's layout.
+
+3
+00:00:10.929 --> 00:00:19.465
+Step 3 of 14. Run on 1 rank first: the clean baseline, like the 1 node × 1 core job.
+
+4
+00:00:19.465 --> 00:00:28.178
+Step 4 of 14. Run on 8 ranks: each scans its own byte range, then ranks 0, 1 and 2 reduce the tasks.
+
+5
+00:00:28.178 --> 00:00:35.092
+Step 5 of 14. Same three result files as the 1-rank baseline; the answers from the task ranks.
+
+6
+00:00:35.092 --> 00:00:54.282
+Step 6 of 14. Benchmark: 5 timed rounds per worker count after a warm-up, in shuffled order.
+
+7
+00:00:54.282 --> 00:01:02.293
+Step 7 of 14. Speedup with nominal 95% bootstrap intervals, the fitted Amdahl curve and its band.
+
+8
+00:01:02.293 --> 00:01:07.057
+Step 8 of 14. Per worker count: median time with an exact interval, efficiency and Karp–Flatt.
+
+9
+00:01:07.057 --> 00:01:12.576
+Step 9 of 14. Ask the results: optional, answered only from the result tables, with your own key.
+
+10
+00:01:12.576 --> 00:01:20.295
+Step 10 of 14. AI settings: the key stays in this browser and goes only to the provider.
+
+11
+00:01:20.295 --> 00:01:25.538
+Step 11 of 14. For this demo: a placeholder key, never a real one; provider calls are intercepted. (Mocked AI response for illustration.)
+
+12
+00:01:25.538 --> 00:01:38.293
+Step 12 of 14. A mocked answer, labelled AI-generated, with cited rows and an automatic check. (Mocked AI response for illustration.)
+
+13
+00:01:38.293 --> 00:01:46.180
+Step 13 of 14. Accept it: the review is recorded in the AI audit log, with JSON and CSV export. (Mocked AI response for illustration.)
+
+14
+00:01:46.180 --> 00:01:52.049
+Step 14 of 14. Forget key: the placeholder is removed from this browser.

@@ -1,0 +1,891 @@
+{
+ "_provenance": "Derived by scripts/build_gazetteer.py: the original coursework process_salV1() + normalise_location() + return_words_ngrams() run on sal.json, restricted to the n-grams of the synthetic place vocabulary. Not the course-provided file.",
+ "source": {
+  "salSha256": "7a0fa31537a91d9e197e80c84278187c535f23279433fc9cc8ec5ffcfc27e290",
+  "fullDictionaryKeys": 16616
+ },
+ "dict": {
+  "adelaide": "4gade",
+  "airlie beach": "3rqld",
+  "albury": "1rnsw",
+  "albury nsw": "1rnsw",
+  "alice": "1rnsw",
+  "alice springs": "7rnte",
+  "ballarat": "2rvic",
+  "ballarat vic": "2rvic",
+  "bathurst": "1rnsw",
+  "battery point": "6ghob",
+  "bay nsw": "1rnsw",
+  "bay qld": "3gbri",
+  "beach qld": "3rqld",
+  "belconnen": "8acte",
+  "bendigo": "2rvic",
+  "bendigo vic": "2rvic",
+  "bondi": "1gsyd",
+  "bondi beach": "1gsyd",
+  "boulder": "5rwau",
+  "box hill": "2gmel",
+  "braddon": "8acte",
+  "bridgewater sa": "4gade",
+  "brisbane": "3gbri",
+  "brisbane qld": "3gbri",
+  "broome": "5rwau",
+  "bunbury wa": "5rwau",
+  "bundaberg qld": "3rqld",
+  "buronga": "1rnsw",
+  "byron bay": "1rnsw",
+  "cairns qld": "3rqld",
+  "canberra": "8acte",
+  "canberra act": "8acte",
+  "cannonvale": "3rqld",
+  "central coast": "1gsyd",
+  "chatswood": "1gsyd",
+  "christmas island": "9oter",
+  "coast nsw": "1gsyd",
+  "coast qld": "3rqld",
+  "coffs harbour": "1rnsw",
+  "crafers": "4gade",
+  "darwin": "7gdar",
+  "devonport": "6rtas",
+  "docklands": "2gmel",
+  "dubbo": "1rnsw",
+  "end brisbane": "3gbri",
+  "eveleigh": "1gsyd",
+  "footscray": "2gmel",
+  "fortitude valley": "3gbri",
+  "frankston": "2gmel",
+  "fremantle": "5gper",
+  "fyshwick": "8acte",
+  "geelong": "2rvic",
+  "geelong vic": "2rvic",
+  "gold coast": "3rqld",
+  "hobart": "6ghob",
+  "ipswich": "3gbri",
+  "ipswich qld": "3gbri",
+  "jan juc": "2rvic",
+  "joondalup": "5gper",
+  "kalgoorlie": "5rwau",
+  "katherine": "7rnte",
+  "kempsey": "1rnsw",
+  "kempsey nsw": "1rnsw",
+  "kingston tas": "6ghob",
+  "kirribilli": "1gsyd",
+  "launceston": "6rtas",
+  "macquarie": "8acte",
+  "macquarie nsw": "1rnsw",
+  "macquarie park": "1gsyd",
+  "mandurah": "5gper",
+  "margaret river": "7rnte",
+  "margaret river wa": "5rwau",
+  "melbourne": "2gmel",
+  "melton vic": "2gmel",
+  "mildura": "2rvic",
+  "mooroopna": "2rvic",
+  "mount gambier": "4rsau",
+  "newcastle": "1rnsw",
+  "newcastle nsw": "1rnsw",
+  "norfolk island": "9oter",
+  "orange": "1rnsw",
+  "orange nsw": "1rnsw",
+  "pakenham": "2gmel",
+  "parramatta": "1gsyd",
+  "penrith": "1gsyd",
+  "penrith nsw": "1gsyd",
+  "perth": "5gper",
+  "perth wa": "5gper",
+  "picton nsw": "1gsyd",
+  "port adelaide": "4gade",
+  "port macquarie": "1rnsw",
+  "queanbeyan": "1rnsw",
+  "redcliffe qld": "3gbri",
+  "river wa": "5rwau",
+  "rockhampton qld": "3rqld",
+  "sandy bay": "6ghob",
+  "serpentine wa": "5gper",
+  "shepparton": "2rvic",
+  "south brisbane": "3gbri",
+  "springs": "5rwau",
+  "st kilda": "4gade",
+  "sunbury": "2gmel",
+  "sunshine coast": "3rqld",
+  "surry hills": "1gsyd",
+  "sydney": "1gsyd",
+  "sydney nsw": "1gsyd",
+  "tamworth": "1rnsw",
+  "toowoomba qld": "3rqld",
+  "toronto": "1rnsw",
+  "torquay vic": "2rvic",
+  "townsville qld": "3rqld",
+  "victor harbor": "4rsau",
+  "wagga nsw": "1rnsw",
+  "wagga wagga": "1rnsw",
+  "west end": "5rwau",
+  "wollongong": "1rnsw",
+  "wollongong nsw": "1rnsw"
+ },
+ "places": [
+  {
+   "name": "Sydney, New South Wales",
+   "location": "sydney nsw",
+   "matchedBy": "sydney",
+   "gcc": "1gsyd",
+   "tried": 1
+  },
+  {
+   "name": "Surry Hills, Sydney",
+   "location": "surry hills sydney",
+   "matchedBy": "sydney",
+   "gcc": "1gsyd",
+   "tried": 3
+  },
+  {
+   "name": "Parramatta, Sydney",
+   "location": "parramatta sydney",
+   "matchedBy": "parramatta",
+   "gcc": "1gsyd",
+   "tried": 1
+  },
+  {
+   "name": "Bondi Beach, Sydney",
+   "location": "bondi beach sydney",
+   "matchedBy": "bondi",
+   "gcc": "1gsyd",
+   "tried": 1
+  },
+  {
+   "name": "Newtown, Sydney",
+   "location": "newtown sydney",
+   "matchedBy": "sydney",
+   "gcc": "1gsyd",
+   "tried": 2
+  },
+  {
+   "name": "Chatswood, Sydney",
+   "location": "chatswood sydney",
+   "matchedBy": "chatswood",
+   "gcc": "1gsyd",
+   "tried": 1
+  },
+  {
+   "name": "Manly, Sydney",
+   "location": "manly sydney",
+   "matchedBy": "sydney",
+   "gcc": "1gsyd",
+   "tried": 2
+  },
+  {
+   "name": "Kirribilli, Sydney",
+   "location": "kirribilli sydney",
+   "matchedBy": "kirribilli",
+   "gcc": "1gsyd",
+   "tried": 1
+  },
+  {
+   "name": "Eveleigh, Sydney",
+   "location": "eveleigh sydney",
+   "matchedBy": "eveleigh",
+   "gcc": "1gsyd",
+   "tried": 1
+  },
+  {
+   "name": "Macquarie Park, Sydney",
+   "location": "macquarie park sydney",
+   "matchedBy": "macquarie",
+   "gcc": "8acte",
+   "tried": 1
+  },
+  {
+   "name": "Central Coast, New South Wales",
+   "location": "central coast nsw",
+   "matchedBy": "central coast",
+   "gcc": "1gsyd",
+   "tried": 4
+  },
+  {
+   "name": "Picton, New South Wales",
+   "location": "picton nsw",
+   "matchedBy": "picton nsw",
+   "gcc": "1gsyd",
+   "tried": 3
+  },
+  {
+   "name": "Penrith, New South Wales",
+   "location": "penrith nsw",
+   "matchedBy": "penrith",
+   "gcc": "1gsyd",
+   "tried": 1
+  },
+  {
+   "name": "Melbourne, Victoria",
+   "location": "melbourne vic",
+   "matchedBy": "melbourne",
+   "gcc": "2gmel",
+   "tried": 1
+  },
+  {
+   "name": "Fitzroy, Melbourne",
+   "location": "fitzroy melbourne",
+   "matchedBy": "melbourne",
+   "gcc": "2gmel",
+   "tried": 2
+  },
+  {
+   "name": "St Kilda, Melbourne",
+   "location": "st kilda melbourne",
+   "matchedBy": "melbourne",
+   "gcc": "2gmel",
+   "tried": 3
+  },
+  {
+   "name": "Richmond, Melbourne",
+   "location": "richmond melbourne",
+   "matchedBy": "melbourne",
+   "gcc": "2gmel",
+   "tried": 2
+  },
+  {
+   "name": "Box Hill, Melbourne",
+   "location": "box hill melbourne",
+   "matchedBy": "melbourne",
+   "gcc": "2gmel",
+   "tried": 3
+  },
+  {
+   "name": "Footscray, Melbourne",
+   "location": "footscray melbourne",
+   "matchedBy": "footscray",
+   "gcc": "2gmel",
+   "tried": 1
+  },
+  {
+   "name": "Brunswick, Melbourne",
+   "location": "brunswick melbourne",
+   "matchedBy": "melbourne",
+   "gcc": "2gmel",
+   "tried": 2
+  },
+  {
+   "name": "Docklands, Melbourne",
+   "location": "docklands melbourne",
+   "matchedBy": "docklands",
+   "gcc": "2gmel",
+   "tried": 1
+  },
+  {
+   "name": "Sunshine, Melbourne",
+   "location": "sunshine melbourne",
+   "matchedBy": "melbourne",
+   "gcc": "2gmel",
+   "tried": 2
+  },
+  {
+   "name": "Windsor, Melbourne",
+   "location": "windsor melbourne",
+   "matchedBy": "melbourne",
+   "gcc": "2gmel",
+   "tried": 2
+  },
+  {
+   "name": "Melton, Victoria",
+   "location": "melton vic",
+   "matchedBy": "melton vic",
+   "gcc": "2gmel",
+   "tried": 3
+  },
+  {
+   "name": "Pakenham, Victoria",
+   "location": "pakenham vic",
+   "matchedBy": "pakenham",
+   "gcc": "2gmel",
+   "tried": 1
+  },
+  {
+   "name": "Frankston, Victoria",
+   "location": "frankston vic",
+   "matchedBy": "frankston",
+   "gcc": "2gmel",
+   "tried": 1
+  },
+  {
+   "name": "Sunbury, Victoria",
+   "location": "sunbury vic",
+   "matchedBy": "sunbury",
+   "gcc": "2gmel",
+   "tried": 1
+  },
+  {
+   "name": "Brisbane, Queensland",
+   "location": "brisbane qld",
+   "matchedBy": "brisbane",
+   "gcc": "3gbri",
+   "tried": 1
+  },
+  {
+   "name": "Fortitude Valley, Brisbane",
+   "location": "fortitude valley brisbane",
+   "matchedBy": "brisbane",
+   "gcc": "3gbri",
+   "tried": 3
+  },
+  {
+   "name": "South Brisbane, Brisbane",
+   "location": "south brisbane brisbane",
+   "matchedBy": "brisbane",
+   "gcc": "3gbri",
+   "tried": 2
+  },
+  {
+   "name": "West End, Brisbane",
+   "location": "west end brisbane",
+   "matchedBy": "brisbane",
+   "gcc": "3gbri",
+   "tried": 3
+  },
+  {
+   "name": "Ipswich, Queensland",
+   "location": "ipswich qld",
+   "matchedBy": "ipswich",
+   "gcc": "3gbri",
+   "tried": 1
+  },
+  {
+   "name": "Redcliffe, Queensland",
+   "location": "redcliffe qld",
+   "matchedBy": "redcliffe qld",
+   "gcc": "3gbri",
+   "tried": 3
+  },
+  {
+   "name": "Adelaide, South Australia",
+   "location": "adelaide sa",
+   "matchedBy": "adelaide",
+   "gcc": "4gade",
+   "tried": 1
+  },
+  {
+   "name": "Glenelg, Adelaide",
+   "location": "glenelg adelaide",
+   "matchedBy": "adelaide",
+   "gcc": "4gade",
+   "tried": 2
+  },
+  {
+   "name": "Norwood, Adelaide",
+   "location": "norwood adelaide",
+   "matchedBy": "adelaide",
+   "gcc": "4gade",
+   "tried": 2
+  },
+  {
+   "name": "Port Adelaide, Adelaide",
+   "location": "port adelaide adelaide",
+   "matchedBy": "adelaide",
+   "gcc": "4gade",
+   "tried": 2
+  },
+  {
+   "name": "Crafers - Bridgewater, South Australia",
+   "location": "crafers bridgewater sa",
+   "matchedBy": "crafers",
+   "gcc": "4gade",
+   "tried": 1
+  },
+  {
+   "name": "Perth, Western Australia",
+   "location": "perth wa",
+   "matchedBy": "perth",
+   "gcc": "5gper",
+   "tried": 1
+  },
+  {
+   "name": "Fremantle, Perth",
+   "location": "fremantle perth",
+   "matchedBy": "fremantle",
+   "gcc": "5gper",
+   "tried": 1
+  },
+  {
+   "name": "Joondalup, Perth",
+   "location": "joondalup perth",
+   "matchedBy": "joondalup",
+   "gcc": "5gper",
+   "tried": 1
+  },
+  {
+   "name": "Scarborough, Perth",
+   "location": "scarborough perth",
+   "matchedBy": "perth",
+   "gcc": "5gper",
+   "tried": 2
+  },
+  {
+   "name": "Mandurah, Western Australia",
+   "location": "mandurah wa",
+   "matchedBy": "mandurah",
+   "gcc": "5gper",
+   "tried": 1
+  },
+  {
+   "name": "Serpentine, Western Australia",
+   "location": "serpentine wa",
+   "matchedBy": "serpentine wa",
+   "gcc": "5gper",
+   "tried": 3
+  },
+  {
+   "name": "Hobart, Tasmania",
+   "location": "hobart tas",
+   "matchedBy": "hobart",
+   "gcc": "6ghob",
+   "tried": 1
+  },
+  {
+   "name": "Sandy Bay, Hobart",
+   "location": "sandy bay hobart",
+   "matchedBy": "hobart",
+   "gcc": "6ghob",
+   "tried": 3
+  },
+  {
+   "name": "Battery Point, Hobart",
+   "location": "battery point hobart",
+   "matchedBy": "hobart",
+   "gcc": "6ghob",
+   "tried": 3
+  },
+  {
+   "name": "Kingston, Tasmania",
+   "location": "kingston tas",
+   "matchedBy": "kingston tas",
+   "gcc": "6ghob",
+   "tried": 3
+  },
+  {
+   "name": "Darwin, Northern Territory",
+   "location": "darwin nt",
+   "matchedBy": "darwin",
+   "gcc": "7gdar",
+   "tried": 1
+  },
+  {
+   "name": "Palmerston, Northern Territory",
+   "location": "palmerston nt",
+   "matchedBy": null,
+   "gcc": null,
+   "tried": 3
+  },
+  {
+   "name": "Canberra, Australian Capital Territory",
+   "location": "canberra act",
+   "matchedBy": "canberra",
+   "gcc": "8acte",
+   "tried": 1
+  },
+  {
+   "name": "Braddon, Canberra",
+   "location": "braddon canberra",
+   "matchedBy": "braddon",
+   "gcc": "8acte",
+   "tried": 1
+  },
+  {
+   "name": "Belconnen, Canberra",
+   "location": "belconnen canberra",
+   "matchedBy": "belconnen",
+   "gcc": "8acte",
+   "tried": 1
+  },
+  {
+   "name": "Fyshwick, Canberra",
+   "location": "fyshwick canberra",
+   "matchedBy": "fyshwick",
+   "gcc": "8acte",
+   "tried": 1
+  },
+  {
+   "name": "Kingston, Canberra",
+   "location": "kingston canberra",
+   "matchedBy": "canberra",
+   "gcc": "8acte",
+   "tried": 2
+  },
+  {
+   "name": "Norfolk Island",
+   "location": "norfolk island",
+   "matchedBy": "norfolk island",
+   "gcc": "9oter",
+   "tried": 3
+  },
+  {
+   "name": "Christmas Island",
+   "location": "christmas island",
+   "matchedBy": "christmas island",
+   "gcc": "9oter",
+   "tried": 3
+  },
+  {
+   "name": "New South Wales, Australia",
+   "location": "nsw australia",
+   "matchedBy": null,
+   "gcc": null,
+   "tried": 3
+  },
+  {
+   "name": "Victoria, Australia",
+   "location": "vic australia",
+   "matchedBy": null,
+   "gcc": null,
+   "tried": 3
+  },
+  {
+   "name": "Queensland, Australia",
+   "location": "qld australia",
+   "matchedBy": null,
+   "gcc": null,
+   "tried": 3
+  },
+  {
+   "name": "Western Australia, Australia",
+   "location": "wa australia",
+   "matchedBy": null,
+   "gcc": null,
+   "tried": 3
+  },
+  {
+   "name": "South Australia, Australia",
+   "location": "sa australia",
+   "matchedBy": null,
+   "gcc": null,
+   "tried": 3
+  },
+  {
+   "name": "Tasmania, Australia",
+   "location": "tas australia",
+   "matchedBy": null,
+   "gcc": null,
+   "tried": 3
+  },
+  {
+   "name": "Northern Territory, Australia",
+   "location": "nt australia",
+   "matchedBy": null,
+   "gcc": null,
+   "tried": 3
+  },
+  {
+   "name": "Australia",
+   "location": "australia",
+   "matchedBy": null,
+   "gcc": null,
+   "tried": 1
+  },
+  {
+   "name": "Gold Coast, Queensland",
+   "location": "gold coast qld",
+   "matchedBy": "gold coast",
+   "gcc": "3rqld",
+   "tried": 4
+  },
+  {
+   "name": "Sunshine Coast, Queensland",
+   "location": "sunshine coast qld",
+   "matchedBy": "sunshine coast",
+   "gcc": "3rqld",
+   "tried": 4
+  },
+  {
+   "name": "Newcastle, New South Wales",
+   "location": "newcastle nsw",
+   "matchedBy": "newcastle",
+   "gcc": "1rnsw",
+   "tried": 1
+  },
+  {
+   "name": "Wollongong, New South Wales",
+   "location": "wollongong nsw",
+   "matchedBy": "wollongong",
+   "gcc": "1rnsw",
+   "tried": 1
+  },
+  {
+   "name": "Geelong, Victoria",
+   "location": "geelong vic",
+   "matchedBy": "geelong",
+   "gcc": "2rvic",
+   "tried": 1
+  },
+  {
+   "name": "Ballarat, Victoria",
+   "location": "ballarat vic",
+   "matchedBy": "ballarat",
+   "gcc": "2rvic",
+   "tried": 1
+  },
+  {
+   "name": "Bendigo, Victoria",
+   "location": "bendigo vic",
+   "matchedBy": "bendigo",
+   "gcc": "2rvic",
+   "tried": 1
+  },
+  {
+   "name": "Cairns, Queensland",
+   "location": "cairns qld",
+   "matchedBy": "cairns qld",
+   "gcc": "3rqld",
+   "tried": 3
+  },
+  {
+   "name": "Townsville, Queensland",
+   "location": "townsville qld",
+   "matchedBy": "townsville qld",
+   "gcc": "3rqld",
+   "tried": 3
+  },
+  {
+   "name": "Toowoomba, Queensland",
+   "location": "toowoomba qld",
+   "matchedBy": "toowoomba qld",
+   "gcc": "3rqld",
+   "tried": 3
+  },
+  {
+   "name": "Rockhampton, Queensland",
+   "location": "rockhampton qld",
+   "matchedBy": "rockhampton qld",
+   "gcc": "3rqld",
+   "tried": 3
+  },
+  {
+   "name": "Hervey Bay, Queensland",
+   "location": "hervey bay qld",
+   "matchedBy": "bay qld",
+   "gcc": "3gbri",
+   "tried": 6
+  },
+  {
+   "name": "Bundaberg, Queensland",
+   "location": "bundaberg qld",
+   "matchedBy": "bundaberg qld",
+   "gcc": "3rqld",
+   "tried": 3
+  },
+  {
+   "name": "Airlie Beach - Cannonvale, Queensland",
+   "location": "airlie beach cannonvale qld",
+   "matchedBy": "cannonvale",
+   "gcc": "3rqld",
+   "tried": 3
+  },
+  {
+   "name": "Launceston, Tasmania",
+   "location": "launceston tas",
+   "matchedBy": "launceston",
+   "gcc": "6rtas",
+   "tried": 1
+  },
+  {
+   "name": "Devonport, Tasmania",
+   "location": "devonport tas",
+   "matchedBy": "devonport",
+   "gcc": "6rtas",
+   "tried": 1
+  },
+  {
+   "name": "Albury, New South Wales",
+   "location": "albury nsw",
+   "matchedBy": "albury",
+   "gcc": "1rnsw",
+   "tried": 1
+  },
+  {
+   "name": "Wagga Wagga, New South Wales",
+   "location": "wagga wagga nsw",
+   "matchedBy": "wagga wagga",
+   "gcc": "1rnsw",
+   "tried": 4
+  },
+  {
+   "name": "Coffs Harbour, New South Wales",
+   "location": "coffs harbour nsw",
+   "matchedBy": "coffs harbour",
+   "gcc": "1rnsw",
+   "tried": 4
+  },
+  {
+   "name": "Byron Bay, New South Wales",
+   "location": "byron bay nsw",
+   "matchedBy": "byron bay",
+   "gcc": "1rnsw",
+   "tried": 4
+  },
+  {
+   "name": "Port Macquarie, New South Wales",
+   "location": "port macquarie nsw",
+   "matchedBy": "macquarie",
+   "gcc": "8acte",
+   "tried": 2
+  },
+  {
+   "name": "Kempsey, New South Wales",
+   "location": "kempsey nsw",
+   "matchedBy": "kempsey",
+   "gcc": "1rnsw",
+   "tried": 1
+  },
+  {
+   "name": "Queanbeyan, New South Wales",
+   "location": "queanbeyan nsw",
+   "matchedBy": "queanbeyan",
+   "gcc": "1rnsw",
+   "tried": 1
+  },
+  {
+   "name": "Orange, New South Wales",
+   "location": "orange nsw",
+   "matchedBy": "orange",
+   "gcc": "1rnsw",
+   "tried": 1
+  },
+  {
+   "name": "Bathurst, New South Wales",
+   "location": "bathurst nsw",
+   "matchedBy": "bathurst",
+   "gcc": "1rnsw",
+   "tried": 1
+  },
+  {
+   "name": "Tamworth, New South Wales",
+   "location": "tamworth nsw",
+   "matchedBy": "tamworth",
+   "gcc": "1rnsw",
+   "tried": 1
+  },
+  {
+   "name": "Dubbo, New South Wales",
+   "location": "dubbo nsw",
+   "matchedBy": "dubbo",
+   "gcc": "1rnsw",
+   "tried": 1
+  },
+  {
+   "name": "Shepparton - Mooroopna, Victoria",
+   "location": "shepparton mooroopna vic",
+   "matchedBy": "shepparton",
+   "gcc": "2rvic",
+   "tried": 1
+  },
+  {
+   "name": "Torquay - Jan Juc, Victoria",
+   "location": "torquay jan juc vic",
+   "matchedBy": "torquay vic",
+   "gcc": "2rvic",
+   "tried": 7
+  },
+  {
+   "name": "Mildura - Buronga, Victoria",
+   "location": "mildura buronga vic",
+   "matchedBy": "mildura",
+   "gcc": "2rvic",
+   "tried": 1
+  },
+  {
+   "name": "Margaret River, Western Australia",
+   "location": "margaret river wa",
+   "matchedBy": "margaret river",
+   "gcc": "7rnte",
+   "tried": 4
+  },
+  {
+   "name": "Broome, Western Australia",
+   "location": "broome wa",
+   "matchedBy": "broome",
+   "gcc": "5rwau",
+   "tried": 1
+  },
+  {
+   "name": "Bunbury, Western Australia",
+   "location": "bunbury wa",
+   "matchedBy": "bunbury wa",
+   "gcc": "5rwau",
+   "tried": 3
+  },
+  {
+   "name": "Kalgoorlie - Boulder, Western Australia",
+   "location": "kalgoorlie boulder wa",
+   "matchedBy": "kalgoorlie",
+   "gcc": "5rwau",
+   "tried": 1
+  },
+  {
+   "name": "Alice Springs, Northern Territory",
+   "location": "alice springs nt",
+   "matchedBy": "alice",
+   "gcc": "1rnsw",
+   "tried": 1
+  },
+  {
+   "name": "Katherine, Northern Territory",
+   "location": "katherine nt",
+   "matchedBy": "katherine",
+   "gcc": "7rnte",
+   "tried": 1
+  },
+  {
+   "name": "Mount Gambier, South Australia",
+   "location": "mount gambier sa",
+   "matchedBy": "mount gambier",
+   "gcc": "4rsau",
+   "tried": 4
+  },
+  {
+   "name": "Victor Harbor, South Australia",
+   "location": "victor harbor sa",
+   "matchedBy": "victor harbor",
+   "gcc": "4rsau",
+   "tried": 4
+  },
+  {
+   "name": "Toronto, Ontario",
+   "location": "toronto ontario",
+   "matchedBy": "toronto",
+   "gcc": "1rnsw",
+   "tried": 1
+  },
+  {
+   "name": "Auckland, New Zealand",
+   "location": "auckland new zealand",
+   "matchedBy": null,
+   "gcc": null,
+   "tried": 7
+  },
+  {
+   "name": "London, England",
+   "location": "london england",
+   "matchedBy": null,
+   "gcc": null,
+   "tried": 3
+  },
+  {
+   "name": "Singapore",
+   "location": "singapore",
+   "matchedBy": null,
+   "gcc": null,
+   "tried": 1
+  },
+  {
+   "name": "Los Angeles, CA",
+   "location": "los angeles ca",
+   "matchedBy": null,
+   "gcc": null,
+   "tried": 7
+  },
+  {
+   "name": "Bali, Indonesia",
+   "location": "bali indonesia",
+   "matchedBy": null,
+   "gcc": null,
+   "tried": 3
+  }
+ ]
+}

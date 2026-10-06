@@ -1,0 +1,27 @@
+WEBVTT
+
+NOTE The results: captions match the on-screen steps.
+
+1
+00:00:00.200 --> 00:00:04.213
+Step 1 of 6. Open Results: the three answers from the final Spartan run over 9,092,274 tweets.
+
+2
+00:00:04.213 --> 00:00:06.960
+Step 2 of 6. Task 2: tweets per Greater Capital City, on a map of Australia and in a table.
+
+3
+00:00:06.960 --> 00:00:17.255
+Step 3 of 6. Hover a city to highlight it on the map and in the table: Melbourne edges out Sydney.
+
+4
+00:00:17.255 --> 00:00:21.804
+Step 4 of 6. Task 1: the ten most prolific authors, ties sharing a place.
+
+5
+00:00:21.804 --> 00:00:27.486
+Step 5 of 6. Task 3: ten authors tweeted from all eight capitals; each cell is a city's share.
+
+6
+00:00:27.486 --> 00:00:35.040
+Step 6 of 6. The three result files, laid out in main.py's format.
