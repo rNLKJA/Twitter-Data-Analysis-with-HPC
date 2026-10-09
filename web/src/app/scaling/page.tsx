@@ -124,9 +124,12 @@ export default function ScalingPage() {
             <h3 className="font-heading font-semibold">Faster code scaled worse</h3>
             <p className="text-sm text-muted-foreground">
               The earlier revision took {formatClock(earlier.t1.seconds)} on one core but reached{" "}
-              {earlier.s.toFixed(1)}× on eight (serial share {formatPct(earlier.f, 1)}). Precompiled
-              regexes, a reworked read loop and a new gather step made the program twice as fast,
-              which left the fixed costs a bigger slice of each run: Amdahl&apos;s law in practice.
+              {earlier.s.toFixed(1)}× on eight (serial share {formatPct(earlier.f, 1)}). The final
+              revision precompiled its regexes and reworked the read loop (the gather only moved
+              into a helper, with the same messages), and its one-core time halved. The logs cannot
+              say how much of that came from the code rather than the node or the file cache, but
+              either way the fixed costs became a bigger slice of each run: Amdahl&apos;s law in
+              practice.
             </p>
           </Panel>
           <Panel as="div" className="space-y-2">
